@@ -1,29 +1,14 @@
-import { View, Text, StyleSheet } from "react-native";
+import { YStack } from "tamagui";
+import themeColors from "src/utils/theme/colors";
+import AppHeader from "src/components/AppHeader";
+import SearchBar from "src/features/Home/components/SearchBar";
 
 export default function ExploreScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Explore</Text>
-      <Text style={styles.subtitle}>Tab 2</Text>
-    </View>
+    <YStack flex={1} bg={themeColors.dark.background}>
+      <AppHeader />
+      <SearchBar />
+      {/* Search content goes here */}
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#1a1a2e",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "600",
-    color: "#fff",
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "#888",
-    marginTop: 8,
-  },
-});

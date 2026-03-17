@@ -9,7 +9,11 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { View } from "tamagui";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import { scale, moderateScale, moderateVerticalScale } from "src/utils/functions/dimensions";
+import {
+  scale,
+  moderateScale,
+  moderateVerticalScale,
+} from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
 
 const AnimatedTouchableOpacity =
@@ -37,8 +41,8 @@ export default function BottomTabBar({ state, descriptors, navigation }) {
           options.tabBarLabel !== undefined
             ? options.tabBarLabel
             : options.title !== undefined
-              ? options.title
-              : route.name;
+            ? options.title
+            : route.name;
 
         const isFocused = state.index === index;
 
@@ -61,14 +65,14 @@ export default function BottomTabBar({ state, descriptors, navigation }) {
             onPress={onPress}
             style={styles.tabItemWrapper}
           >
-            {isFocused ? (
-              <RNView style={styles.focusedBackground} />
-            ) : null}
+            {isFocused ? <RNView style={styles.focusedBackground} /> : null}
 
             <View style={styles.tabItemContent}>
               {getIconByRouteName(
                 route.name,
-                isFocused ? themeColors.dark.onAccent : themeColors.dark.onSurface
+                isFocused
+                  ? themeColors.dark.onAccent
+                  : themeColors.dark.onSurface
               )}
               {isFocused && (
                 <Animated.Text
@@ -97,7 +101,7 @@ export default function BottomTabBar({ state, descriptors, navigation }) {
       case "profile":
         return (
           <MaterialCommunityIcons
-            name="account-outline"
+            name="library"
             size={moderateScale(24)}
             color={color}
           />
