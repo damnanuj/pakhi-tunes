@@ -27,7 +27,7 @@ const MENU_ITEMS = [
 export default function ProfilePage() {
   return (
     <YStack flex={1} bg={themeColors.dark.background}>
-      <ScreenHeader title="My profile" showBack={false} />
+      <ScreenHeader title="My profile" showBack={false} showSettings />
 
       <ScrollView
         showsVerticalScrollIndicator={false}

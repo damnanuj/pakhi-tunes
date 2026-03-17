@@ -9,7 +9,7 @@ import ScreenHeader from "src/components/ScreenHeader";
 export default function LanguagePage() {
   return (
     <YStack flex={1} backgroundColor={themeColors.dark.background}>
-      <ScreenHeader title="Language" showSettings={false} />
+      <ScreenHeader title="Language" showBack showSettings={false} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{

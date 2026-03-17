@@ -1,12 +1,6 @@
 import React from "react";
 import { XStack } from "tamagui";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  ArrowBigLeft,
-  ArrowLeft,
-  ChevronLeft,
-  Settings,
-} from "@tamagui/lucide-icons";
+import { ArrowLeft, Settings } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import {
   scale,
@@ -18,39 +12,37 @@ import themeColors from "src/utils/theme/colors";
 import CircularButton from "./CircularButton";
 
 export interface ScreenHeaderProps {
-  /** Dynamic text showing the current screen name (displayed in center) */
-  title: string;
-  /** Show back button (ChevronLeft) on the left. Default: true */
+  /** Content for the left slot - icon, text, image, or any component */
+  leftContent?: React.ReactNode;
+  /** Content for the right slot - icon(s), buttons, or any component */
+  rightContent?: React.ReactNode;
+  /** Shorthand: renders as text in the left section when provided (ignored if leftContent is set) */
+  title?: string;
+  /** Convenience: show back button on left when no leftContent. Default: false */
   showBack?: boolean;
-  /** Show settings icon on the right. Default: true */
+  /** Convenience: show settings icon on right when no rightContent. Default: false */
   showSettings?: boolean;
   /** Custom back press handler. Falls back to router.back() if not provided */
   onBackPress?: () => void;
   /** Custom settings press handler */
   onSettingsPress?: () => void;
-  /** Optional custom content for the left slot (overrides back button when provided) */
-  leftContent?: React.ReactNode;
-  /** Optional custom content for the right slot (overrides settings icon when provided) */
-  rightContent?: React.ReactNode;
 }
 
 /**
- * Reusable screen header with:
- * - Back button (ChevronLeft) on the left
- * - Dynamic screen name in the center
- * - Settings icon on the right
+ * Unified header with left and right slots.
+ * Pass any content (icons, text, images, components) to each slot.
+ * Use title/showBack/showSettings for common patterns.
  */
 export default function ScreenHeader({
-  title,
-  showBack = true,
-  showSettings = true,
-  onBackPress,
-  onSettingsPress,
   leftContent,
   rightContent,
+  title,
+  showBack = false,
+  showSettings = false,
+  onBackPress,
+  onSettingsPress,
 }: ScreenHeaderProps) {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
 
   const handleBack = () => {
     if (onBackPress) {
@@ -67,25 +59,40 @@ export default function ScreenHeader({
   };
 
   const renderLeft = () => {
-    if (leftContent) return leftContent;
-    if (showBack) {
+    if (leftContent != null) return leftContent;
+    const backButton = showBack ? (
+      <CircularButton onPress={handleBack}>
+        <ArrowLeft
+          size={moderateScale(20)}
+          color={themeColors.dark.onSurface}
+        />
+      </CircularButton>
+    ) : null;
+    const titleText = title ? (
+      <MyText
+        fontSize={moderateScale(18)}
+        weight="700"
+        color={themeColors.dark.onSurface}
+      >
+        {title}
+      </MyText>
+    ) : null;
+    if (backButton || titleText) {
       return (
-        <CircularButton>
-          <ArrowLeft
-            size={moderateScale(20)}
-            color={themeColors.dark.onSurface}
-          />
-        </CircularButton>
+        <XStack items="center" gap={scale(15)}>
+          {backButton}
+          {titleText}
+        </XStack>
       );
     }
     return null;
   };
 
   const renderRight = () => {
-    if (rightContent) return rightContent;
+    if (rightContent != null) return rightContent;
     if (showSettings) {
       return (
-        <CircularButton>
+        <CircularButton onPress={handleSettings}>
           <Settings
             size={moderateScale(20)}
             color={themeColors.dark.onSurface}
@@ -103,15 +110,8 @@ export default function ScreenHeader({
       justify="space-between"
       items="center"
     >
-      <XStack flex={1} items="center" justify="flex-start" gap={scale(15)}>
+      <XStack flex={1} items="center" justify="flex-start">
         {renderLeft()}
-        <MyText
-          fontSize={moderateScale(18)}
-          weight="700"
-          color={themeColors.dark.onSurface}
-        >
-          {title}
-        </MyText>
       </XStack>
       <XStack flex={1} items="center" justify="flex-end">
         {renderRight()}
