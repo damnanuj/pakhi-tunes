@@ -20,7 +20,7 @@ import {
 import themeColors from "src/utils/theme/colors";
 
 const BUTTON_HEIGHT = verticalScale(65);
-const THUMB_SIZE = 44;
+const THUMB_SIZE = 50;
 const TRIGGER_THRESHOLD = 0.75; // 75% slide to trigger
 
 export default function EntryPage() {
@@ -155,7 +155,7 @@ export default function EntryPage() {
             {...panResponder.panHandlers}
             style={{
               position: "absolute",
-              left: scale(8),
+              left: scale(6),
               top: (BUTTON_HEIGHT - THUMB_SIZE) / 2,
               width: THUMB_SIZE,
               height: THUMB_SIZE,
