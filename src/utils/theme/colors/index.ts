@@ -2,7 +2,7 @@ const themeColors = {
   dark: {
     background: "#000000" as const,
     surface: "#1e1f25" as const,
-    surfaceSecondary: "#2F2F2F" as const,
+    surfaceSecondary: "#171717" as const,
     onSurface: "#FFFFFF" as const,
     onAccent: "#000000" as const,
     accent: "#FFFF00" as const,
@@ -13,7 +13,7 @@ const themeColors = {
   light: {
     background: "#FFFFFF" as const,
     surface: "#1e1f25" as const,
-    surfaceSecondary: "#ededed" as const,
+    surfaceSecondary: "#171717" as const,
     onSurface: "#1E1E1E" as const,
     onAccent: "#000000" as const,
     accent: "#FFFF00" as const,
@@ -24,6 +24,5 @@ const themeColors = {
 };
 
 export default themeColors;
-
 
 //#606060

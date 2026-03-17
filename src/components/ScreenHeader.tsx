@@ -1,7 +1,12 @@
 import React from "react";
 import { XStack } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ArrowBigLeft, ArrowLeft, ChevronLeft, Settings } from "@tamagui/lucide-icons";
+import {
+  ArrowBigLeft,
+  ArrowLeft,
+  ChevronLeft,
+  Settings,
+} from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import {
   scale,
@@ -63,7 +68,7 @@ export default function ScreenHeader({
 
   const renderLeft = () => {
     if (leftContent) return leftContent;
-    if (!showBack) {
+    if (showBack) {
       return (
         <CircularButton>
           <ArrowLeft

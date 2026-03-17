@@ -59,7 +59,6 @@ export default function ProfileMenuItem({
 
 const styles = StyleSheet.create({
   container: {
-   
     backgroundColor: themeColors.dark.surfaceSecondary,
     borderRadius: moderateScale(15),
     overflow: "hidden",

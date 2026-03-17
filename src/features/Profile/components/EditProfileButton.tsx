@@ -4,17 +4,15 @@ import { scale, moderateScale, verticalScale } from "src/utils/functions/dimensi
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
 
-interface PrimaryButtonProps {
-  title: string;
+interface EditProfileButtonProps {
   onPress?: () => void;
   disabled?: boolean;
 }
 
-export default function PrimaryButton({
-  title,
+export default function EditProfileButton({
   onPress,
   disabled = false,
-}: PrimaryButtonProps) {
+}: EditProfileButtonProps) {
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -27,7 +25,7 @@ export default function PrimaryButton({
         weight="700"
         color={themeColors.dark.onAccent}
       >
-        {title}
+        Edit profile
       </MyText>
     </TouchableOpacity>
   );
@@ -36,9 +34,9 @@ export default function PrimaryButton({
 const styles = StyleSheet.create({
   button: {
     backgroundColor: themeColors.dark.accent,
-    paddingHorizontal: scale(24),
-    paddingVertical: verticalScale(12),
-    borderRadius: moderateScale(24),
+    paddingHorizontal: scale(22),
+    paddingVertical: verticalScale(10),
+    borderRadius: moderateScale(10),
     alignItems: "center",
     justifyContent: "center",
   },

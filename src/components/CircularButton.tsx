@@ -29,7 +29,7 @@ export default function CircularButton({
       size="$3.5"
       chromeless
       borderWidth={1}
-      borderColor={themeColors.dark.border}
+      borderColor={themeColors.dark.borderSecondary}
       circular
       width={size}
       height={size}
