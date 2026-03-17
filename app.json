@@ -13,7 +13,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#000000"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.damnanuj.pakhitunes"
@@ -54,7 +56,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "fe30ec24-f714-4f7c-8d8f-edb52fd9f2eb"
+        "projectId": "180ebec4-d962-4318-8b8b-286826c15e36"
       }
     }
   }
