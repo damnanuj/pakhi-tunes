@@ -111,6 +111,7 @@ function RootLayoutNav() {
       <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
+        <Stack.Screen name="entry" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="login" />
       </Stack>
