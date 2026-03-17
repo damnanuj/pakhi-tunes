@@ -8,6 +8,7 @@ const themeColors = {
     accent: "#FFFF00" as const,
     textMuted: "#707070" as const,
     border: "#707070" as const,
+    borderSecondary: "#303030" as const,
   },
   light: {
     background: "#FFFFFF" as const,
@@ -18,7 +19,11 @@ const themeColors = {
     accent: "#FFFF00" as const,
     textMuted: "#2F2F2F" as const,
     border: "#707070" as const,
+    borderSecondary: "#303030" as const,
   },
 };
 
 export default themeColors;
+
+
+//#606060

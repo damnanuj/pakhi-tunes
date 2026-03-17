@@ -1,21 +1,17 @@
 import React from "react";
 import { ScrollView, View } from "react-native";
 import { XStack, YStack } from "tamagui";
+import { Heart, Download, Globe, Trash2, LogOut } from "@tamagui/lucide-icons";
 import {
-  Heart,
-  Download,
-  Globe,
-  Trash2,
-  LogOut,
-} from "@tamagui/lucide-icons";
-import { scale, moderateScale, verticalScale } from "src/utils/functions/dimensions";
+  scale,
+  moderateScale,
+  verticalScale,
+} from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
-import {
-  ScreenHeader,
-  Avatar,
-  PrimaryButton,
-  ProfileMenuItem,
-} from "src/components/ui";
+import ScreenHeader from "src/components/ScreenHeader";
+import Avatar from "src/components/Avatar";
+import PrimaryButton from "src/components/PrimaryButton";
+import ProfileMenuItem from "../components/ProfileMenuItem";
 import MyText from "src/components/MyText";
 
 // Placeholder avatar - replace with actual user image
@@ -33,7 +29,7 @@ const MENU_ITEMS = [
 
 export default function ProfilePage() {
   return (
-    <YStack flex={1} backgroundColor={themeColors.dark.background}>
+    <YStack flex={1} bg={themeColors.dark.background}>
       <ScreenHeader title="My profile" showBack={false} />
 
       <ScrollView
@@ -44,11 +40,7 @@ export default function ProfilePage() {
         }}
       >
         {/* Profile section */}
-        <XStack
-          alignItems="center"
-          gap={scale(16)}
-          marginBottom={verticalScale(24)}
-        >
+        <XStack items="center" gap={scale(16)} mb={verticalScale(24)}>
           <Avatar source={PLACEHOLDER_AVATAR} size={moderateScale(72)} />
           <YStack flex={1} gap={verticalScale(4)}>
             <MyText
@@ -78,7 +70,7 @@ export default function ProfilePage() {
               key={item.label}
               icon={
                 <item.icon
-                  size={moderateScale(22)}
+                  size={moderateScale(18)}
                   color={themeColors.dark.onSurface}
                 />
               }

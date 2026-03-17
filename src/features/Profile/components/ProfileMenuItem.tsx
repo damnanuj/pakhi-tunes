@@ -2,9 +2,16 @@ import React from "react";
 import { TouchableOpacity, StyleSheet, View } from "react-native";
 import { XStack } from "tamagui";
 import { ChevronRight } from "@tamagui/lucide-icons";
-import { scale, moderateScale, verticalScale } from "src/utils/functions/dimensions";
+import {
+  scale,
+  moderateScale,
+  verticalScale,
+} from "src/utils/functions/dimensions";
 import MyText from "src/components/MyText";
+import CircularButton from "src/components/CircularButton";
 import themeColors from "src/utils/theme/colors";
+
+const ITEM_HEIGHT = verticalScale(70);
 
 interface ProfileMenuItemProps {
   icon: React.ReactNode;
@@ -25,12 +32,14 @@ export default function ProfileMenuItem({
     >
       <XStack
         flex={1}
-        alignItems="center"
+        items="center"
         gap={scale(14)}
-        paddingHorizontal={scale(16)}
-        paddingVertical={verticalScale(14)}
+        px={scale(16)}
+        py={verticalScale(12)}
       >
-        <View style={styles.iconWrapper}>{icon}</View>
+        <View pointerEvents="none">
+          <CircularButton>{icon}</CircularButton>
+        </View>
         <MyText
           fontSize={moderateScale(15)}
           weight="500"
@@ -50,13 +59,10 @@ export default function ProfileMenuItem({
 
 const styles = StyleSheet.create({
   container: {
+   
     backgroundColor: themeColors.dark.surfaceSecondary,
-    borderRadius: moderateScale(16),
+    borderRadius: moderateScale(15),
     overflow: "hidden",
-  },
-  iconWrapper: {
-    width: moderateScale(24),
-    alignItems: "center",
-    justifyContent: "center",
+    minHeight: ITEM_HEIGHT,
   },
 });
