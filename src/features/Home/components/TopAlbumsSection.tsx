@@ -47,8 +47,8 @@ export default function TopAlbumsSection() {
   return (
     <YStack px={scale(20)} pb={verticalScale(100)}>
       <XStack
-        justifyContent="space-between"
-        alignItems="center"
+        justify="space-between"
+        items="center"
         mb={verticalScale(16)}
       >
         <MyText
@@ -70,8 +70,8 @@ export default function TopAlbumsSection() {
         {TOP_ALBUMS.map((album, index) => (
           <YStack
             key={index}
-            alignItems="center"
-            maxWidth={ALBUM_SIZE + scale(8)}
+            items="center"
+            style={{ maxWidth: ALBUM_SIZE + scale(8) }}
           >
             <Image
               source={{ uri: album.cover }}

@@ -23,14 +23,16 @@ const FONT_WEIGHT_MAP: Record<string, string> = {
 interface MyTextProps extends TextProps {
   /** Font weight: "100" | "300" | "400" | "500" | "600" | "700" | "800" | "900" or "thin" | "light" | "normal" | "medium" | "semibold" | "bold" | "extrabold" | "black" */
   weight?: string;
+  /** Text alignment - use Tamagui's ta prop */
+  textAlign?: "left" | "center" | "right" | "auto" | "justify";
 }
 
-const MyText: React.FC<MyTextProps> = ({ style, weight, ...rest }) => {
+const MyText: React.FC<MyTextProps> = ({ style, weight, textAlign, ...rest }) => {
   const fontFamily = weight ? FONT_WEIGHT_MAP[weight] ?? "MPlusRounded500" : "MPlusRounded500";
 
   return (
     <Text
-      style={[{ fontFamily }, style]}
+      style={[{ fontFamily, ...(textAlign && { textAlign }) }, style]}
       color={"$textPrimary"}
       {...rest}
     />

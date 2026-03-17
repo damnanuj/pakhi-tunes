@@ -17,7 +17,7 @@ const ARTIST_SIZE = moderateScale(72);
 export default function TopArtistsSection() {
   return (
     <YStack px={scale(20)}>
-      <XStack justifyContent="space-between" alignItems="center" mb={verticalScale(16)}>
+      <XStack justify="space-between" items="center" mb={verticalScale(16)}>
         <MyText fontSize={moderateScale(18)} fontWeight="600" color={themeColors.dark.onSurface}>
           Top Artists
         </MyText>
@@ -31,7 +31,7 @@ export default function TopArtistsSection() {
         contentContainerStyle={{ gap: scale(16) }}
       >
         {TOP_ARTISTS.map((uri, index) => (
-          <XStack key={index} alignItems="center">
+          <XStack key={index} items="center">
             <Image
               source={{ uri }}
               style={{

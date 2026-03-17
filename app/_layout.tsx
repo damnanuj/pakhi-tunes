@@ -29,7 +29,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 export { ErrorBoundary } from "expo-router";
 
 export const unstable_settings = {
-  initialRouteName: "/(tabs)",
+  initialRouteName: "(tabs)",
 };
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.

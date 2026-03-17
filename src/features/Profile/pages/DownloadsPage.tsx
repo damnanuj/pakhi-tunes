@@ -8,7 +8,7 @@ import ScreenHeader from "src/components/ScreenHeader";
 
 export default function DownloadsPage() {
   return (
-    <YStack flex={1} backgroundColor={themeColors.dark.background}>
+    <YStack flex={1} background={themeColors.dark.background}>
       <ScreenHeader title="Downloads" showBack showSettings={false} />
       <ScrollView
         showsVerticalScrollIndicator={false}

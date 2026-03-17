@@ -40,7 +40,7 @@ const GENRES = [
   {
     name: "Electronic",
     image:
-      "https://images.unsplash.com/photo-1571330735066-03aaa9429d9b?w=400&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1545128485-c400e7702796?w=400&h=400&fit=crop",
   },
   {
     name: "R&B",

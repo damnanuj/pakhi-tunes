@@ -11,7 +11,7 @@ import MyText from "src/components/MyText";
 import CircularButton from "src/components/CircularButton";
 import themeColors from "src/utils/theme/colors";
 
-const ITEM_HEIGHT = verticalScale(70);
+const ITEM_HEIGHT = verticalScale(80);
 
 interface ProfileMenuItemProps {
   icon: React.ReactNode;

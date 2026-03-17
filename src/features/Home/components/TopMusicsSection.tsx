@@ -88,9 +88,11 @@ const TOP_MUSICS = [
   },
 ];
 
-function MusicRowItem({ item }: { item: (typeof TOP_MUSICS)[number] }) {
+type MusicItem = (typeof TOP_MUSICS)[number];
+
+function MusicRowItem({ item }: { item: MusicItem }) {
   return (
-    <XStack items="center" gap={scale(12)} flex={1} minWidth="100%">
+    <XStack items="center" gap={scale(12)} flex={1} width="100%">
       <Image
         source={{ uri: item.thumbnail }}
         style={{
@@ -100,7 +102,7 @@ function MusicRowItem({ item }: { item: (typeof TOP_MUSICS)[number] }) {
         }}
         resizeMode="cover"
       />
-      <YStack flex={1} minWidth={0} justify="center">
+      <YStack flex={1} style={{ minWidth: 0 }} justify="center">
         <MyText
           fontSize={moderateScale(14)}
           fontWeight="600"
@@ -128,19 +130,19 @@ function MusicRowItem({ item }: { item: (typeof TOP_MUSICS)[number] }) {
               ? themeColors.dark.accent
               : themeColors.dark.border
           }
-          backgroundColor={
+          background={
             item.isDownloading
               ? themeColors.dark.accent
               : themeColors.dark.surfaceSecondary
           }
-          alignItems="center"
-          justifyContent="center"
+          items="center"
+          justify="center"
         >
           <Download
             size={moderateScale(18)}
             color={
               item.isDownloading
-                ? themeColors.dark.onAccent
+                ? themeColors.dark.accent
                 : themeColors.dark.onSurface
             }
           />
@@ -150,7 +152,7 @@ function MusicRowItem({ item }: { item: (typeof TOP_MUSICS)[number] }) {
   );
 }
 
-function MusicColumn({ items }: { items: (typeof TOP_MUSICS)[number][] }) {
+function MusicColumn({ items }: { items: MusicItem[] }) {
   return (
     <YStack width={COLUMN_WIDTH} gap={verticalScale(16)}>
       {items.map((item) => (
@@ -161,7 +163,7 @@ function MusicColumn({ items }: { items: (typeof TOP_MUSICS)[number][] }) {
 }
 
 export default function TopMusicsSection() {
-  const columns = [];
+  const columns: MusicItem[][] = [];
   for (let i = 0; i < TOP_MUSICS.length; i += 3) {
     columns.push(TOP_MUSICS.slice(i, i + 3));
   }

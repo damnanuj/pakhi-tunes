@@ -28,7 +28,7 @@ export default function SearchBar() {
           flex={1}
           placeholder="Search Music"
           placeholderTextColor={themeColors.dark.textMuted}
-          backgroundColor="transparent"
+          background="transparent"
           borderWidth={0}
           fontSize={moderateScale(16)}
           color={themeColors.dark.onSurface}
