@@ -1,14 +1,11 @@
 import { View, Text, StyleSheet } from "react-native";
-import TabScreenWrapper from "src/components/common/TabScreenWrapper";
 
 export default function ExploreScreen() {
   return (
-    <TabScreenWrapper>
     <View style={styles.container}>
       <Text style={styles.title}>Explore</Text>
       <Text style={styles.subtitle}>Tab 2</Text>
     </View>
-    </TabScreenWrapper>
   );
 }
 

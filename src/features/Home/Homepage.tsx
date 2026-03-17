@@ -13,7 +13,7 @@ const SECTION_GAP = verticalScale(20);
 
 export default function Homepage() {
   return (
-    <YStack flex={1} bg={themeColors.dark.DARK_BG}>
+    <YStack flex={1} bg={themeColors.dark.background}>
       <HomeHeader />
       <ScrollView
         showsVerticalScrollIndicator={false}

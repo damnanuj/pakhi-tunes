@@ -14,7 +14,7 @@ export default function SearchBar() {
         flex={1}
         flexDirection="row"
         items="center"
-        bg={themeColors.dark.SECONDARY}
+        bg={themeColors.dark.surfaceSecondary}
         rounded={moderateScale(16)}
         px={scale(16)}
         height={moderateScale(48)}
@@ -22,19 +22,19 @@ export default function SearchBar() {
       >
         <Search
           size={moderateScale(20)}
-          color={themeColors.dark.TEXT_SECONDARY}
+          color={themeColors.dark.textMuted}
         />
         <Input
           flex={1}
           placeholder="Search Music"
-          placeholderTextColor={themeColors.dark.TEXT_SECONDARY}
+          placeholderTextColor={themeColors.dark.textMuted}
           backgroundColor="transparent"
           borderWidth={0}
           fontSize={moderateScale(16)}
-          color={themeColors.dark.WHITE}
+          color={themeColors.dark.onSurface}
           style={{ fontFamily: "MPlusRounded500" }}
         />
-        <Mic size={moderateScale(20)} color={themeColors.dark.TEXT_SECONDARY} />
+        <Mic size={moderateScale(20)} color={themeColors.dark.textMuted} />
       </XStack>
     </XStack>
   );

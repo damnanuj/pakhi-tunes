@@ -104,7 +104,7 @@ export default function FeaturedCards() {
             <MyText
               fontSize={moderateScale(20)}
               fontWeight="700"
-              color={themeColors.dark.WHITE}
+              color={themeColors.dark.onSurface}
             >
               {genre.name}
             </MyText>

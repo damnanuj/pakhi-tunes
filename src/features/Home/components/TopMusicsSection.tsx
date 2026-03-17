@@ -104,14 +104,14 @@ function MusicRowItem({ item }: { item: (typeof TOP_MUSICS)[number] }) {
         <MyText
           fontSize={moderateScale(14)}
           fontWeight="600"
-          color={themeColors.dark.WHITE}
+          color={themeColors.dark.onSurface}
           numberOfLines={2}
         >
           {item.artist}
         </MyText>
         <MyText
           fontSize={moderateScale(12)}
-          color={themeColors.dark.TEXT_SECONDARY}
+          color={themeColors.dark.textMuted}
           numberOfLines={2}
         >
           {item.song}
@@ -125,13 +125,13 @@ function MusicRowItem({ item }: { item: (typeof TOP_MUSICS)[number] }) {
           borderWidth={1}
           borderColor={
             item.isDownloading
-              ? themeColors.dark.YELLOW
-              : themeColors.dark.BORDER_PRIMARY
+              ? themeColors.dark.accent
+              : themeColors.dark.border
           }
           backgroundColor={
             item.isDownloading
-              ? themeColors.dark.YELLOW
-              : themeColors.dark.SECONDARY
+              ? themeColors.dark.accent
+              : themeColors.dark.surfaceSecondary
           }
           alignItems="center"
           justifyContent="center"
@@ -140,8 +140,8 @@ function MusicRowItem({ item }: { item: (typeof TOP_MUSICS)[number] }) {
             size={moderateScale(18)}
             color={
               item.isDownloading
-                ? themeColors.dark.BLACK
-                : themeColors.dark.WHITE
+                ? themeColors.dark.onAccent
+                : themeColors.dark.onSurface
             }
           />
         </XStack>
@@ -172,11 +172,11 @@ export default function TopMusicsSection() {
         <MyText
           fontSize={moderateScale(18)}
           fontWeight="600"
-          color={themeColors.dark.WHITE}
+          color={themeColors.dark.onSurface}
         >
           Top Musics
         </MyText>
-        <MyText fontSize={moderateScale(14)} color={themeColors.dark.YELLOW}>
+        <MyText fontSize={moderateScale(14)} color={themeColors.dark.accent}>
           See All
         </MyText>
       </XStack>

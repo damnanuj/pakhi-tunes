@@ -52,7 +52,7 @@ const LoginPage = () => {
           <MyText
             borderColor={"green"}
             style={{ fontFamily: "NeoNeon" }}
-            color={themeColors.dark.YELLOW}
+            color={themeColors.dark.accent}
             fontSize={moderateScale(60)}
           >
             Pakhi Tunes
@@ -212,7 +212,7 @@ function SigninForm() {
         <Form.Trigger asChild>
           <Button
             width="100%"
-            bg={themeColors.dark.YELLOW}
+            bg={themeColors.dark.accent}
             size="$4"
             onPress={handleSignIn}
             disabled={isLoading}
@@ -247,7 +247,7 @@ function SigninForm() {
         <Button
           width="100%"
           borderWidth={moderateScale(1.5, 0.3)}
-          borderColor={themeColors.dark.TEXT_SECONDARY}
+          borderColor={themeColors.dark.textMuted}
           size="$4"
           bg="transparent"
           icon={<GoogleIcon size={30} />}

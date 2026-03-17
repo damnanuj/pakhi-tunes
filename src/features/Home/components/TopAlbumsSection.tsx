@@ -54,11 +54,11 @@ export default function TopAlbumsSection() {
         <MyText
           fontSize={moderateScale(18)}
           fontWeight="600"
-          color={themeColors.dark.WHITE}
+          color={themeColors.dark.onSurface}
         >
           Top Albums
         </MyText>
-        <MyText fontSize={moderateScale(14)} color={themeColors.dark.YELLOW}>
+        <MyText fontSize={moderateScale(14)} color={themeColors.dark.accent}>
           See All
         </MyText>
       </XStack>
@@ -85,7 +85,7 @@ export default function TopAlbumsSection() {
             <MyText
               fontSize={moderateScale(12)}
               fontWeight="500"
-              color={themeColors.dark.WHITE}
+              color={themeColors.dark.onSurface}
               numberOfLines={1}
               mt={verticalScale(8)}
               textAlign="center"
@@ -94,7 +94,7 @@ export default function TopAlbumsSection() {
             </MyText>
             <MyText
               fontSize={moderateScale(10)}
-              color={themeColors.dark.TEXT_SECONDARY}
+              color={themeColors.dark.textMuted}
               numberOfLines={1}
               textAlign="center"
             >

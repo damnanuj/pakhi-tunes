@@ -23,7 +23,7 @@ export default function BottomTabBar({ state, descriptors, navigation }) {
       style={[
         styles.container,
         {
-          backgroundColor: themeColors.dark.DARK_BG,
+          backgroundColor: themeColors.dark.surface,
           paddingBottom: Math.max(insets.bottom, 0),
           overflow: "hidden",
         },
@@ -68,13 +68,13 @@ export default function BottomTabBar({ state, descriptors, navigation }) {
             <View style={styles.tabItemContent}>
               {getIconByRouteName(
                 route.name,
-                isFocused ? themeColors.dark.BLACK : themeColors.dark.WHITE
+                isFocused ? themeColors.dark.onAccent : themeColors.dark.onSurface
               )}
               {isFocused && (
                 <Animated.Text
                   entering={FadeIn.duration(200)}
                   exiting={FadeOut.duration(200)}
-                  style={[styles.text, { color: themeColors.dark.BLACK }]}
+                  style={[styles.text, { color: themeColors.dark.onAccent }]}
                 >
                   {label as string}
                 </Animated.Text>
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   focusedBackground: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: moderateScale(30),
-    backgroundColor: themeColors.dark.YELLOW,
+    backgroundColor: themeColors.dark.accent,
   },
   tabItemContent: {
     flexDirection: "row",

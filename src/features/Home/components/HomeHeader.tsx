@@ -19,7 +19,7 @@ export default function HomeHeader() {
       <MyText
         fontSize={moderateScale(16)}
         fontWeight="600"
-        color={themeColors.dark.WHITE}
+        color={themeColors.dark.onSurface}
       >
         Pakhi Tunes
       </MyText>
@@ -28,16 +28,16 @@ export default function HomeHeader() {
           size="$3.5"
           chromeless
           borderWidth={1}
-          borderColor={themeColors.dark.BORDER_PRIMARY}
+          borderColor={themeColors.dark.border}
           circular
           width={moderateScale(44)}
           height={moderateScale(44)}
         >
           <YStack items="center" justify="center">
-            <MyText fontSize={moderateScale(8)} color={themeColors.dark.YELLOW}>
+            <MyText fontSize={moderateScale(8)} color={themeColors.dark.accent}>
               FREE
             </MyText>
-            <MyText fontSize={moderateScale(8)} color={themeColors.dark.YELLOW}>
+            <MyText fontSize={moderateScale(8)} color={themeColors.dark.accent}>
               MUSIC
             </MyText>
           </YStack>
@@ -46,23 +46,23 @@ export default function HomeHeader() {
           size="$3.5"
           chromeless
           borderWidth={1}
-          borderColor={themeColors.dark.BORDER_PRIMARY}
+          borderColor={themeColors.dark.border}
           circular
           width={moderateScale(44)}
           height={moderateScale(44)}
         >
-          <Bell size={moderateScale(20)} color={themeColors.dark.WHITE} />
+          <Bell size={moderateScale(20)} color={themeColors.dark.onSurface} />
         </Button>
         <Button
           size="$3.5"
           chromeless
           borderWidth={1}
-          borderColor={themeColors.dark.BORDER_PRIMARY}
+          borderColor={themeColors.dark.border}
           circular
           width={moderateScale(44)}
           height={moderateScale(44)}
         >
-          <Settings size={moderateScale(20)} color={themeColors.dark.WHITE} />
+          <Settings size={moderateScale(20)} color={themeColors.dark.onSurface} />
         </Button>
       </XStack>
     </XStack>

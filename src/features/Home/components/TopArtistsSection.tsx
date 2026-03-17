@@ -18,10 +18,10 @@ export default function TopArtistsSection() {
   return (
     <YStack px={scale(20)}>
       <XStack justifyContent="space-between" alignItems="center" mb={verticalScale(16)}>
-        <MyText fontSize={moderateScale(18)} fontWeight="600" color={themeColors.dark.WHITE}>
+        <MyText fontSize={moderateScale(18)} fontWeight="600" color={themeColors.dark.onSurface}>
           Top Artists
         </MyText>
-        <MyText fontSize={moderateScale(14)} color={themeColors.dark.YELLOW}>
+        <MyText fontSize={moderateScale(14)} color={themeColors.dark.accent}>
           See All
         </MyText>
       </XStack>

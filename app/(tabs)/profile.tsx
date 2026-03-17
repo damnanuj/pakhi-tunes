@@ -1,14 +1,11 @@
 import { View, Text, StyleSheet } from "react-native";
-import TabScreenWrapper from "src/components/common/TabScreenWrapper";
 
 export default function ProfileScreen() {
   return (
-    <TabScreenWrapper>
     <View style={styles.container}>
       <Text style={styles.title}>Profile</Text>
       <Text style={styles.subtitle}>Tab 3</Text>
     </View>
-    </TabScreenWrapper>
   );
 }
 

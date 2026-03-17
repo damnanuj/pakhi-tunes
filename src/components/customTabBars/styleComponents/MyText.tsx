@@ -1,5 +1,4 @@
 import React from "react";
-import themeColors from "src/utils/theme/colors";
 import { Text, TextProps } from "tamagui";
 
 interface MyTextProps extends TextProps {}
