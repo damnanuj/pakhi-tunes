@@ -1,7 +1,7 @@
 import { ScrollView, Image } from "react-native";
 import { XStack, YStack } from "tamagui";
 import { scale, verticalScale, moderateScale } from "src/utils/functions/dimensions";
-import MyText from "src/components/customTabBars/styleComponents/MyText";
+import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
 
 const TOP_ARTISTS = [

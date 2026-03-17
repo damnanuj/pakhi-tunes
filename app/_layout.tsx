@@ -23,7 +23,7 @@ import Provider from "./Provider";
 import {
   ThemeProviderCustom,
   useThemeController,
-} from "src/context/theme-context";
+} from "src/contexts/ThemeContext/ThemeContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 export { ErrorBoundary } from "expo-router";

@@ -2,16 +2,16 @@ import { ScrollView, View } from "react-native";
 import { YStack } from "tamagui";
 import { verticalScale } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
-import HomeHeader from "./components/HomeHeader";
-import SearchBar from "./components/SearchBar";
-import FeaturedCards from "./components/FeaturedCards";
-import TopMusicsSection from "./components/TopMusicsSection";
-import TopArtistsSection from "./components/TopArtistsSection";
-import TopAlbumsSection from "./components/TopAlbumsSection";
+import HomeHeader from "../components/HomeHeader";
+import SearchBar from "../components/SearchBar";
+import FeaturedCards from "../components/FeaturedCards";
+import TopMusicsSection from "../components/TopMusicsSection";
+import TopArtistsSection from "../components/TopArtistsSection";
+import TopAlbumsSection from "../components/TopAlbumsSection";
 
 const SECTION_GAP = verticalScale(20);
 
-export default function Homepage() {
+export default function HomePage() {
   return (
     <YStack flex={1} bg={themeColors.dark.background}>
       <HomeHeader />

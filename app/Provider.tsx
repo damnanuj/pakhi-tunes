@@ -1,7 +1,7 @@
 import { TamaguiProvider, type TamaguiProviderProps } from "tamagui";
 import CustomSafeArea from "providers/CustomSafeArea";
 import config from "tamagui.config";
-import { useThemeController } from "src/context/theme-context";
+import { useThemeController } from "src/contexts/ThemeContext/ThemeContext";
 
 export default function Provider({
   children,

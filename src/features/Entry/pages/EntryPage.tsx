@@ -10,7 +10,7 @@ import {
 import { ChevronRight } from "@tamagui/lucide-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { YStack } from "tamagui";
-import MyText from "src/components/customTabBars/styleComponents/MyText";
+import MyText from "src/components/MyText";
 import {
   scale,
   verticalScale,
@@ -76,7 +76,7 @@ export default function EntryPage() {
     <YStack flex={1} bg={themeColors.dark.background}>
       <YStack flex={1}>
         <Image
-          source={require("../../../assets/images/entry-hero.jpg")}
+          source={require("../../../../assets/images/entry-hero.jpg")}
           style={{
             width: "100%",
             height: "100%",

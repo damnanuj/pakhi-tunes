@@ -16,7 +16,7 @@ import {
   PrimaryButton,
   ProfileMenuItem,
 } from "src/components/ui";
-import MyText from "src/components/customTabBars/styleComponents/MyText";
+import MyText from "src/components/MyText";
 
 // Placeholder avatar - replace with actual user image
 const PLACEHOLDER_AVATAR = {

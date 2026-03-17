@@ -1,5 +1,5 @@
-export { default as IconButton } from "./IconButton";
-export { default as ScreenHeader } from "./ScreenHeader";
-export { default as Avatar } from "./Avatar";
-export { default as PrimaryButton } from "./PrimaryButton";
-export { default as ProfileMenuItem } from "./ProfileMenuItem";
+export { default as IconButton } from "src/components/IconButton";
+export { default as ScreenHeader } from "src/components/ScreenHeader";
+export { default as Avatar } from "src/components/Avatar";
+export { default as PrimaryButton } from "src/components/PrimaryButton";
+export { default as ProfileMenuItem } from "src/components/ProfileMenuItem";

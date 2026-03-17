@@ -3,13 +3,13 @@ import { ScrollView } from "react-native";
 import { YStack } from "tamagui";
 import { scale, moderateScale, verticalScale } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
-import MyText from "src/components/customTabBars/styleComponents/MyText";
-import ScreenHeader from "src/components/ui/ScreenHeader";
+import MyText from "src/components/MyText";
+import ScreenHeader from "src/components/ScreenHeader";
 
-export default function DownloadsPage() {
+export default function LanguagePage() {
   return (
     <YStack flex={1} backgroundColor={themeColors.dark.background}>
-      <ScreenHeader title="Downloads" showSettings={false} />
+      <ScreenHeader title="Language" showSettings={false} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
@@ -23,7 +23,7 @@ export default function DownloadsPage() {
           color={themeColors.dark.textMuted}
           mt={verticalScale(24)}
         >
-          Your downloaded tracks will appear here.
+          Select your preferred language.
         </MyText>
       </ScrollView>
     </YStack>

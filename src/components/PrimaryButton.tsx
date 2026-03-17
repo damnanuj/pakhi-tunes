@@ -1,7 +1,7 @@
 import React from "react";
 import { TouchableOpacity, StyleSheet } from "react-native";
 import { scale, moderateScale, verticalScale } from "src/utils/functions/dimensions";
-import MyText from "src/components/customTabBars/styleComponents/MyText";
+import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
 
 interface PrimaryButtonProps {

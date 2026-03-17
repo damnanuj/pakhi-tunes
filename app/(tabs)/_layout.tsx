@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import BottomTabBar from "src/components/customTabBars/BottomTabBar";
+import BottomTabBar from "src/components/BottomTabBar";
 
 export default function TabLayout() {
   return (

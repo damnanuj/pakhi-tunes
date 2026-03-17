@@ -8,8 +8,8 @@ import {
   moderateScale,
   verticalScale,
 } from "src/utils/functions/dimensions";
-import MyText from "src/components/customTabBars/styleComponents/MyText";
-import IconButton from "./IconButton";
+import MyText from "src/components/MyText";
+import IconButton from "src/components/IconButton";
 import themeColors from "src/utils/theme/colors";
 
 interface ScreenHeaderProps {

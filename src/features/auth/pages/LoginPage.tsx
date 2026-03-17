@@ -13,7 +13,7 @@ import {
 } from "tamagui";
 import { ScrollView } from "react-native";
 import { useRouter } from "expo-router";
-import MyText from "src/components/customTabBars/styleComponents/MyText";
+import MyText from "src/components/MyText";
 import { scale, verticalScale, moderateScale } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
 import { Check as CheckIcon } from "@tamagui/lucide-icons";

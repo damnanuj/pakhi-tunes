@@ -3,7 +3,7 @@ import { TouchableOpacity, StyleSheet, View } from "react-native";
 import { XStack } from "tamagui";
 import { ChevronRight } from "@tamagui/lucide-icons";
 import { scale, moderateScale, verticalScale } from "src/utils/functions/dimensions";
-import MyText from "src/components/customTabBars/styleComponents/MyText";
+import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
 
 interface ProfileMenuItemProps {

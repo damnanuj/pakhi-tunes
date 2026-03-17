@@ -5,7 +5,7 @@ import {
   verticalScale,
   moderateScale,
 } from "src/utils/functions/dimensions";
-import MyText from "src/components/customTabBars/styleComponents/MyText";
+import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
 import { Download } from "@tamagui/lucide-icons";
 

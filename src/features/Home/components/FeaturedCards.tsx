@@ -5,7 +5,7 @@ import {
   verticalScale,
 } from "src/utils/functions/dimensions";
 import { SCREEN_WIDTH } from "src/utils/functions/dimensions";
-import MyText from "src/components/customTabBars/styleComponents/MyText";
+import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
 
 const CARD_WIDTH = (SCREEN_WIDTH - scale(20) * 3) / 2;
