@@ -28,7 +28,7 @@ export default function BottomTabBar({ state, descriptors, navigation }) {
         styles.container,
         {
           backgroundColor: themeColors.dark.surface,
-          paddingBottom: Math.max(insets.bottom, 0),
+          // paddingBottom: Math.max(insets.bottom, 0),
           overflow: "hidden",
         },
       ]}
@@ -117,6 +117,8 @@ export default function BottomTabBar({ state, descriptors, navigation }) {
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
+    // borderWidth: 1,
+    // borderColor: "red",
     flexDirection: "row",
     justifyContent: "space-evenly",
     alignItems: "center",
@@ -134,6 +136,8 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
   },
   tabItemWrapper: {
+    // borderWidth: 1,
+    // borderColor: "blue",
     height: moderateVerticalScale(43),
     borderRadius: moderateScale(30),
     overflow: "hidden",
