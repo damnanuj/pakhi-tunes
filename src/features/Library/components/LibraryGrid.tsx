@@ -1,13 +1,23 @@
-import { FlatList, View } from "react-native";
+import { FlatList, ScrollView, View } from "react-native";
+import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
 import {
   scale,
   verticalScale,
+  moderateScale,
 } from "src/utils/functions/dimensions";
+import MyText from "src/components/MyText";
+import themeColors from "src/utils/theme/colors";
+import { useRefreshable } from "src/hooks";
+import { getTopArtists } from "src/services";
 import LibraryCard from "./LibraryCard";
+import LibraryGridSkeleton from "../skeletons/LibraryGridSkeleton";
 import type { LibraryTabId } from "./LibraryTabs";
+import type { TopArtist } from "src/types/topArtists.types";
+
+const TOP_ARTISTS_LIMIT = 50;
 
 const CARD_GAP = scale(12);
-const HORIZONTAL_PADDING = scale(20);
 
 export interface LibraryItem {
   id: string;
@@ -81,33 +91,6 @@ const PLAYLISTS_ITEMS: LibraryItem[] = [
   },
 ];
 
-const ARTISTS_ITEMS: LibraryItem[] = [
-  {
-    id: "a1",
-    title: "Taylor Swift",
-    imageUrl:
-      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop",
-  },
-  {
-    id: "a2",
-    title: "The Weeknd",
-    imageUrl:
-      "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=400&h=400&fit=crop",
-  },
-  {
-    id: "a3",
-    title: "Dua Lipa",
-    imageUrl:
-      "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&h=400&fit=crop",
-  },
-  {
-    id: "a4",
-    title: "Adele",
-    imageUrl:
-      "https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=400&h=400&fit=crop",
-  },
-];
-
 const ALBUMS_ITEMS: LibraryItem[] = [
   {
     id: "al1",
@@ -135,22 +118,108 @@ const ALBUMS_ITEMS: LibraryItem[] = [
   },
 ];
 
-const TAB_DATA: Record<LibraryTabId, LibraryItem[]> = {
+const TAB_DATA: Record<Exclude<LibraryTabId, "artists">, LibraryItem[]> = {
   recent: RECENT_ITEMS,
   playlists: PLAYLISTS_ITEMS,
-  artists: ARTISTS_ITEMS,
   albums: ALBUMS_ITEMS,
 };
+
+function mapArtistToLibraryItem(artist: TopArtist): LibraryItem {
+  return {
+    id: artist.encrypted_id,
+    imageUrl: artist.image,
+    title: artist.name,
+  };
+}
 
 export interface LibraryGridProps {
   activeTab: LibraryTabId;
   onItemPress?: (item: LibraryItem) => void;
 }
 
+const columnWrapperStyle = {
+  gap: CARD_GAP,
+  paddingHorizontal: scale(20),
+  marginBottom: verticalScale(12),
+} as const;
+
+const contentContainerStyle = {
+  paddingBottom: verticalScale(100),
+} as const;
+
 export default function LibraryGrid({
   activeTab,
   onItemPress,
 }: LibraryGridProps) {
+  const router = useRouter();
+  const { refreshControl } = useRefreshable({
+    queryKeys: ["topArtists", TOP_ARTISTS_LIMIT],
+  });
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["topArtists", TOP_ARTISTS_LIMIT],
+    queryFn: () => getTopArtists({ limit: TOP_ARTISTS_LIMIT }),
+    enabled: activeTab === "artists",
+  });
+
+  const artists = data?.data?.results ?? [];
+  const artistItems = artists.map(mapArtistToLibraryItem);
+
+  const handleArtistPress = (item: LibraryItem) => {
+    router.push({
+      pathname: "/top-artists/[id]",
+      params: { id: item.id, name: item.title },
+    });
+  };
+
+  if (activeTab === "artists") {
+    if (isLoading) {
+      return <LibraryGridSkeleton />;
+    }
+
+    if (isError) {
+      return (
+        <ScrollView
+          contentContainerStyle={{ flex: 1, justifyContent: "center" }}
+          refreshControl={refreshControl}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={{ paddingHorizontal: scale(20), paddingVertical: verticalScale(24), alignSelf: "center" }}>
+            <MyText
+              fontSize={moderateScale(14)}
+              color={themeColors.dark.textMuted}
+              textAlign="center"
+            >
+              Failed to load artists
+            </MyText>
+          </View>
+        </ScrollView>
+      );
+    }
+
+    return (
+      <FlatList
+        data={artistItems}
+        keyExtractor={(item) => item.id}
+        numColumns={2}
+        columnWrapperStyle={columnWrapperStyle}
+        contentContainerStyle={contentContainerStyle}
+        refreshControl={refreshControl}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item }) => (
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <LibraryCard
+              id={item.id}
+              imageUrl={item.imageUrl}
+              title={item.title}
+              onPress={() => handleArtistPress(item)}
+            />
+          </View>
+        )}
+      />
+    );
+  }
+
   const items = TAB_DATA[activeTab] ?? RECENT_ITEMS;
 
   return (
@@ -158,14 +227,8 @@ export default function LibraryGrid({
       data={items}
       keyExtractor={(item) => item.id}
       numColumns={2}
-      columnWrapperStyle={{
-        gap: CARD_GAP,
-        paddingHorizontal: scale(20),
-        marginBottom: verticalScale(12),
-      }}
-      contentContainerStyle={{
-        paddingBottom: verticalScale(100),
-      }}
+      columnWrapperStyle={columnWrapperStyle}
+      contentContainerStyle={contentContainerStyle}
       showsVerticalScrollIndicator={false}
       renderItem={({ item }) => (
         <View style={{ flex: 1, minWidth: 0 }}>
