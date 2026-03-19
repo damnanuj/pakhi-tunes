@@ -16,9 +16,9 @@ export default function LibraryPage() {
   return (
     <YStack flex={1} bg={themeColors.dark.background}>
       <AppHeader />
-      <View style={{ marginBottom: SECTION_GAP }}>
+      {/* <View style={{ marginBottom: SECTION_GAP }}>
         <SearchBar />
-      </View>
+      </View> */}
       <View style={{ marginBottom: SECTION_GAP }}>
         <LibraryTabs activeTab={activeTab} onTabChange={setActiveTab} />
       </View>
