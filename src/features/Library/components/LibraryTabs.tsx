@@ -29,7 +29,6 @@ export default function LibraryTabs({
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-     
       contentContainerStyle={{
         paddingHorizontal: scale(20),
         gap: scale(8),
@@ -46,7 +45,9 @@ export default function LibraryTabs({
             style={{
               paddingHorizontal: scale(16),
               paddingVertical: verticalScale(10),
-              borderRadius: moderateScale(24),
+              borderRadius: moderateScale(12),
+              borderWidth: 1,
+              borderColor: themeColors.dark.borderSecondary,
               backgroundColor: isActive
                 ? themeColors.dark.accent
                 : themeColors.dark.surfaceSecondary,
@@ -55,7 +56,11 @@ export default function LibraryTabs({
             <MyText
               fontSize={moderateScale(14)}
               weight="600"
-              color={isActive ? themeColors.dark.onAccent : themeColors.dark.onSurface}
+              color={
+                isActive
+                  ? themeColors.dark.onAccent
+                  : themeColors.dark.onSurface
+              }
             >
               {tab.label}
             </MyText>
