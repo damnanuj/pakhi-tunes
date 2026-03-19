@@ -40,12 +40,11 @@ export default function ArtistProfileHeader({
 
   return (
     <YStack
-      // mb={verticalScale(5)}
-      // borderBottomWidth={1}
+    
       borderColor={themeColors.dark.borderSecondary}
       items="center"
       pb={verticalScale(24)}
-      // pt={verticalScale(16)}
+    
       bg={themeColors.dark.background}
     >
       <Image
@@ -75,10 +74,11 @@ export default function ArtistProfileHeader({
         )}
       </XStack>
       <MyText
-        fontSize={moderateScale(12)}
-        weight="400"
+        fontSize={moderateScale(14)}
+        weight="600"
         color={themeColors.dark.textMuted}
         mt={verticalScale(2)}
+        letterSpacing={-0.6}
       >
         Artist · {formatListeners(artist.fanCount)} Listeners
       </MyText>

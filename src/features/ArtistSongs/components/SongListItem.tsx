@@ -59,8 +59,8 @@ export default function SongListItem({ song }: SongListItemProps) {
           {song.name}
         </MyText>
         <MyText
-          fontSize={moderateScale(12)}
-          weight="400"
+          fontSize={moderateScale(13)}
+          weight="500"
           color={themeColors.dark.textMuted}
           numberOfLines={1}
         >

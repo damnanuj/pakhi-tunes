@@ -9,18 +9,16 @@ import SkeletonPlaceholder from "src/components/SkeletonPlaceholder";
 import themeColors from "src/utils/theme/colors";
 
 const IMAGE_SIZE = moderateScale(56);
-const PROFILE_IMAGE_SIZE = moderateScale(96);
+const PROFILE_IMAGE_SIZE = moderateScale(100);
 const SKELETON_COUNT = 10;
 
 function SkeletonArtistHeader() {
   return (
     <YStack
-      alignItems="center"
+      items="center"
       pb={verticalScale(24)}
-      pt={verticalScale(16)}
-      bg={themeColors.dark.surfaceSecondary}
-      borderBottomLeftRadius={scale(24)}
-      borderBottomRightRadius={scale(24)}
+      bg={themeColors.dark.background}
+      borderColor={themeColors.dark.borderSecondary}
     >
       <SkeletonPlaceholder
         width={PROFILE_IMAGE_SIZE}
@@ -31,26 +29,14 @@ function SkeletonArtistHeader() {
         width={scale(120)}
         height={moderateScale(16)}
         borderRadius={moderateScale(4)}
-        style={{ marginTop: verticalScale(16) }}
+        style={{ marginTop: verticalScale(8) }}
       />
       <SkeletonPlaceholder
-        width={scale(100)}
-        height={moderateScale(12)}
+        width={scale(150)}
+        height={moderateScale(14)}
         borderRadius={moderateScale(4)}
-        style={{ marginTop: verticalScale(12) }}
+        style={{ marginTop: verticalScale(8) }}
       />
-      <XStack gap={scale(24)} mt={verticalScale(24)}>
-        <SkeletonPlaceholder
-          width={moderateScale(56)}
-          height={moderateScale(56)}
-          borderRadius={moderateScale(28)}
-        />
-        <SkeletonPlaceholder
-          width={moderateScale(56)}
-          height={moderateScale(56)}
-          borderRadius={moderateScale(28)}
-        />
-      </XStack>
     </YStack>
   );
 }
