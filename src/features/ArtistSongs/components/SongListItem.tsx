@@ -1,6 +1,6 @@
 import { Image, Pressable } from "react-native";
 import { XStack, YStack } from "tamagui";
-import { MoreVertical, Play } from "@tamagui/lucide-icons";
+import { CirclePlay, MoreVertical } from "@tamagui/lucide-icons";
 import {
   scale,
   verticalScale,
@@ -11,7 +11,6 @@ import themeColors from "src/utils/theme/colors";
 import type { ArtistSong } from "src/types/artistSongs.types";
 
 const IMAGE_SIZE = moderateScale(56);
-const ICON_SIZE = moderateScale(40);
 
 function getImageUrl(
   images: { quality: string; url: string }[],
@@ -71,26 +70,11 @@ export default function SongListItem({ song }: SongListItemProps) {
       <Pressable hitSlop={8}>
         <MoreVertical
           size={moderateScale(20)}
-          color={themeColors.dark.textMuted}
+          color={themeColors.dark.onSurface}
         />
       </Pressable>
       <Pressable hitSlop={8}>
-        <XStack
-          width={ICON_SIZE}
-          height={ICON_SIZE}
-          rounded={ICON_SIZE / 2}
-          borderWidth={1}
-          borderColor={themeColors.dark.accent}
-          bg="transparent"
-          items="center"
-          justify="center"
-        >
-          <Play
-            size={moderateScale(18)}
-            color={themeColors.dark.accent}
-            fill={themeColors.dark.accent}
-          />
-        </XStack>
+        <CirclePlay size={moderateScale(30)} color={themeColors.dark.accent} />
       </Pressable>
     </XStack>
   );
