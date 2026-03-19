@@ -25,8 +25,18 @@ function getImageUrl(
   );
 }
 
-function formatListeners(count: number): string {
+function formatCount(count: number): string {
   return count.toLocaleString();
+}
+
+function getArtistMetadata(artist: ArtistDetail): string | null {
+  if (artist.fanCount != null) {
+    return `Artist · ${formatCount(artist.fanCount)} Listeners`;
+  }
+  if (artist.followerCount != null) {
+    return `Artist · ${formatCount(artist.followerCount)} Followers`;
+  }
+  return null;
 }
 
 interface ArtistProfileHeaderProps {
@@ -37,6 +47,7 @@ export default function ArtistProfileHeader({
   artist,
 }: ArtistProfileHeaderProps) {
   const imageUrl = getImageUrl(artist.image);
+  const metadata = getArtistMetadata(artist);
 
   return (
     <YStack
@@ -73,15 +84,17 @@ export default function ArtistProfileHeader({
           <Verified size={moderateScale(18)} color="#22c55e" />
         )}
       </XStack>
-      <MyText
-        fontSize={moderateScale(14)}
-        weight="600"
-        color={themeColors.dark.textMuted}
-        mt={verticalScale(2)}
-        letterSpacing={-0.6}
-      >
-        Artist · {formatListeners(artist.fanCount)} Listeners
-      </MyText>
+      {metadata && (
+        <MyText
+          fontSize={moderateScale(14)}
+          weight="600"
+          color={themeColors.dark.textMuted}
+          mt={verticalScale(2)}
+          letterSpacing={-0.6}
+        >
+          {metadata}
+        </MyText>
+      )}
     </YStack>
   );
 }

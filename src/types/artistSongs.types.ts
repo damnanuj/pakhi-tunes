@@ -13,7 +13,7 @@ export interface ArtistDetail {
   name: string;
   url: string;
   image: ArtistSongImage[];
-  fanCount: number;
+  fanCount: number | null;
   followerCount: number;
   dob: string;
   isVerified: boolean;
