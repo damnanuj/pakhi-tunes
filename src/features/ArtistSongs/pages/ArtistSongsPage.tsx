@@ -1,7 +1,7 @@
-import { FlatList, ScrollView } from "react-native";
-import { useQuery } from "@tanstack/react-query";
+import { useCallback } from "react";
+import { FlatList, ListRenderItem, ScrollView } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { Stack, YStack } from "tamagui";
+import { YStack } from "tamagui";
 import {
   scale,
   verticalScale,
@@ -10,31 +10,75 @@ import {
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
 import ScreenHeader from "src/components/ScreenHeader";
-import { useRefreshable } from "src/hooks";
+import { useRefreshable, useInfinitePaginatedQuery } from "src/hooks";
 import { getArtistSongs } from "src/services";
 import SongListItem from "../components/SongListItem";
 import ArtistProfileHeader from "../components/ArtistProfileHeader";
-import ArtistSongsPageSkeleton from "../skeletons/ArtistSongsPageSkeleton";
+import ArtistSongsPageSkeleton, {
+  SongListItemSkeleton,
+} from "../skeletons/ArtistSongsPageSkeleton";
 import type { ArtistSong } from "src/types/artistSongs.types";
+import type { ArtistSongsResponse } from "src/types/artistSongs.types";
 
-const ARTIST_SONGS_LIMIT = 50;
+const PAGE_SIZE = 20;
+
+function getItems(res: ArtistSongsResponse) {
+  return res.data.results;
+}
+
+function getNextPageParam(res: ArtistSongsResponse): number | undefined {
+  const { next, currentPage } = res.data;
+  if (!next) return undefined;
+  return currentPage * PAGE_SIZE;
+}
 
 export default function ArtistSongsPage() {
   const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
   const artistName = name ?? "Artist";
 
-  const { refreshControl } = useRefreshable({
-    queryKeys: ["artistSongs", id ?? "", ARTIST_SONGS_LIMIT],
-  });
-
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["artistSongs", id ?? "", ARTIST_SONGS_LIMIT],
-    queryFn: () => getArtistSongs(id!, { limit: ARTIST_SONGS_LIMIT }),
+  const {
+    items: songs,
+    firstPage,
+    isLoading,
+    isError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+  } = useInfinitePaginatedQuery<ArtistSong, ArtistSongsResponse>({
+    queryKey: ["artistSongs", id ?? "", PAGE_SIZE],
+    queryFn: ({ pageParam }) =>
+      getArtistSongs(id!, { limit: PAGE_SIZE, offset: pageParam }),
+    getItems,
+    getNextPageParam,
+    pageSize: PAGE_SIZE,
     enabled: !!id,
   });
 
-  const songs = data?.data?.results ?? [];
-  const artist = data?.data?.artist;
+  const { refreshControl } = useRefreshable({
+    onRefresh: async () => {
+      await refetch();
+    },
+  });
+
+  const artist = firstPage?.data?.artist;
+
+  const renderItem: ListRenderItem<ArtistSong> = useCallback(
+    ({ item }) => <SongListItem song={item} />,
+    []
+  );
+
+  const handleEndReached = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const keyExtractor = useCallback(
+    (item: ArtistSong, index: number) =>
+      `${item.encrypted_id ?? item.id}-${index}`,
+    []
+  );
 
   if (isLoading) {
     return (
@@ -68,23 +112,32 @@ export default function ArtistSongsPage() {
     );
   }
 
-  const renderItem = ({ item }: { item: ArtistSong }) => (
-    <SongListItem song={item} />
-  );
-
   const listHeader = artist ? <ArtistProfileHeader artist={artist} /> : null;
+
+  const listFooter = isFetchingNextPage ? (
+    <YStack py={verticalScale(8)}>
+      {Array.from({ length: 5 }, (_, i) => (
+        <SongListItemSkeleton key={i} />
+      ))}
+    </YStack>
+  ) : null;
 
   return (
     <YStack flex={1} bg={themeColors.dark.background}>
       <ScreenHeader showBack title={`${artistName} songs`} />
       <FlatList
         data={songs}
-        keyExtractor={(item, index) =>
-          `${item.encrypted_id ?? item.id}-${index}`
-        }
+        keyExtractor={keyExtractor}
         renderItem={renderItem}
         ListHeaderComponent={listHeader}
+        ListFooterComponent={listFooter}
         refreshControl={refreshControl}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.4}
+        initialNumToRender={PAGE_SIZE}
+        maxToRenderPerBatch={PAGE_SIZE}
+        windowSize={5}
+        removeClippedSubviews={true}
         contentContainerStyle={{
           paddingBottom: verticalScale(40),
         }}

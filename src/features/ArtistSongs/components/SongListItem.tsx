@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Image, Pressable } from "react-native";
 import { XStack, YStack } from "tamagui";
 import { CirclePlay, MoreVertical } from "@tamagui/lucide-icons";
@@ -30,7 +31,7 @@ interface SongListItemProps {
   song: ArtistSong;
 }
 
-export default function SongListItem({ song }: SongListItemProps) {
+function SongListItem({ song }: SongListItemProps) {
   const songName = decodeHtmlEntities(song.name);
   const artistNames = song.artists.primary.map((a) => a.name).join(", ");
   const imageUrl = getImageUrl(song.image);
@@ -81,3 +82,5 @@ export default function SongListItem({ song }: SongListItemProps) {
     </XStack>
   );
 }
+
+export default memo(SongListItem);

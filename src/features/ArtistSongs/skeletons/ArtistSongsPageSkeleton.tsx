@@ -44,7 +44,7 @@ function SkeletonArtistHeader() {
 const ICON_SIZE = moderateScale(20);
 const PLAY_ICON_SIZE = moderateScale(30);
 
-function SkeletonItem() {
+export function SongListItemSkeleton() {
   return (
     <XStack
       items="center"
@@ -90,7 +90,7 @@ export default function ArtistSongsPageSkeleton() {
     <FlatList
       data={data}
       keyExtractor={(item) => String(item.key)}
-      renderItem={() => <SkeletonItem />}
+      renderItem={() => <SongListItemSkeleton />}
       ListHeaderComponent={<SkeletonArtistHeader />}
       contentContainerStyle={{
         paddingBottom: verticalScale(40),
