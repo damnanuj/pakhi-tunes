@@ -41,6 +41,9 @@ function SkeletonArtistHeader() {
   );
 }
 
+const ICON_SIZE = moderateScale(20);
+const PLAY_ICON_SIZE = moderateScale(30);
+
 function SkeletonItem() {
   return (
     <XStack
@@ -54,7 +57,7 @@ function SkeletonItem() {
         height={IMAGE_SIZE}
         borderRadius={moderateScale(8)}
       />
-      <YStack flex={1} gap={verticalScale(8)} justify="center">
+      <YStack flex={1} style={{ minWidth: 0 }} gap={verticalScale(8)} justify="center">
         <SkeletonPlaceholder
           width={scale(180)}
           height={moderateScale(14)}
@@ -62,19 +65,19 @@ function SkeletonItem() {
         />
         <SkeletonPlaceholder
           width={scale(120)}
-          height={moderateScale(12)}
+          height={moderateScale(13)}
           borderRadius={moderateScale(4)}
         />
       </YStack>
       <SkeletonPlaceholder
-        width={moderateScale(20)}
-        height={moderateScale(20)}
+        width={ICON_SIZE}
+        height={ICON_SIZE}
         borderRadius={moderateScale(4)}
       />
       <SkeletonPlaceholder
-        width={moderateScale(40)}
-        height={moderateScale(40)}
-        borderRadius={moderateScale(20)}
+        width={PLAY_ICON_SIZE}
+        height={PLAY_ICON_SIZE}
+        borderRadius={PLAY_ICON_SIZE / 2}
       />
     </XStack>
   );
