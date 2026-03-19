@@ -8,7 +8,9 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { View } from "tamagui";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import {
   scale,
   moderateScale,
@@ -95,19 +97,21 @@ export default function BottomTabBar({ state, descriptors, navigation }) {
     switch (routeName) {
       case "index":
       case "home":
-        return <Ionicons name="home-outline" size={iconSize} color={color} />;
+        return <Ionicons name="home" size={iconSize+4} color={color} />;
       case "explore":
-        return <Ionicons name="search-outline" size={iconSize} color={color} />;
-      case "profile":
         return (
-          <MaterialCommunityIcons
-            name="library"
+          <FontAwesome6 name="magnifying-glass" size={iconSize} color={color} />
+        );
+      case "library":
+        return (
+          <MaterialIcons
+            name="library-music"
             size={moderateScale(24)}
             color={color}
           />
         );
-      case "settings":
-        return <Ionicons name="person-outline" size={iconSize} color={color} />;
+      case "profile":
+        return <FontAwesome5 name="user-alt" size={iconSize} color={color} />;
       default:
         return <Feather name="home" size={iconSize} color={color} />;
     }

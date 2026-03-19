@@ -1,5 +1,5 @@
-import LibraryPage from "src/features/Library/pages/LibraryPage";
+import ProfilePage from "src/features/Profile/pages/ProfilePage";
 
-export default function LibraryScreen() {
-  return <LibraryPage />;
+export default function ProfileScreen() {
+  return <ProfilePage />;
 }
