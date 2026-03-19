@@ -1,10 +1,9 @@
 import { ScrollView, View } from "react-native";
 import { YStack } from "tamagui";
-import {
-  verticalScale,
-} from "src/utils/functions/dimensions";
+import { verticalScale } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
 import AppHeader from "src/components/AppHeader";
+import { useRefreshable } from "src/hooks";
 import SearchBar from "../components/SearchBar";
 import FeaturedCards from "../components/FeaturedCards";
 import TopMusicsSection from "../components/TopMusicsSection";
@@ -14,12 +13,17 @@ import TopAlbumsSection from "../components/TopAlbumsSection";
 const SECTION_GAP = verticalScale(20);
 
 export default function HomePage() {
+  const { refreshControl } = useRefreshable({
+    queryKeys: ["topArtists"],
+  });
+
   return (
     <YStack flex={1} bg={themeColors.dark.background}>
       <AppHeader />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: verticalScale(20) }}
+        refreshControl={refreshControl}
       >
         <View style={{ marginBottom: SECTION_GAP }}>
           <SearchBar />

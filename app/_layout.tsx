@@ -114,6 +114,10 @@ function RootLayoutNav() {
         <Stack.Screen name="entry" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="login" />
+        <Stack.Screen
+          name="top-artists"
+          options={{ animation: "slide_from_right" }}
+        />
       </Stack>
     </ThemeProvider>
   );

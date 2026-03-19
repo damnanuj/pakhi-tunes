@@ -1,0 +1,56 @@
+---
+description: Add pull-to-refresh to scrollable pages
+globs: **/pages/*.tsx,**/features/**/*Page.tsx
+alwaysApply: false
+---
+
+# Pull-to-Refresh on Pages
+
+Every scrollable page (ScrollView, FlatList) should support pull-down-to-refresh.
+
+## Use the `useRefreshable` hook
+
+Import from `src/hooks` and pass `refreshControl` to your scrollable:
+
+```tsx
+import { useRefreshable } from "src/hooks";
+
+export default function MyPage() {
+  const { refreshControl } = useRefreshable({
+    queryKeys: ["myQueryKey"],  // or ["myQuery", param] for parameterized queries
+  });
+
+  return (
+    <ScrollView refreshControl={refreshControl}>
+      {/* content */}
+    </ScrollView>
+  );
+}
+```
+
+## With FlatList
+
+```tsx
+<FlatList
+  data={items}
+  refreshControl={refreshControl}
+  renderItem={...}
+/>
+```
+
+## Custom refresh logic
+
+When you need custom logic (e.g. using `refetch` from useQuery):
+
+```tsx
+const { refetch } = useQuery({ ... });
+const { refreshControl } = useRefreshable({ onRefresh: refetch });
+```
+
+## Multiple queries
+
+```tsx
+const { refreshControl } = useRefreshable({
+  queryKeys: [["topArtists", 50], ["topAlbums"]],
+});
+```
