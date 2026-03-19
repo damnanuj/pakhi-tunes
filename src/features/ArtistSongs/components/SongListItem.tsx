@@ -6,6 +6,7 @@ import {
   verticalScale,
   moderateScale,
 } from "src/utils/functions/dimensions";
+import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
 import type { ArtistSong } from "src/types/artistSongs.types";
@@ -30,6 +31,7 @@ interface SongListItemProps {
 }
 
 export default function SongListItem({ song }: SongListItemProps) {
+  const songName = decodeHtmlEntities(song.name);
   const artistNames = song.artists.primary.map((a) => a.name).join(", ");
   const imageUrl = getImageUrl(song.image);
 
@@ -56,7 +58,7 @@ export default function SongListItem({ song }: SongListItemProps) {
           color={themeColors.dark.onSurface}
           numberOfLines={1}
         >
-          {song.name}
+          {songName}
         </MyText>
         <MyText
           fontSize={moderateScale(13)}
