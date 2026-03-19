@@ -48,7 +48,7 @@ export default function TopArtistsSection() {
         >
           Top Artists
         </MyText>
-        <Pressable onPress={() => router.push("/top-artists")}>
+        <Pressable onPress={() => router.push("/top-artists" as never)}>
           <MyText fontSize={moderateScale(14)} color={themeColors.dark.accent}>
             See All
           </MyText>
