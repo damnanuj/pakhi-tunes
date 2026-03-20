@@ -8,6 +8,8 @@ type ArtworkProgressRingProps = {
   strokeWidth: number;
   progress: number;
   artworkUrl: string;
+  /** Progress ring + thumb color; defaults to theme accent */
+  accentColor?: string;
 };
 
 /** Circular cover art with a non-interactive progress ring (full-screen player). */
@@ -16,7 +18,9 @@ function ArtworkProgressRing({
   strokeWidth,
   progress,
   artworkUrl,
+  accentColor,
 }: ArtworkProgressRingProps) {
+  const ringAccent = accentColor ?? themeColors.dark.accent;
   const pad = strokeWidth / 2 + 1;
   const r = size / 2 - pad;
   const cx = size / 2;
@@ -50,7 +54,7 @@ function ArtworkProgressRing({
           cx={cx}
           cy={cy}
           r={r}
-          stroke={themeColors.dark.accent}
+          stroke={ringAccent}
           strokeWidth={strokeWidth}
           fill="none"
           strokeDasharray={`${circumference}`}
@@ -63,7 +67,7 @@ function ArtworkProgressRing({
             cx={thumbX}
             cy={thumbY}
             r={strokeWidth * 0.85}
-            fill={themeColors.dark.accent}
+            fill={ringAccent}
           />
         ) : null}
       </Svg>

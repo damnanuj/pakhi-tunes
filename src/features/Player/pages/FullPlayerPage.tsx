@@ -1,5 +1,19 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, useWindowDimensions } from "react-native";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import {
+  LayoutChangeEvent,
+  Platform,
+  Pressable,
+  View,
+  useWindowDimensions,
+  type PressableStateCallbackType,
+  type ViewStyle,
+} from "react-native";
 import { useRouter } from "expo-router";
 import {
   Download,
@@ -7,13 +21,13 @@ import {
   ListMusic,
   Pause,
   Play,
-  Plus,
   Repeat,
   Shuffle,
   SkipBack,
   SkipForward,
 } from "@tamagui/lucide-icons";
 import { XStack, YStack } from "tamagui";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ScreenHeader from "src/components/ScreenHeader";
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
@@ -26,11 +40,136 @@ import { usePlayback } from "../context/PlayerContext";
 import { usePlayerStore } from "../store/playerStore";
 import { formatMillisToClock } from "../utils/formatPlaybackTime";
 import ArtworkProgressRing from "../components/ArtworkProgressRing";
-import MockWaveformBar from "../components/MockWaveformBar";
+
 const ART_RING_STROKE = moderateScale(2);
+
+const rippleLight = { color: "rgba(255,255,255,0.12)", borderless: true };
+
+function SimpleLineProgressBar({ progress }: { progress: number }) {
+  const [trackW, setTrackW] = useState(0);
+  const thumbR = moderateScale(6);
+  const trackH = moderateScale(3);
+  const rowH = moderateScale(22);
+  const p = Math.min(1, Math.max(0, progress));
+
+  const onLayout = useCallback((e: LayoutChangeEvent) => {
+    setTrackW(e.nativeEvent.layout.width);
+  }, []);
+
+  const thumbLeft =
+    trackW > 0
+      ? Math.min(
+          Math.max(0, p * trackW - thumbR),
+          Math.max(0, trackW - thumbR * 2)
+        )
+      : 0;
+
+  const thumbTop = rowH / 2 - thumbR;
+
+  return (
+    <View
+      onLayout={onLayout}
+      style={{
+        alignSelf: "stretch",
+        height: rowH,
+        justifyContent: "center",
+      }}
+    >
+      <View
+        style={{
+          height: trackH,
+          borderRadius: trackH / 2,
+          backgroundColor: themeColors.dark.surface,
+          borderWidth: 1,
+          borderColor: themeColors.dark.borderSecondary,
+          overflow: "hidden",
+        }}
+      >
+        <View
+          style={{
+            height: "100%",
+            width: `${p * 100}%`,
+            backgroundColor: themeColors.dark.accent,
+            borderRadius: trackH / 2,
+          }}
+        />
+      </View>
+      {trackW > 0 ? (
+        <View
+          style={{
+            position: "absolute",
+            left: thumbLeft,
+            top: thumbTop,
+            width: thumbR * 2,
+            height: thumbR * 2,
+            borderRadius: thumbR,
+            backgroundColor: themeColors.dark.accent,
+            borderWidth: 2,
+            borderColor: themeColors.dark.background,
+            ...(Platform.OS === "ios"
+              ? {
+                  shadowColor: themeColors.dark.accent,
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: 0.45,
+                  shadowRadius: 6,
+                }
+              : { elevation: 4 }),
+          }}
+        />
+      ) : null}
+    </View>
+  );
+}
+
+function ghostControlStyle(pressed: boolean): ViewStyle {
+  return {
+    width: moderateScale(46),
+    height: moderateScale(46),
+    borderRadius: moderateScale(23),
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: pressed
+      ? "rgba(255,255,255,0.1)"
+      : "rgba(255,255,255,0.05)",
+    borderWidth: 1,
+    borderColor: pressed ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.06)",
+  };
+}
+
+function IconControl({
+  onPress,
+  children,
+}: {
+  onPress: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      android_ripple={rippleLight}
+      style={({ pressed }: PressableStateCallbackType) =>
+        ghostControlStyle(pressed)
+      }
+    >
+      {children}
+    </Pressable>
+  );
+}
+
+const playFabShadow: ViewStyle =
+  Platform.OS === "ios"
+    ? {
+        shadowColor: themeColors.dark.accent,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.4,
+        shadowRadius: 16,
+      }
+    : { elevation: 12 };
 
 export default function FullPlayerPage() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { togglePlayPause } = usePlayback();
 
@@ -67,40 +206,64 @@ export default function FullPlayerPage() {
   }, [togglePlayPause]);
 
   const noop = useCallback(() => {
-    /* mock control */
+    /* secondary controls */
   }, []);
 
   if (!activeTrack) {
     return null;
   }
 
-  const albumLine = activeTrack.albumName?.trim() || "—";
-  const labelLine = activeTrack.label?.trim() || "—";
+  const contextTitle =
+    activeTrack.albumName?.trim() ||
+    activeTrack.label?.trim() ||
+    "Your library";
+
+  const totalMillis =
+    durationMillis > 0 ? durationMillis : activeTrack.durationSec * 1000;
 
   return (
-    <YStack
-      flex={1}
-      bg={themeColors.dark.background}
-      borderWidth={1}
-      borderColor="red"
-    >
+    <YStack flex={1} bg={themeColors.dark.background}>
       <ScreenHeader title="Playing Now" showBack showSettings={false} />
-      <ScrollView
-        style={{ flex: 1 }}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          flexGrow: 1,
-          paddingBottom: verticalScale(28),
-          paddingHorizontal: scale(20),
-        }}
+
+      <YStack
+        flex={1}
+        pb={insets.bottom + verticalScale(28)}
+        px={scale(20)}
+        style={{ minHeight: 0 }}
       >
         <YStack
           flex={1}
           gap={verticalScale(20)}
           items="center"
-          borderWidth={1}
-          borderColor="blue"
+          style={{ minHeight: 0 }}
         >
+          <YStack items="center" gap={verticalScale(6)} px={scale(8)}>
+            <MyText
+              fontSize={moderateScale(11)}
+              weight="600"
+              color={themeColors.dark.textMuted}
+              textAlign="center"
+              numberOfLines={1}
+              style={{
+                letterSpacing: moderateScale(1.2),
+                textTransform: "uppercase",
+              }}
+            >
+              Playing from
+            </MyText>
+            <MyText
+              fontSize={moderateScale(14)}
+              weight="700"
+              color={themeColors.dark.onSurface}
+              textAlign="center"
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              style={{ letterSpacing: moderateScale(-0.2) }}
+            >
+              {contextTitle}
+            </MyText>
+          </YStack>
+
           <ArtworkProgressRing
             size={artSize}
             strokeWidth={ART_RING_STROKE}
@@ -123,19 +286,8 @@ export default function FullPlayerPage() {
             >
               {activeTrack.title}
             </MyText>
-
             <MyText
               fontSize={moderateScale(16)}
-              weight="500"
-              color={themeColors.dark.onSurface}
-              textAlign="center"
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              {activeTrack.artist}
-            </MyText>
-            <MyText
-              fontSize={moderateScale(14)}
               weight="500"
               color={themeColors.dark.textMuted}
               textAlign="center"
@@ -143,7 +295,7 @@ export default function FullPlayerPage() {
               ellipsizeMode="tail"
               mt={scale(4)}
             >
-              {labelLine}
+              {activeTrack.artist}
             </MyText>
           </YStack>
 
@@ -151,25 +303,23 @@ export default function FullPlayerPage() {
             gap={verticalScale(8)}
             style={{ alignSelf: "stretch" as const }}
           >
-            <MockWaveformBar progress={progress} width={width} />
+            <SimpleLineProgressBar progress={progress} />
             <XStack justify="space-between" px={scale(4)}>
               <MyText
                 fontSize={moderateScale(13)}
                 weight="600"
-                style={{ color: themeColors.dark.accent }}
+                color={themeColors.dark.textMuted}
+                style={{ fontVariant: ["tabular-nums"] }}
               >
                 {formatMillisToClock(playedMillis)}
               </MyText>
               <MyText
                 fontSize={moderateScale(13)}
                 weight="600"
-                color="$textPrimary"
+                color={themeColors.dark.textMuted}
+                style={{ fontVariant: ["tabular-nums"] }}
               >
-                {formatMillisToClock(
-                  durationMillis > 0
-                    ? durationMillis
-                    : activeTrack.durationSec * 1000
-                )}
+                {formatMillisToClock(totalMillis)}
               </MyText>
             </XStack>
           </YStack>
@@ -178,31 +328,42 @@ export default function FullPlayerPage() {
             items="center"
             justify="space-between"
             style={{ alignSelf: "stretch" as const }}
-            px={scale(4)}
-            mt={verticalScale(8)}
+            px={scale(2)}
+            mt={verticalScale(12)}
           >
-            <Pressable onPress={noop} hitSlop={10}>
+            <IconControl onPress={noop}>
               <Shuffle
-                size={moderateScale(22)}
+                size={moderateScale(20)}
                 color={themeColors.dark.onSurface}
               />
-            </Pressable>
-            <Pressable onPress={noop} hitSlop={10}>
+            </IconControl>
+            <IconControl onPress={noop}>
               <SkipBack
-                size={moderateScale(28)}
+                size={moderateScale(26)}
                 color={themeColors.dark.onSurface}
               />
-            </Pressable>
+            </IconControl>
             <Pressable
               onPress={onPlayPause}
-              style={{
-                width: moderateScale(64),
-                height: moderateScale(64),
-                borderRadius: moderateScale(32),
+              accessibilityRole="button"
+              accessibilityLabel={isPlaying ? "Pause" : "Play"}
+              android_ripple={{
+                color: "rgba(0,0,0,0.15)",
+                foreground: true,
+                borderless: false,
+              }}
+              style={({ pressed }: PressableStateCallbackType) => ({
+                width: moderateScale(68),
+                height: moderateScale(68),
+                borderRadius: moderateScale(34),
                 backgroundColor: themeColors.dark.accent,
                 alignItems: "center",
                 justifyContent: "center",
-              }}
+                transform: [{ scale: pressed ? 0.94 : 1 }],
+                borderWidth: 1,
+                borderColor: "rgba(255,255,255,0.22)",
+                ...playFabShadow,
+              })}
             >
               {isPlaying ? (
                 <Pause
@@ -219,81 +380,93 @@ export default function FullPlayerPage() {
                 />
               )}
             </Pressable>
-            <Pressable onPress={noop} hitSlop={10}>
+            <IconControl onPress={noop}>
               <SkipForward
-                size={moderateScale(28)}
+                size={moderateScale(26)}
                 color={themeColors.dark.onSurface}
               />
-            </Pressable>
-            <Pressable onPress={noop} hitSlop={10}>
+            </IconControl>
+            <IconControl onPress={noop}>
               <Repeat
-                size={moderateScale(22)}
+                size={moderateScale(20)}
                 color={themeColors.dark.onSurface}
               />
-            </Pressable>
+            </IconControl>
           </XStack>
 
-          <XStack width="100%" gap={scale(16)} items="center">
-            <XStack
-              bg={themeColors.dark.surfaceSecondary}
-              rounded={moderateScale(12)}
-              flex={1}
-              p={scale(12)}
-              gap={scale(12)}
-              px={scale(20)}
-              items="center"
-              justify="flex-start"
+          <XStack
+            width="100%"
+            gap={scale(16)}
+            items="center"
+            mt="auto"
+            pt={verticalScale(24)}
+            px={scale(4)}
+          >
+            <Pressable
+              onPress={noop}
+              accessibilityRole="button"
+              accessibilityLabel="Up next queue"
+              android_ripple={rippleLight}
+              style={({ pressed }: PressableStateCallbackType) => ({
+                flex: 1,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "flex-start",
+                gap: scale(10),
+                opacity: pressed ? 0.85 : 1,
+              })}
             >
+              <View style={ghostControlStyle(false)}>
+                <ListMusic
+                  size={moderateScale(20)}
+                  color={themeColors.dark.onSurface}
+                />
+              </View>
+              <MyText
+                fontSize={moderateScale(14)}
+                weight="700"
+                color={themeColors.dark.onSurface}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                style={{ flex: 1, minWidth: 0 }}
+              >
+                Up next
+              </MyText>
+            </Pressable>
+
+            <XStack flex={1} gap={scale(8)} items="center" justify="flex-end">
               <Pressable
                 onPress={noop}
-                hitSlop={10}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: scale(4),
-                }}
+                accessibilityRole="button"
+                accessibilityLabel="Download"
+                android_ripple={rippleLight}
+                style={({ pressed }: PressableStateCallbackType) =>
+                  ghostControlStyle(pressed)
+                }
               >
-                <ListMusic
-                  size={moderateScale(22)}
-                  color={themeColors.dark.onSurface}
-                />
-                <MyText
-                  fontSize={moderateScale(12)}
-                  weight="500"
-                  color={themeColors.dark.onSurface}
-                >
-                  Queue
-                </MyText>
-              </Pressable>
-            </XStack>
-
-            <XStack
-              flex={1}
-              rounded={moderateScale(14)}
-              bg={themeColors.dark.surfaceSecondary}
-              p={scale(12)}
-              gap={scale(12)}
-              px={scale(20)}
-              items="center"
-              justify="flex-end"
-            >
-              <Pressable onPress={noop} hitSlop={10}>
                 <Download
-                  size={moderateScale(22)}
+                  size={moderateScale(20)}
                   color={themeColors.dark.onSurface}
                 />
               </Pressable>
-              <Pressable onPress={noop} hitSlop={10}>
+              <Pressable
+                onPress={noop}
+                accessibilityRole="button"
+                accessibilityLabel="Like"
+                android_ripple={rippleLight}
+                style={({ pressed }: PressableStateCallbackType) =>
+                  ghostControlStyle(pressed)
+                }
+              >
                 <Heart
-                  size={moderateScale(22)}
+                  size={moderateScale(20)}
                   color={themeColors.dark.onSurface}
                 />
               </Pressable>
             </XStack>
           </XStack>
         </YStack>
-      </ScrollView>
+      </YStack>
     </YStack>
   );
 }
