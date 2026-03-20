@@ -9,6 +9,7 @@ import {
 } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
 import ScreenHeader from "src/components/ScreenHeader";
+import { useMiniPlayerBottomInset } from "src/features/Player";
 import ProfileSection from "../components/ProfileSection";
 import ProfileMenuItem from "../components/ProfileMenuItem";
 
@@ -25,6 +26,8 @@ const MENU_ITEMS = [
 ];
 
 export default function ProfilePage() {
+  const miniPlayerInset = useMiniPlayerBottomInset();
+
   return (
     <YStack flex={1} bg={themeColors.dark.background}>
       <ScreenHeader title="My profile" showBack={false} showSettings />
@@ -33,7 +36,7 @@ export default function ProfilePage() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: scale(20),
-          paddingBottom: verticalScale(120),
+          paddingBottom: verticalScale(32) + miniPlayerInset,
         }}
       >
         <ProfileSection

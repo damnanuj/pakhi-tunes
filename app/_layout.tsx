@@ -124,6 +124,10 @@ function RootLayoutNav() {
           name="top-artists"
           options={{ animation: "slide_from_right" }}
         />
+        <Stack.Screen
+          name="player"
+          options={{ animation: "slide_from_bottom", headerShown: false }}
+        />
       </Stack>
     </ThemeProvider>
   );

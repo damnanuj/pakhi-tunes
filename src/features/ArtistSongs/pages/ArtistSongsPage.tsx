@@ -19,7 +19,7 @@ import ArtistSongsPageSkeleton, {
 } from "../skeletons/ArtistSongsPageSkeleton";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import type { ArtistSongsResponse } from "src/types/artistSongs.types";
-import { usePlayerStore } from "src/features/Player";
+import { useMiniPlayerBottomInset } from "src/features/Player";
 
 const PAGE_SIZE = 20;
 
@@ -36,7 +36,7 @@ function getNextPageParam(res: ArtistSongsResponse): number | undefined {
 export default function ArtistSongsPage() {
   const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
   const artistName = name ?? "Artist";
-  const hasMiniPlayer = usePlayerStore((s) => s.activeTrack !== null);
+  const miniPlayerInset = useMiniPlayerBottomInset();
 
   const {
     items: songs,
@@ -141,7 +141,7 @@ export default function ArtistSongsPage() {
         windowSize={5}
         removeClippedSubviews={true}
         contentContainerStyle={{
-          paddingBottom: verticalScale(hasMiniPlayer ? 120 : 40),
+          paddingBottom: verticalScale(40) + miniPlayerInset,
         }}
         showsVerticalScrollIndicator={false}
       />

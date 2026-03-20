@@ -10,6 +10,7 @@ import {
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
 import ScreenHeader from "src/components/ScreenHeader";
+import { useMiniPlayerBottomInset } from "src/features/Player";
 import { useRefreshable } from "src/hooks";
 import { getTopArtists } from "src/services";
 import ArtistGridItem from "../components/ArtistGridItem";
@@ -22,6 +23,7 @@ const GAP = scale(16);
 
 export default function TopArtistsPage() {
   const router = useRouter();
+  const miniPlayerInset = useMiniPlayerBottomInset();
   const { refreshControl } = useRefreshable({
     queryKeys: ["topArtists", TOP_ARTISTS_LIMIT],
   });
@@ -86,7 +88,7 @@ export default function TopArtistsPage() {
         refreshControl={refreshControl}
         contentContainerStyle={{
           paddingHorizontal: HORIZONTAL_PADDING,
-          paddingBottom: verticalScale(40),
+          paddingBottom: verticalScale(40) + miniPlayerInset,
         }}
         columnWrapperStyle={{ gap: GAP, justifyContent: "space-between" }}
         showsVerticalScrollIndicator={false}

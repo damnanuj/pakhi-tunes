@@ -5,8 +5,11 @@ import { scale, moderateScale, verticalScale } from "src/utils/functions/dimensi
 import themeColors from "src/utils/theme/colors";
 import MyText from "src/components/MyText";
 import ScreenHeader from "src/components/ScreenHeader";
+import { useMiniPlayerBottomInset } from "src/features/Player";
 
 export default function DownloadsPage() {
+  const miniPlayerInset = useMiniPlayerBottomInset();
+
   return (
     <YStack flex={1} background={themeColors.dark.background}>
       <ScreenHeader title="Downloads" showBack showSettings={false} />
@@ -14,7 +17,7 @@ export default function DownloadsPage() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: scale(20),
-          paddingBottom: verticalScale(120),
+          paddingBottom: verticalScale(32) + miniPlayerInset,
         }}
       >
         <MyText

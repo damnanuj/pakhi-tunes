@@ -15,5 +15,7 @@ export function mapArtistSongToTrack(song: ArtistSong): ActiveTrack | null {
     artist: song.artists.primary.map((a) => a.name).join(", "),
     artworkUrl: getSongCoverUrl(song.image),
     durationSec: song.duration,
+    albumName: decodeHtmlEntities(song.album.name),
+    label: song.label,
   };
 }

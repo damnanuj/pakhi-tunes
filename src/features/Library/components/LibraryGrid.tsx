@@ -10,6 +10,7 @@ import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
 import { useRefreshable } from "src/hooks";
 import { getTopArtists } from "src/services";
+import { useMiniPlayerBottomInset } from "src/features/Player";
 import LibraryCard from "./LibraryCard";
 import LibraryGridSkeleton from "../skeletons/LibraryGridSkeleton";
 import type { LibraryTabId } from "./LibraryTabs";
@@ -143,15 +144,15 @@ const columnWrapperStyle = {
   marginBottom: verticalScale(12),
 } as const;
 
-const contentContainerStyle = {
-  paddingBottom: verticalScale(100),
-} as const;
-
 export default function LibraryGrid({
   activeTab,
   onItemPress,
 }: LibraryGridProps) {
   const router = useRouter();
+  const miniPlayerInset = useMiniPlayerBottomInset();
+  const listContentStyle = {
+    paddingBottom: verticalScale(24) + miniPlayerInset,
+  };
   const { refreshControl } = useRefreshable({
     queryKeys: ["topArtists", TOP_ARTISTS_LIMIT],
   });
@@ -203,7 +204,7 @@ export default function LibraryGrid({
         keyExtractor={(item) => item.id}
         numColumns={2}
         columnWrapperStyle={columnWrapperStyle}
-        contentContainerStyle={contentContainerStyle}
+        contentContainerStyle={listContentStyle}
         refreshControl={refreshControl}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
@@ -228,7 +229,7 @@ export default function LibraryGrid({
       keyExtractor={(item) => item.id}
       numColumns={2}
       columnWrapperStyle={columnWrapperStyle}
-      contentContainerStyle={contentContainerStyle}
+      contentContainerStyle={listContentStyle}
       showsVerticalScrollIndicator={false}
       renderItem={({ item }) => (
         <View style={{ flex: 1, minWidth: 0 }}>
