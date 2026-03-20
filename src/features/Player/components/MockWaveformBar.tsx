@@ -1,5 +1,5 @@
-import { memo, useMemo } from "react";
-import { View } from "react-native";
+import { memo, useCallback, useMemo, useState } from "react";
+import { LayoutChangeEvent, View } from "react-native";
 import themeColors from "src/utils/theme/colors";
 import { moderateScale, scale } from "src/utils/functions/dimensions";
 
@@ -17,21 +17,39 @@ type MockWaveformBarProps = {
  */
 function MockWaveformBar({ progress, width }: MockWaveformBarProps) {
   const clamped = Math.min(1, Math.max(0, progress));
+  const [measuredWidth, setMeasuredWidth] = useState(0);
 
-  const { barCount, barWidth, gap, heights, trackHeight } = useMemo(() => {
-    const sectionWidth = Math.max(100, width - SCROLL_H_PAD);
+  const onLayout = useCallback((e: LayoutChangeEvent) => {
+    const w = e.nativeEvent.layout.width;
+    if (w > 0) setMeasuredWidth((prev) => (Math.abs(prev - w) < 0.5 ? prev : w));
+  }, []);
+
+  const { barCount, barWidth, gapBase, gapExtra, heights, trackHeight } =
+    useMemo(() => {
+    const sectionWidth = Math.max(
+      100,
+      measuredWidth > 0 ? measuredWidth : width - SCROLL_H_PAD
+    );
     const bw = moderateScale(3.75);
     const minGap = scale(2);
 
     let count = Math.floor((sectionWidth + minGap) / (bw + minGap));
     count = Math.min(52, Math.max(22, count));
 
-    let g =
-      count > 1 ? (sectionWidth - count * bw) / (count - 1) : 0;
-    while (g < minGap && count > 22) {
+    while (count > 22) {
+      const nGaps = count - 1;
+      const spaceForGaps = sectionWidth - count * bw;
+      const gFloor =
+        nGaps > 0 ? Math.floor(Math.max(0, spaceForGaps) / nGaps) : 0;
+      if (gFloor >= minGap) break;
       count -= 1;
-      g = count > 1 ? (sectionWidth - count * bw) / (count - 1) : 0;
     }
+
+    const nGaps = Math.max(0, count - 1);
+    const spaceForGaps = Math.max(0, sectionWidth - count * bw);
+    const gapBase =
+      nGaps > 0 ? Math.floor(spaceForGaps / nGaps) : 0;
+    const gapExtra = nGaps > 0 ? spaceForGaps - gapBase * nGaps : 0;
 
     const minH = moderateScale(3);
     const maxH = moderateScale(46);
@@ -50,11 +68,12 @@ function MockWaveformBar({ progress, width }: MockWaveformBarProps) {
     return {
       barCount: count,
       barWidth: bw,
-      gap: Math.max(0, g),
+      gapBase,
+      gapExtra,
       heights: h,
       trackHeight: maxH + moderateScale(8),
     };
-  }, [width]);
+  }, [measuredWidth, width]);
 
   const playedCount =
     clamped >= 1 ? barCount : Math.floor(clamped * barCount);
@@ -64,12 +83,14 @@ function MockWaveformBar({ progress, width }: MockWaveformBarProps) {
 
   return (
     <View
+      onLayout={onLayout}
       style={{
         alignSelf: "stretch",
         width: "100%",
         height: trackHeight,
         flexDirection: "row",
         alignItems: "center",
+        overflow: "hidden",
       }}
     >
       {heights.map((h, i) => (
@@ -78,7 +99,8 @@ function MockWaveformBar({ progress, width }: MockWaveformBarProps) {
           style={{
             width: barWidth,
             height: h,
-            marginRight: i < barCount - 1 ? gap : 0,
+            marginRight:
+              i < barCount - 1 ? gapBase + (i < gapExtra ? 1 : 0) : 0,
             borderRadius: barWidth / 2,
             backgroundColor: i < playedCount ? accent : remaining,
           }}

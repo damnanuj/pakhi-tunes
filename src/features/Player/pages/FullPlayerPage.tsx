@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import {
+  Download,
   Heart,
   ListMusic,
   Pause,
@@ -77,7 +78,12 @@ export default function FullPlayerPage() {
   const labelLine = activeTrack.label?.trim() || "—";
 
   return (
-    <YStack flex={1} bg={themeColors.dark.background}>
+    <YStack
+      flex={1}
+      bg={themeColors.dark.background}
+      borderWidth={1}
+      borderColor="red"
+    >
       <ScreenHeader title="Playing Now" showBack showSettings={false} />
       <ScrollView
         style={{ flex: 1 }}
@@ -92,6 +98,8 @@ export default function FullPlayerPage() {
           flex={1}
           gap={verticalScale(20)}
           items="center"
+          borderWidth={1}
+          borderColor="blue"
         >
           <ArtworkProgressRing
             size={artSize}
@@ -138,37 +146,6 @@ export default function FullPlayerPage() {
               {labelLine}
             </MyText>
           </YStack>
-
-          <XStack
-            items="center"
-            justify="space-around"
-            py={verticalScale(14)}
-            px={scale(28)}
-            bg={themeColors.dark.surface}
-            borderWidth={1}
-            borderColor={themeColors.dark.borderSecondary}
-            rounded={moderateScale(999)}
-            style={{ alignSelf: "center", minWidth: width * 0.78 }}
-          >
-            <Pressable onPress={noop} hitSlop={8}>
-              <Plus
-                size={moderateScale(22)}
-                color={themeColors.dark.onSurface}
-              />
-            </Pressable>
-            <Pressable onPress={noop} hitSlop={8}>
-              <Heart
-                size={moderateScale(22)}
-                color={themeColors.dark.onSurface}
-              />
-            </Pressable>
-            <Pressable onPress={noop} hitSlop={8}>
-              <ListMusic
-                size={moderateScale(22)}
-                color={themeColors.dark.accent}
-              />
-            </Pressable>
-          </XStack>
 
           <YStack
             gap={verticalScale(8)}
@@ -254,6 +231,66 @@ export default function FullPlayerPage() {
                 color={themeColors.dark.onSurface}
               />
             </Pressable>
+          </XStack>
+
+          <XStack width="100%" gap={scale(16)} items="center">
+            <XStack
+              bg={themeColors.dark.surfaceSecondary}
+              rounded={moderateScale(12)}
+              flex={1}
+              p={scale(12)}
+              gap={scale(12)}
+              px={scale(20)}
+              items="center"
+              justify="flex-start"
+            >
+              <Pressable
+                onPress={noop}
+                hitSlop={10}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: scale(4),
+                }}
+              >
+                <ListMusic
+                  size={moderateScale(22)}
+                  color={themeColors.dark.onSurface}
+                />
+                <MyText
+                  fontSize={moderateScale(12)}
+                  weight="500"
+                  color={themeColors.dark.onSurface}
+                >
+                  Queue
+                </MyText>
+              </Pressable>
+            </XStack>
+
+            <XStack
+              flex={1}
+              rounded={moderateScale(14)}
+              bg={themeColors.dark.surfaceSecondary}
+              p={scale(12)}
+              gap={scale(12)}
+              px={scale(20)}
+              items="center"
+              justify="flex-end"
+            >
+              <Pressable onPress={noop} hitSlop={10}>
+                <Download
+                  size={moderateScale(22)}
+                  color={themeColors.dark.onSurface}
+                />
+              </Pressable>
+              <Pressable onPress={noop} hitSlop={10}>
+                <Heart
+                  size={moderateScale(22)}
+                  color={themeColors.dark.onSurface}
+                />
+              </Pressable>
+            </XStack>
           </XStack>
         </YStack>
       </ScrollView>
