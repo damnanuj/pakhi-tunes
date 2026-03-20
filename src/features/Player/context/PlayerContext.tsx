@@ -56,8 +56,7 @@ function syncStoreFromLoadedStatus(status: LoadedPlaybackStatus) {
 type SoundRef = {
   unloadAsync: () => Promise<void>;
   getStatusAsync: () => Promise<
-    | { isLoaded: false }
-    | ({ isLoaded: true } & Record<string, unknown>)
+    { isLoaded: false } | ({ isLoaded: true } & Record<string, unknown>)
   >;
   pauseAsync: () => Promise<void>;
   playAsync: () => Promise<void>;

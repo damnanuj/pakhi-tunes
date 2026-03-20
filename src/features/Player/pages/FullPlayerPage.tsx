@@ -567,26 +567,26 @@ export default function FullPlayerPage() {
             pt={verticalScale(24)}
             px={scale(4)}
           >
-            <Pressable
-              onPress={noop}
-              accessibilityRole="button"
-              accessibilityLabel="Up next queue"
-              android_ripple={rippleLight}
-              style={({ pressed }: PressableStateCallbackType) => ({
-                flex: 1,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "flex-start",
-                gap: scale(10),
-                opacity: pressed ? 0.85 : 1,
-              })}
+            <XStack
+              flex={1}
+              gap={scale(10)}
+              items="center"
+              style={{ minWidth: 0 }}
             >
-              <View style={ghostControlStyle(false)}>
+              <Pressable
+                onPress={noop}
+                accessibilityRole="button"
+                accessibilityLabel="Up next queue"
+                android_ripple={rippleLight}
+                style={({ pressed }: PressableStateCallbackType) =>
+                  ghostControlStyle(pressed)
+                }
+              >
                 <ListMusic
                   size={moderateScale(20)}
                   color={themeColors.dark.onSurface}
                 />
-              </View>
+              </Pressable>
               <MyText
                 fontSize={moderateScale(14)}
                 weight="700"
@@ -597,7 +597,7 @@ export default function FullPlayerPage() {
               >
                 Up next
               </MyText>
-            </Pressable>
+            </XStack>
 
             <XStack flex={1} gap={scale(8)} items="center" justify="flex-end">
               <Pressable
