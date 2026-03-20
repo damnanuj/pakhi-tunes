@@ -9,11 +9,14 @@ type PlaybackSlice = {
 
 type PlayerState = {
   activeTrack: ActiveTrack | null;
+  /** True while a new track is loading into expo-av (after UI shows active track). */
+  isPlaybackLoading: boolean;
 } & PlaybackSlice;
 
 type PlayerActions = {
   setActiveTrack: (track: ActiveTrack | null) => void;
   setPlayback: (partial: Partial<PlaybackSlice>) => void;
+  setPlaybackLoading: (loading: boolean) => void;
   resetPlayback: () => void;
 };
 
@@ -25,6 +28,7 @@ const initialPlayback: PlaybackSlice = {
 
 export const usePlayerStore = create<PlayerState & PlayerActions>((set) => ({
   activeTrack: null,
+  isPlaybackLoading: false,
   ...initialPlayback,
   setActiveTrack: (track) =>
     set({
@@ -33,5 +37,6 @@ export const usePlayerStore = create<PlayerState & PlayerActions>((set) => ({
       durationMillis: track ? Math.max(0, track.durationSec) * 1000 : 0,
     }),
   setPlayback: (partial) => set(partial),
+  setPlaybackLoading: (loading) => set({ isPlaybackLoading: loading }),
   resetPlayback: () => set(initialPlayback),
 }));

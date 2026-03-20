@@ -1,5 +1,5 @@
 import { memo, useCallback } from "react";
-import { Image, Pressable, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, View } from "react-native";
 import { XStack, YStack } from "tamagui";
 import {
   CirclePlay,
@@ -33,13 +33,15 @@ function SongListItem({ song }: SongListItemProps) {
   const { playSong, togglePlayPause } = usePlayback();
   const activeId = usePlayerStore((s) => s.activeTrack?.id);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const isPlaybackLoading = usePlayerStore((s) => s.isPlaybackLoading);
 
   const songName = decodeHtmlEntities(song.name);
   const artistNames = song.artists.primary.map((a) => a.name).join(", ");
   const imageUrl = getSongCoverUrl(song.image);
 
   const isThisTrack = activeId === song.id;
-  const showPauseOnRow = isThisTrack && isPlaying;
+  const showLoadingOnRow = isThisTrack && isPlaybackLoading;
+  const showPauseOnRow = isThisTrack && isPlaying && !isPlaybackLoading;
 
   const handlePlayAction = useCallback(() => {
     if (isThisTrack) void togglePlayPause();
@@ -79,7 +81,27 @@ function SongListItem({ song }: SongListItemProps) {
             }}
             resizeMode="cover"
           />
-          {showPauseOnRow ? (
+          {showLoadingOnRow ? (
+            <View
+              pointerEvents="none"
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                width: IMAGE_SIZE,
+                height: IMAGE_SIZE,
+                borderRadius: ARTWORK_RADIUS,
+                backgroundColor: "rgba(0,0,0,0.48)",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <ActivityIndicator
+                color={themeColors.dark.accent}
+                size="small"
+              />
+            </View>
+          ) : showPauseOnRow ? (
             <PlayingArtworkIndicator
               size={IMAGE_SIZE}
               borderRadius={ARTWORK_RADIUS}
@@ -112,7 +134,21 @@ function SongListItem({ song }: SongListItemProps) {
         />
       </Pressable>
       <Pressable hitSlop={8} onPress={handlePlayAction}>
-        {isThisTrack ? (
+        {showLoadingOnRow ? (
+          <View
+            style={{
+              width: ROW_ACTION_ICON,
+              height: ROW_ACTION_ICON,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <ActivityIndicator
+              color={themeColors.dark.accent}
+              size="small"
+            />
+          </View>
+        ) : isThisTrack ? (
           showPauseOnRow ? (
             <PauseCircle
               size={ROW_ACTION_ICON}

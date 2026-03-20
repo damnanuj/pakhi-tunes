@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { Image, Pressable } from "react-native";
+import { ActivityIndicator, Image, Pressable } from "react-native";
 import { usePathname, useRouter, useSegments } from "expo-router";
 import { Pause, Play } from "@tamagui/lucide-icons";
 import { View, XStack, YStack } from "tamagui";
@@ -27,6 +27,7 @@ function MiniPlayer() {
 
   const activeTrack = usePlayerStore((s) => s.activeTrack);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const isPlaybackLoading = usePlayerStore((s) => s.isPlaybackLoading);
   const positionMillis = usePlayerStore((s) => s.positionMillis);
   const durationMillis = usePlayerStore((s) => s.durationMillis);
 
@@ -139,10 +140,18 @@ function MiniPlayer() {
         <PlayProgressRing
           size={MINI_PLAYER_RING}
           strokeWidth={RING_STROKE}
-          progress={progress}
-          onPress={() => void togglePlayPause()}
+          progress={isPlaybackLoading ? 0 : progress}
+          onPress={() => {
+            if (isPlaybackLoading) return;
+            void togglePlayPause();
+          }}
         >
-          {isPlaying ? (
+          {isPlaybackLoading ? (
+            <ActivityIndicator
+              color={themeColors.dark.accent}
+              size="small"
+            />
+          ) : isPlaying ? (
             <Pause
               size={moderateScale(18)}
               color={themeColors.dark.accent}

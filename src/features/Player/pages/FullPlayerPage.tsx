@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import {
+  ActivityIndicator,
   LayoutChangeEvent,
   PanResponder,
   Platform,
@@ -303,8 +304,12 @@ export default function FullPlayerPage() {
   const { width } = useWindowDimensions();
   const { togglePlayPause, seekToMillis } = usePlayback();
 
+  const seekGenerationRef = useRef(0);
+  const [isSeekInProgress, setIsSeekInProgress] = useState(false);
+
   const activeTrack = usePlayerStore((s) => s.activeTrack);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const isPlaybackLoading = usePlayerStore((s) => s.isPlaybackLoading);
   const positionMillis = usePlayerStore((s) => s.positionMillis);
   const durationMillis = usePlayerStore((s) => s.durationMillis);
 
@@ -335,6 +340,21 @@ export default function FullPlayerPage() {
     void togglePlayPause();
   }, [togglePlayPause]);
 
+  const handleSeekToMillis = useCallback(
+    async (millis: number) => {
+      const gen = ++seekGenerationRef.current;
+      setIsSeekInProgress(true);
+      try {
+        await seekToMillis(millis);
+      } finally {
+        if (seekGenerationRef.current === gen) {
+          setIsSeekInProgress(false);
+        }
+      }
+    },
+    [seekToMillis]
+  );
+
   const noop = useCallback(() => {
     /* secondary controls */
   }, []);
@@ -350,6 +370,8 @@ export default function FullPlayerPage() {
 
   const totalMillis =
     durationMillis > 0 ? durationMillis : activeTrack.durationSec * 1000;
+
+  const showMainFabSpinner = isPlaybackLoading || isSeekInProgress;
 
   return (
     <YStack flex={1} bg={themeColors.dark.background}>
@@ -436,7 +458,7 @@ export default function FullPlayerPage() {
             <SimpleLineProgressBar
               progress={progress}
               durationMillis={totalMillis}
-              onSeek={seekToMillis}
+              onSeek={handleSeekToMillis}
             />
             <XStack justify="space-between" px={scale(4)}>
               <MyText
@@ -478,9 +500,12 @@ export default function FullPlayerPage() {
               />
             </IconControl>
             <Pressable
+              disabled={showMainFabSpinner}
               onPress={onPlayPause}
               accessibilityRole="button"
-              accessibilityLabel={isPlaying ? "Pause" : "Play"}
+              accessibilityLabel={
+                showMainFabSpinner ? "Loading" : isPlaying ? "Pause" : "Play"
+              }
               android_ripple={{
                 color: "rgba(0,0,0,0.15)",
                 foreground: true,
@@ -496,10 +521,16 @@ export default function FullPlayerPage() {
                 transform: [{ scale: pressed ? 0.94 : 1 }],
                 borderWidth: 1,
                 borderColor: "rgba(255,255,255,0.22)",
+                opacity: showMainFabSpinner ? 0.85 : 1,
                 ...playFabShadow,
               })}
             >
-              {isPlaying ? (
+              {showMainFabSpinner ? (
+                <ActivityIndicator
+                  color={themeColors.dark.onAccent}
+                  size="large"
+                />
+              ) : isPlaying ? (
                 <Pause
                   size={moderateScale(30)}
                   color={themeColors.dark.onAccent}

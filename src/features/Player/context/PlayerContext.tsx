@@ -70,6 +70,7 @@ async function loadExpoAv() {
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const soundRef = useRef<SoundRef | null>(null);
+  const playRequestGenerationRef = useRef(0);
 
   const unloadSound = useCallback(async () => {
     positionSyncSuspendedUntilMs = 0;
@@ -95,56 +96,64 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const track = mapArtistSongToTrack(song);
       if (!track) return;
 
-      let Audio: Awaited<ReturnType<typeof loadExpoAv>>["Audio"];
+      const requestGen = ++playRequestGenerationRef.current;
+      usePlayerStore.getState().setPlaybackLoading(true);
       try {
-        ({ Audio } = await loadExpoAv());
-      } catch {
-        Alert.alert(
-          "Playback unavailable",
-          "Audio native module is missing. Rebuild the app (e.g. npx expo run:android) after adding expo-av."
-        );
-        return;
-      }
-
-      await unloadSound();
-
-      try {
-        await Audio.setAudioModeAsync({
-          playsInSilentModeIOS: true,
-          staysActiveInBackground: false,
-        });
-
-        usePlayerStore.getState().setActiveTrack(track);
-
-        const { sound } = await Audio.Sound.createAsync(
-          { uri: track.uri },
-          { shouldPlay: true, progressUpdateIntervalMillis: 400 },
-          (status) => {
-            if (!status.isLoaded) return;
-            syncStoreFromLoadedStatus(status as LoadedPlaybackStatus);
-          }
-        );
-
-        soundRef.current = sound as unknown as SoundRef;
-
-        const initial = await sound.getStatusAsync();
-        if (initial.isLoaded) {
-          usePlayerStore.getState().setPlayback({
-            isPlaying: initial.isPlaying,
-            positionMillis: initial.positionMillis ?? 0,
-            durationMillis:
-              initial.durationMillis && initial.durationMillis > 0
-                ? initial.durationMillis
-                : track.durationSec * 1000,
-          });
+        let Audio: Awaited<ReturnType<typeof loadExpoAv>>["Audio"];
+        try {
+          ({ Audio } = await loadExpoAv());
+        } catch {
+          Alert.alert(
+            "Playback unavailable",
+            "Audio native module is missing. Rebuild the app (e.g. npx expo run:android) after adding expo-av."
+          );
+          return;
         }
-      } catch {
-        usePlayerStore.getState().setActiveTrack(null);
-        usePlayerStore.getState().resetPlayback();
-        Alert.alert(
-          "Could not play",
-          "Rebuild the dev client so expo-av is included, then try again."
-        );
+
+        await unloadSound();
+
+        try {
+          await Audio.setAudioModeAsync({
+            playsInSilentModeIOS: true,
+            staysActiveInBackground: false,
+          });
+
+          usePlayerStore.getState().setActiveTrack(track);
+
+          const { sound } = await Audio.Sound.createAsync(
+            { uri: track.uri },
+            { shouldPlay: true, progressUpdateIntervalMillis: 400 },
+            (status) => {
+              if (!status.isLoaded) return;
+              syncStoreFromLoadedStatus(status as LoadedPlaybackStatus);
+            }
+          );
+
+          soundRef.current = sound as unknown as SoundRef;
+
+          const initial = await sound.getStatusAsync();
+          if (initial.isLoaded) {
+            usePlayerStore.getState().setPlayback({
+              isPlaying: initial.isPlaying,
+              positionMillis: initial.positionMillis ?? 0,
+              durationMillis:
+                initial.durationMillis && initial.durationMillis > 0
+                  ? initial.durationMillis
+                  : track.durationSec * 1000,
+            });
+          }
+        } catch {
+          usePlayerStore.getState().setActiveTrack(null);
+          usePlayerStore.getState().resetPlayback();
+          Alert.alert(
+            "Could not play",
+            "Rebuild the dev client so expo-av is included, then try again."
+          );
+        }
+      } finally {
+        if (playRequestGenerationRef.current === requestGen) {
+          usePlayerStore.getState().setPlaybackLoading(false);
+        }
       }
     },
     [unloadSound]
@@ -168,7 +177,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const status = await sound.getStatusAsync();
     if (!status.isLoaded) return;
 
-    const loaded = status as { durationMillis?: number };
+    const loaded = status as {
+      durationMillis?: number;
+      isPlaying?: boolean;
+      positionMillis?: number;
+    };
     const durMs =
       loaded.durationMillis && loaded.durationMillis > 0
         ? loaded.durationMillis
@@ -180,10 +193,91 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       Math.floor(durMs)
     );
 
+    const wasPlaying = loaded.isPlaying === true;
+
     suspendPositionSyncFromStatusForMs(900);
     try {
       await sound.setPositionAsync(clamped);
       usePlayerStore.getState().setPlayback({ positionMillis: clamped });
+
+      /**
+       * `setPositionAsync` often resolves before the native decoder has buffered
+       * the new location — especially on large jumps. Keep callers (e.g. seek
+       * spinner) waiting until playback is really running at the new time.
+       *
+       * Reported `positionMillis` often lags behind what you hear, so we combine:
+       * — align to seek target when the OS reports it, or give up if already playing;
+       * — prefer a small forward tick, but cap how long we wait on coarse timers.
+       */
+      if (wasPlaying) {
+        try {
+          await sound.playAsync();
+        } catch {
+          /* ignore */
+        }
+
+        const pollMs = 45;
+        const timeoutMs = 15000;
+        const advanceEpsMs = 12;
+        const alignedSlackMs = 5000;
+        /** If already playing but position hasn't caught the seek yet, don't spin for ages */
+        const alignPlayingFallbackMs = 220;
+        /** After align, don't wait longer than this for a position tick (quantized / slow updates) */
+        const advanceCapMs = 100;
+
+        const afterSetPositionMs = Date.now();
+        const waitUntil = Date.now() + timeoutMs;
+        let phase: "align" | "advance" = "align";
+        let prevReportedPos: number | null = null;
+        let advanceStartedAtMs: number | null = null;
+
+        while (Date.now() < waitUntil) {
+          const s = await sound.getStatusAsync();
+          if (!s.isLoaded) return;
+          const st = s as {
+            isPlaying?: boolean;
+            positionMillis?: number;
+          };
+          const pos = st.positionMillis ?? 0;
+
+          if (phase === "align") {
+            const aligned = Math.abs(pos - clamped) <= alignedSlackMs;
+            const playingButReportsLag =
+              st.isPlaying &&
+              Date.now() - afterSetPositionMs >= alignPlayingFallbackMs;
+            if (aligned || playingButReportsLag) {
+              phase = "advance";
+              prevReportedPos = null;
+              advanceStartedAtMs = Date.now();
+            }
+            await new Promise((r) => setTimeout(r, pollMs));
+            continue;
+          }
+
+          if (!st.isPlaying) {
+            prevReportedPos = null;
+            await new Promise((r) => setTimeout(r, pollMs));
+            continue;
+          }
+
+          if (
+            prevReportedPos !== null &&
+            pos >= prevReportedPos + advanceEpsMs
+          ) {
+            break;
+          }
+
+          if (
+            advanceStartedAtMs !== null &&
+            Date.now() - advanceStartedAtMs >= advanceCapMs
+          ) {
+            break;
+          }
+
+          prevReportedPos = pos;
+          await new Promise((r) => setTimeout(r, pollMs));
+        }
+      }
     } catch {
       /* ignore */
     } finally {
