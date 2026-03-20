@@ -9,7 +9,7 @@ type PlaybackSlice = {
 
 type PlayerState = {
   activeTrack: ActiveTrack | null;
-  /** True while a new track is loading into expo-av (after UI shows active track). */
+  /** True while a new track is loading into the native player (after UI shows active track). */
   isPlaybackLoading: boolean;
 } & PlaybackSlice;
 

@@ -7,6 +7,11 @@ import {
   type ReactNode,
 } from "react";
 import { Alert } from "react-native";
+import {
+  createAudioPlayer,
+  setAudioModeAsync,
+  type AudioStatus,
+} from "expo-audio";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import { usePlayerStore } from "../store/playerStore";
 import { mapArtistSongToTrack } from "../utils/mapArtistSongToTrack";
@@ -20,8 +25,8 @@ type PlayerContextValue = {
 const PlayerContext = createContext<PlayerContextValue | null>(null);
 
 /**
- * expo-av can emit status updates with the pre-seek position briefly after
- * `setPositionAsync` resolves. Skip applying those so the UI does not flicker.
+ * The native player can emit status updates with the pre-seek position briefly after
+ * `seekTo` resolves. Skip applying those so the UI does not flicker.
  */
 let positionSyncSuspendedUntilMs = 0;
 
@@ -32,52 +37,36 @@ function suspendPositionSyncFromStatusForMs(ms: number) {
   }
 }
 
-/** Narrow shape from expo-av status callback (avoid static `expo-av` import). */
-type LoadedPlaybackStatus = {
-  isLoaded: true;
-  isPlaying: boolean;
-  positionMillis: number;
-  durationMillis?: number;
-};
-
-function syncStoreFromLoadedStatus(status: LoadedPlaybackStatus) {
+function syncStoreFromLoadedStatus(status: AudioStatus) {
+  if (!status.isLoaded) return;
   const durationMillis =
-    status.durationMillis && status.durationMillis > 0
-      ? status.durationMillis
-      : undefined;
+    status.duration > 0 ? Math.round(status.duration * 1000) : undefined;
+  const positionMillis = Math.round(status.currentTime * 1000);
   const ignorePosition = Date.now() < positionSyncSuspendedUntilMs;
   usePlayerStore.getState().setPlayback({
-    isPlaying: status.isPlaying,
-    ...(!ignorePosition ? { positionMillis: status.positionMillis ?? 0 } : {}),
+    isPlaying: status.playing,
+    ...(!ignorePosition ? { positionMillis } : {}),
     ...(durationMillis !== undefined ? { durationMillis } : {}),
   });
 }
 
-type SoundRef = {
-  unloadAsync: () => Promise<void>;
-  getStatusAsync: () => Promise<
-    { isLoaded: false } | ({ isLoaded: true } & Record<string, unknown>)
-  >;
-  pauseAsync: () => Promise<void>;
-  playAsync: () => Promise<void>;
-  setPositionAsync: (positionMillis: number) => Promise<void>;
-};
-
-async function loadExpoAv() {
-  return import("expo-av");
-}
+type PlayerRef = ReturnType<typeof createAudioPlayer>;
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
-  const soundRef = useRef<SoundRef | null>(null);
+  const playerRef = useRef<PlayerRef | null>(null);
+  const statusSubRef = useRef<{ remove: () => void } | null>(null);
   const playRequestGenerationRef = useRef(0);
 
-  const unloadSound = useCallback(async () => {
+  const unloadPlayer = useCallback(async () => {
     positionSyncSuspendedUntilMs = 0;
-    const s = soundRef.current;
-    soundRef.current = null;
-    if (s) {
+    const sub = statusSubRef.current;
+    statusSubRef.current = null;
+    sub?.remove();
+    const p = playerRef.current;
+    playerRef.current = null;
+    if (p) {
       try {
-        await s.unloadAsync();
+        p.remove();
       } catch {
         /* ignore */
       }
@@ -86,9 +75,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     return () => {
-      void unloadSound();
+      void unloadPlayer();
     };
-  }, [unloadSound]);
+  }, [unloadPlayer]);
 
   const playSong = useCallback(
     async (song: ArtistSong) => {
@@ -98,46 +87,37 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const requestGen = ++playRequestGenerationRef.current;
       usePlayerStore.getState().setPlaybackLoading(true);
       try {
-        let Audio: Awaited<ReturnType<typeof loadExpoAv>>["Audio"];
         try {
-          ({ Audio } = await loadExpoAv());
-        } catch {
-          Alert.alert(
-            "Playback unavailable",
-            "Audio native module is missing. Rebuild the app (e.g. npx expo run:android) after adding expo-av."
-          );
-          return;
-        }
+          await unloadPlayer();
 
-        await unloadSound();
-
-        try {
-          await Audio.setAudioModeAsync({
-            playsInSilentModeIOS: true,
-            staysActiveInBackground: false,
+          await setAudioModeAsync({
+            playsInSilentMode: true,
+            shouldPlayInBackground: false,
           });
 
           usePlayerStore.getState().setActiveTrack(track);
 
-          const { sound } = await Audio.Sound.createAsync(
+          const player = createAudioPlayer(
             { uri: track.uri },
-            { shouldPlay: true, progressUpdateIntervalMillis: 400 },
-            (status) => {
-              if (!status.isLoaded) return;
-              syncStoreFromLoadedStatus(status as LoadedPlaybackStatus);
-            }
+            { updateInterval: 400 }
           );
 
-          soundRef.current = sound as unknown as SoundRef;
+          const sub = player.addListener("playbackStatusUpdate", (status) => {
+            syncStoreFromLoadedStatus(status);
+          });
+          statusSubRef.current = sub;
+          playerRef.current = player;
 
-          const initial = await sound.getStatusAsync();
+          player.play();
+
+          const initial = player.currentStatus;
           if (initial.isLoaded) {
             usePlayerStore.getState().setPlayback({
-              isPlaying: initial.isPlaying,
-              positionMillis: initial.positionMillis ?? 0,
+              isPlaying: initial.playing,
+              positionMillis: Math.round(initial.currentTime * 1000),
               durationMillis:
-                initial.durationMillis && initial.durationMillis > 0
-                  ? initial.durationMillis
+                initial.duration > 0
+                  ? Math.round(initial.duration * 1000)
                   : track.durationSec * 1000,
             });
           }
@@ -146,7 +126,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           usePlayerStore.getState().resetPlayback();
           Alert.alert(
             "Could not play",
-            "Rebuild the dev client so expo-av is included, then try again."
+            "Rebuild the dev client so expo-audio is included, then try again."
           );
         }
       } finally {
@@ -155,35 +135,29 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         }
       }
     },
-    [unloadSound]
+    [unloadPlayer]
   );
 
   const togglePlayPause = useCallback(async () => {
-    const sound = soundRef.current;
-    if (!sound) return;
-    const status = await sound.getStatusAsync();
-    if (!status.isLoaded) return;
-    if (status.isPlaying) {
-      await sound.pauseAsync();
+    const player = playerRef.current;
+    if (!player || !player.isLoaded) return;
+    if (player.playing) {
+      player.pause();
     } else {
-      await sound.playAsync();
+      player.play();
     }
   }, []);
 
   const seekToMillis = useCallback(async (millis: number) => {
-    const sound = soundRef.current;
-    if (!sound) return;
-    const status = await sound.getStatusAsync();
-    if (!status.isLoaded) return;
+    const player = playerRef.current;
+    if (!player || !player.isLoaded) return;
 
-    const loaded = status as {
-      durationMillis?: number;
-      isPlaying?: boolean;
-      positionMillis?: number;
-    };
+    const durSec = player.duration > 0 ? player.duration : undefined;
+    const durMsFromPlayer =
+      durSec !== undefined ? Math.round(durSec * 1000) : undefined;
     const durMs =
-      loaded.durationMillis && loaded.durationMillis > 0
-        ? loaded.durationMillis
+      durMsFromPlayer && durMsFromPlayer > 0
+        ? durMsFromPlayer
         : usePlayerStore.getState().durationMillis;
     if (!durMs || durMs <= 0) return;
 
@@ -192,25 +166,25 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       Math.floor(durMs)
     );
 
-    const wasPlaying = loaded.isPlaying === true;
+    const wasPlaying = player.playing === true;
 
     suspendPositionSyncFromStatusForMs(900);
     try {
-      await sound.setPositionAsync(clamped);
+      await player.seekTo(clamped / 1000);
       usePlayerStore.getState().setPlayback({ positionMillis: clamped });
 
       /**
-       * `setPositionAsync` often resolves before the native decoder has buffered
+       * `seekTo` often resolves before the native decoder has buffered
        * the new location — especially on large jumps. Keep callers (e.g. seek
        * spinner) waiting until playback is really running at the new time.
        *
-       * Reported `positionMillis` often lags behind what you hear, so we combine:
+       * Reported position often lags behind what you hear, so we combine:
        * — align to seek target when the OS reports it, or give up if already playing;
        * — prefer a small forward tick, but cap how long we wait on coarse timers.
        */
       if (wasPlaying) {
         try {
-          await sound.playAsync();
+          player.play();
         } catch {
           /* ignore */
         }
@@ -231,18 +205,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         let advanceStartedAtMs: number | null = null;
 
         while (Date.now() < waitUntil) {
-          const s = await sound.getStatusAsync();
-          if (!s.isLoaded) return;
-          const st = s as {
-            isPlaying?: boolean;
-            positionMillis?: number;
-          };
-          const pos = st.positionMillis ?? 0;
+          if (!player.isLoaded) return;
+          const pos = Math.round(player.currentTime * 1000);
+          const isPlayingNow = player.playing;
 
           if (phase === "align") {
             const aligned = Math.abs(pos - clamped) <= alignedSlackMs;
             const playingButReportsLag =
-              st.isPlaying &&
+              isPlayingNow &&
               Date.now() - afterSetPositionMs >= alignPlayingFallbackMs;
             if (aligned || playingButReportsLag) {
               phase = "advance";
@@ -253,7 +223,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             continue;
           }
 
-          if (!st.isPlaying) {
+          if (!isPlayingNow) {
             prevReportedPos = null;
             await new Promise((r) => setTimeout(r, pollMs));
             continue;
