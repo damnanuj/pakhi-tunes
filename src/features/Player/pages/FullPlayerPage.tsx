@@ -2,11 +2,13 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 import {
   LayoutChangeEvent,
+  PanResponder,
   Platform,
   Pressable,
   View,
@@ -45,15 +47,84 @@ const ART_RING_STROKE = moderateScale(2);
 
 const rippleLight = { color: "rgba(255,255,255,0.12)", borderless: true };
 
-function SimpleLineProgressBar({ progress }: { progress: number }) {
+function SimpleLineProgressBar({
+  progress,
+  durationMillis,
+  onSeek,
+}: {
+  progress: number;
+  durationMillis: number;
+  onSeek: (millis: number) => void | Promise<void>;
+}) {
   const [trackW, setTrackW] = useState(0);
+  const trackWRef = useRef(0);
+  const [isScrubbing, setIsScrubbing] = useState(false);
+  const [scrubProgress, setScrubProgress] = useState(0);
+  const scrubProgressRef = useRef(0);
+
   const thumbR = moderateScale(6);
   const trackH = moderateScale(3);
   const rowH = moderateScale(22);
-  const p = Math.min(1, Math.max(0, progress));
+  const hitH = moderateScale(44);
+  const seekable = durationMillis > 0;
+
+  const p = Math.min(
+    1,
+    Math.max(0, isScrubbing ? scrubProgress : progress)
+  );
+
+  const progressFromLocationX = useCallback((x: number) => {
+    const w = trackWRef.current;
+    if (w <= 0) return 0;
+    return Math.min(1, Math.max(0, x / w));
+  }, []);
+
+  const finishScrub = useCallback(
+    (x?: number) => {
+      if (!seekable) return;
+      const nextP =
+        x !== undefined
+          ? progressFromLocationX(x)
+          : scrubProgressRef.current;
+      void Promise.resolve(onSeek(nextP * durationMillis)).finally(() => {
+        setIsScrubbing(false);
+      });
+    },
+    [durationMillis, onSeek, progressFromLocationX, seekable]
+  );
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => seekable,
+        onMoveShouldSetPanResponder: () => seekable,
+        onPanResponderGrant: (e) => {
+          if (!seekable) return;
+          const nextP = progressFromLocationX(e.nativeEvent.locationX);
+          scrubProgressRef.current = nextP;
+          setIsScrubbing(true);
+          setScrubProgress(nextP);
+        },
+        onPanResponderMove: (e) => {
+          if (!seekable) return;
+          const nextP = progressFromLocationX(e.nativeEvent.locationX);
+          scrubProgressRef.current = nextP;
+          setScrubProgress(nextP);
+        },
+        onPanResponderRelease: (e) => {
+          finishScrub(e.nativeEvent.locationX);
+        },
+        onPanResponderTerminate: () => {
+          finishScrub();
+        },
+      }),
+    [finishScrub, progressFromLocationX, seekable]
+  );
 
   const onLayout = useCallback((e: LayoutChangeEvent) => {
-    setTrackW(e.nativeEvent.layout.width);
+    const w = e.nativeEvent.layout.width;
+    trackWRef.current = w;
+    setTrackW(w);
   }, []);
 
   const thumbLeft =
@@ -65,61 +136,120 @@ function SimpleLineProgressBar({ progress }: { progress: number }) {
       : 0;
 
   const thumbTop = rowH / 2 - thumbR;
+  const thumbCenterX = p * trackW;
+  const tooltipPadH = moderateScale(10);
+  const tooltipPadV = moderateScale(5);
+  const scrubMillis = Math.round(scrubProgress * durationMillis);
+  const tooltipMinW = moderateScale(52);
+
+  const tooltipLeft =
+    trackW > 0
+      ? Math.min(
+          Math.max(0, thumbCenterX - tooltipMinW / 2),
+          Math.max(0, trackW - tooltipMinW)
+        )
+      : 0;
 
   return (
     <View
       onLayout={onLayout}
       style={{
         alignSelf: "stretch",
-        height: rowH,
+        height: hitH,
         justifyContent: "center",
       }}
+      {...(seekable ? panResponder.panHandlers : {})}
     >
       <View
         style={{
-          height: trackH,
-          borderRadius: trackH / 2,
-          backgroundColor: themeColors.dark.surface,
-          borderWidth: 1,
-          borderColor: themeColors.dark.borderSecondary,
-          overflow: "hidden",
+          height: rowH,
+          justifyContent: "center",
         }}
       >
+        {isScrubbing && trackW > 0 ? (
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              left: tooltipLeft,
+              bottom: rowH + verticalScale(6),
+              minWidth: tooltipMinW,
+              paddingHorizontal: tooltipPadH,
+              paddingVertical: tooltipPadV,
+              borderRadius: moderateScale(8),
+              backgroundColor: themeColors.dark.surface,
+              borderWidth: 1,
+              borderColor: themeColors.dark.borderSecondary,
+              alignItems: "center",
+              justifyContent: "center",
+              ...(Platform.OS === "ios"
+                ? {
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.35,
+                    shadowRadius: 4,
+                  }
+                : { elevation: 6 }),
+            }}
+          >
+            <MyText
+              fontSize={moderateScale(13)}
+              weight="700"
+              color={themeColors.dark.onSurface}
+              style={{ fontVariant: ["tabular-nums"] }}
+            >
+              {formatMillisToClock(scrubMillis)}
+            </MyText>
+          </View>
+        ) : null}
         <View
           style={{
-            height: "100%",
-            width: `${p * 100}%`,
-            backgroundColor: themeColors.dark.accent,
+            height: trackH,
             borderRadius: trackH / 2,
+            backgroundColor: themeColors.dark.surface,
+            borderWidth: 1,
+            borderColor: themeColors.dark.borderSecondary,
+            overflow: "hidden",
           }}
-        />
+        >
+          <View
+            style={{
+              height: "100%",
+              width: `${p * 100}%`,
+              backgroundColor: themeColors.dark.accent,
+              borderRadius: trackH / 2,
+            }}
+          />
+        </View>
+        {trackW > 0 ? (
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              left: thumbLeft,
+              top: thumbTop,
+              width: thumbR * 2,
+              height: thumbR * 2,
+              borderRadius: thumbR,
+              backgroundColor: themeColors.dark.accent,
+              borderWidth: 2,
+              borderColor: themeColors.dark.background,
+              ...(Platform.OS === "ios"
+                ? {
+                    shadowColor: themeColors.dark.accent,
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: 0.45,
+                    shadowRadius: 6,
+                  }
+                : { elevation: 4 }),
+            }}
+          />
+        ) : null}
       </View>
-      {trackW > 0 ? (
-        <View
-          style={{
-            position: "absolute",
-            left: thumbLeft,
-            top: thumbTop,
-            width: thumbR * 2,
-            height: thumbR * 2,
-            borderRadius: thumbR,
-            backgroundColor: themeColors.dark.accent,
-            borderWidth: 2,
-            borderColor: themeColors.dark.background,
-            ...(Platform.OS === "ios"
-              ? {
-                  shadowColor: themeColors.dark.accent,
-                  shadowOffset: { width: 0, height: 0 },
-                  shadowOpacity: 0.45,
-                  shadowRadius: 6,
-                }
-              : { elevation: 4 }),
-          }}
-        />
-      ) : null}
     </View>
   );
 }
+
 
 function ghostControlStyle(pressed: boolean): ViewStyle {
   return {
@@ -171,7 +301,7 @@ export default function FullPlayerPage() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { togglePlayPause } = usePlayback();
+  const { togglePlayPause, seekToMillis } = usePlayback();
 
   const activeTrack = usePlayerStore((s) => s.activeTrack);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
@@ -303,7 +433,11 @@ export default function FullPlayerPage() {
             gap={verticalScale(8)}
             style={{ alignSelf: "stretch" as const }}
           >
-            <SimpleLineProgressBar progress={progress} />
+            <SimpleLineProgressBar
+              progress={progress}
+              durationMillis={totalMillis}
+              onSeek={seekToMillis}
+            />
             <XStack justify="space-between" px={scale(4)}>
               <MyText
                 fontSize={moderateScale(13)}

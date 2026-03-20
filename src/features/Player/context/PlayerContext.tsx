@@ -14,9 +14,23 @@ import { mapArtistSongToTrack } from "../utils/mapArtistSongToTrack";
 type PlayerContextValue = {
   playSong: (song: ArtistSong) => Promise<void>;
   togglePlayPause: () => Promise<void>;
+  seekToMillis: (millis: number) => Promise<void>;
 };
 
 const PlayerContext = createContext<PlayerContextValue | null>(null);
+
+/**
+ * expo-av can emit status updates with the pre-seek position briefly after
+ * `setPositionAsync` resolves. Skip applying those so the UI does not flicker.
+ */
+let positionSyncSuspendedUntilMs = 0;
+
+function suspendPositionSyncFromStatusForMs(ms: number) {
+  const until = Date.now() + ms;
+  if (until > positionSyncSuspendedUntilMs) {
+    positionSyncSuspendedUntilMs = until;
+  }
+}
 
 /** Narrow shape from expo-av status callback (avoid static `expo-av` import). */
 type LoadedPlaybackStatus = {
@@ -31,9 +45,10 @@ function syncStoreFromLoadedStatus(status: LoadedPlaybackStatus) {
     status.durationMillis && status.durationMillis > 0
       ? status.durationMillis
       : undefined;
+  const ignorePosition = Date.now() < positionSyncSuspendedUntilMs;
   usePlayerStore.getState().setPlayback({
     isPlaying: status.isPlaying,
-    positionMillis: status.positionMillis ?? 0,
+    ...(!ignorePosition ? { positionMillis: status.positionMillis ?? 0 } : {}),
     ...(durationMillis !== undefined ? { durationMillis } : {}),
   });
 }
@@ -46,6 +61,7 @@ type SoundRef = {
   >;
   pauseAsync: () => Promise<void>;
   playAsync: () => Promise<void>;
+  setPositionAsync: (positionMillis: number) => Promise<void>;
 };
 
 async function loadExpoAv() {
@@ -56,6 +72,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const soundRef = useRef<SoundRef | null>(null);
 
   const unloadSound = useCallback(async () => {
+    positionSyncSuspendedUntilMs = 0;
     const s = soundRef.current;
     soundRef.current = null;
     if (s) {
@@ -145,7 +162,40 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const value: PlayerContextValue = { playSong, togglePlayPause };
+  const seekToMillis = useCallback(async (millis: number) => {
+    const sound = soundRef.current;
+    if (!sound) return;
+    const status = await sound.getStatusAsync();
+    if (!status.isLoaded) return;
+
+    const loaded = status as { durationMillis?: number };
+    const durMs =
+      loaded.durationMillis && loaded.durationMillis > 0
+        ? loaded.durationMillis
+        : usePlayerStore.getState().durationMillis;
+    if (!durMs || durMs <= 0) return;
+
+    const clamped = Math.min(
+      Math.max(0, Math.floor(millis)),
+      Math.floor(durMs)
+    );
+
+    suspendPositionSyncFromStatusForMs(900);
+    try {
+      await sound.setPositionAsync(clamped);
+      usePlayerStore.getState().setPlayback({ positionMillis: clamped });
+    } catch {
+      /* ignore */
+    } finally {
+      suspendPositionSyncFromStatusForMs(350);
+    }
+  }, []);
+
+  const value: PlayerContextValue = {
+    playSong,
+    togglePlayPause,
+    seekToMillis,
+  };
 
   return (
     <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>
