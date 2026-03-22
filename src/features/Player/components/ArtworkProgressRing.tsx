@@ -37,10 +37,10 @@ function ArtworkProgressRing({
   const thumbX = cx + r * Math.cos(thumbAngle);
   const thumbY = cy + r * Math.sin(thumbAngle);
 
+  console.log(artworkUrl);
+
   return (
-    <View
-      style={{ width: size, height: size }}
-    >
+    <View style={{ width: size, height: size }}>
       <Svg width={size} height={size}>
         <Circle
           cx={cx}

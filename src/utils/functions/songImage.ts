@@ -2,12 +2,12 @@ import type { ArtistSongImage } from "src/types/artistSongs.types";
 
 export function getSongCoverUrl(
   images: ArtistSongImage[],
-  preferred = "150x150"
+  preferred = "500x500"
 ): string {
   const found = images.find((i) => i.quality === preferred);
   return (
     found?.url ??
-    images.find((i) => i.quality === "500x500")?.url ??
+    images.find((i) => i.quality === "150x150")?.url ??
     images[0]?.url ??
     ""
   );

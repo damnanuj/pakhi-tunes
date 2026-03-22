@@ -8,22 +8,10 @@ import {
 } from "src/utils/functions/dimensions";
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
+import { getSongCoverUrl } from "src/utils/functions/songImage";
 import type { ArtistDetail } from "src/types/artistSongs.types";
 
 const IMAGE_SIZE = moderateScale(100);
-
-function getImageUrl(
-  images: { quality: string; url: string }[],
-  preferred = "150x150"
-): string {
-  const found = images.find((i) => i.quality === preferred);
-  return (
-    found?.url ??
-    images.find((i) => i.quality === "500x500")?.url ??
-    images[0]?.url ??
-    ""
-  );
-}
 
 function formatCount(count: number): string {
   return count.toLocaleString();
@@ -46,7 +34,7 @@ interface ArtistProfileHeaderProps {
 export default function ArtistProfileHeader({
   artist,
 }: ArtistProfileHeaderProps) {
-  const imageUrl = getImageUrl(artist.image);
+  const imageUrl = getSongCoverUrl(artist.image);
   const metadata = getArtistMetadata(artist);
 
   return (
