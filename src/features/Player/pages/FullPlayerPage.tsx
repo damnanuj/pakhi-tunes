@@ -64,7 +64,7 @@ function SimpleLineProgressBar({
   const scrubProgressRef = useRef(0);
 
   const thumbR = moderateScale(6);
-  const trackH = moderateScale(3);
+  const trackH = moderateScale(5);
   const rowH = moderateScale(22);
   const hitH = moderateScale(44);
   const seekable = durationMillis > 0;
