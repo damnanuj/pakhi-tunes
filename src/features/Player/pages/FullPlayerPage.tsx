@@ -44,7 +44,7 @@ import { usePlayerStore } from "../store/playerStore";
 import { formatMillisToClock } from "../utils/formatPlaybackTime";
 import ArtworkProgressRing from "../components/ArtworkProgressRing";
 
-const ART_RING_STROKE = moderateScale(2);
+const ART_RING_STROKE = moderateScale(3);
 
 const rippleLight = { color: "rgba(255,255,255,0.12)", borderless: true };
 
@@ -332,7 +332,7 @@ export default function FullPlayerPage() {
   }, [positionMillis, durationMillis]);
 
   const artSize = useMemo(
-    () => Math.min(width * 0.64, moderateScale(286)),
+    () => Math.min(width * 0.68, moderateScale(300)),
     [width]
   );
 
@@ -379,17 +379,17 @@ export default function FullPlayerPage() {
 
       <YStack
         flex={1}
-        pb={insets.bottom + verticalScale(28)}
+        pb={insets.bottom + verticalScale(22)}
         px={scale(20)}
         style={{ minHeight: 0 }}
       >
         <YStack
           flex={1}
-          gap={verticalScale(20)}
+          gap={verticalScale(14)}
           items="center"
           style={{ minHeight: 0 }}
         >
-          <YStack items="center" gap={verticalScale(6)} px={scale(8)}>
+          <YStack items="center" gap={verticalScale(4)} px={scale(8)}>
             <MyText
               fontSize={moderateScale(11)}
               weight="600"
@@ -445,14 +445,14 @@ export default function FullPlayerPage() {
               textAlign="center"
               numberOfLines={1}
               ellipsizeMode="tail"
-              mt={scale(4)}
+              mt={scale(3)}
             >
               {activeTrack.artist}
             </MyText>
           </YStack>
 
           <YStack
-            gap={verticalScale(8)}
+            gap={verticalScale(6)}
             style={{ alignSelf: "stretch" as const }}
           >
             <SimpleLineProgressBar
@@ -485,7 +485,7 @@ export default function FullPlayerPage() {
             justify="space-between"
             style={{ alignSelf: "stretch" as const }}
             px={scale(2)}
-            mt={verticalScale(12)}
+            mt={verticalScale(8)}
           >
             <IconControl onPress={noop}>
               <Shuffle
@@ -564,7 +564,7 @@ export default function FullPlayerPage() {
             gap={scale(16)}
             items="center"
             mt="auto"
-            pt={verticalScale(24)}
+            pt={verticalScale(16)}
             px={scale(4)}
           >
             <XStack
