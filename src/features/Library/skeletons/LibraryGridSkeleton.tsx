@@ -16,6 +16,9 @@ const IMAGE_HEIGHT = IMAGE_WIDTH / 1.2;
 const SKELETON_COUNT = 8;
 
 function SkeletonCard() {
+  const actionSize = moderateScale(28);
+  const titleLineMax = IMAGE_WIDTH - actionSize - scale(8);
+
   return (
     <View
       style={{
@@ -42,11 +45,13 @@ function SkeletonCard() {
           justifyContent: "space-between",
         }}
       >
-        <SkeletonPlaceholder
-          width={IMAGE_WIDTH * 0.7}
-          height={moderateScale(14)}
-          borderRadius={moderateScale(4)}
-        />
+        <View style={{ flex: 1, minWidth: 0, marginRight: scale(8) }}>
+          <SkeletonPlaceholder
+            width={titleLineMax * 0.82}
+            height={moderateScale(14)}
+            borderRadius={moderateScale(4)}
+          />
+        </View>
         <SkeletonPlaceholder
           width={moderateScale(28)}
           height={moderateScale(28)}

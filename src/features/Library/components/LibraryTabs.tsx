@@ -1,15 +1,8 @@
-import { ScrollView, TouchableOpacity } from "react-native";
-import {
-  scale,
-  moderateScale,
-  verticalScale,
-} from "src/utils/functions/dimensions";
-import MyText from "src/components/MyText";
-import themeColors from "src/utils/theme/colors";
+import PillTabs, { type PillTabItem } from "src/components/PillTabs";
 
 export type LibraryTabId = "recent" | "playlists" | "artists" | "albums";
 
-const TABS: { id: LibraryTabId; label: string }[] = [
+const LIBRARY_TABS: PillTabItem[] = [
   { id: "recent", label: "Recent" },
   { id: "playlists", label: "Playlists" },
   { id: "artists", label: "Artists" },
@@ -21,52 +14,16 @@ export interface LibraryTabsProps {
   onTabChange: (tab: LibraryTabId) => void;
 }
 
+/** Library filter tabs — uses shared {@link PillTabs}. */
 export default function LibraryTabs({
   activeTab,
   onTabChange,
 }: LibraryTabsProps) {
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{
-        paddingHorizontal: scale(20),
-        gap: scale(8),
-        flexDirection: "row",
-      }}
-    >
-      {TABS.map((tab) => {
-        const isActive = activeTab === tab.id;
-        return (
-          <TouchableOpacity
-            key={tab.id}
-            onPress={() => onTabChange(tab.id)}
-            activeOpacity={0.8}
-            style={{
-              paddingHorizontal: scale(16),
-              paddingVertical: verticalScale(10),
-              borderRadius: moderateScale(12),
-              borderWidth: 1,
-              borderColor: themeColors.dark.borderSecondary,
-              backgroundColor: isActive
-                ? themeColors.dark.accent
-                : themeColors.dark.surfaceSecondary,
-            }}
-          >
-            <MyText
-              fontSize={moderateScale(14)}
-              weight="600"
-              color={
-                isActive
-                  ? themeColors.dark.onAccent
-                  : themeColors.dark.onSurface
-              }
-            >
-              {tab.label}
-            </MyText>
-          </TouchableOpacity>
-        );
-      })}
-    </ScrollView>
+    <PillTabs
+      tabs={LIBRARY_TABS}
+      activeId={activeTab}
+      onTabChange={(id) => onTabChange(id as LibraryTabId)}
+    />
   );
 }

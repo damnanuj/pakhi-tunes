@@ -13,8 +13,17 @@ export interface NewReleaseAlbumItem {
 
 export type NewReleaseListItem = NewReleaseAlbumItem | ArtistSong;
 
+export interface NewReleasesMeta {
+  language: string | null;
+  pageUrl: string;
+  supportedLanguages: string[];
+  browseLanguage: string | null;
+  currentPageKey: string;
+}
+
 export interface NewReleasesData extends Pagination {
   results: NewReleaseListItem[];
+  meta?: NewReleasesMeta;
 }
 
 export interface NewReleasesResponse {
