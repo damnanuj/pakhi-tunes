@@ -1,10 +1,17 @@
+import { View } from "react-native";
 import { Tabs } from "expo-router";
 import BottomTabBar from "src/components/BottomTabBar";
+import { MiniPlayer } from "src/features/Player";
 
 export default function TabLayout() {
   return (
     <Tabs
-      tabBar={(props) => <BottomTabBar {...props} />}
+      tabBar={(props) => (
+        <View style={{ position: "relative", width: "100%" }}>
+          <MiniPlayer />
+          <BottomTabBar {...props} />
+        </View>
+      )}
       screenOptions={{ headerShown: false }}
     >
       <Tabs.Screen name="home" options={{ title: "Home" }} />

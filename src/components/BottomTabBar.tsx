@@ -16,7 +16,7 @@ import {
   moderateScale,
   moderateVerticalScale,
 } from "src/utils/functions/dimensions";
-import { TAB_BAR_HEIGHT } from "src/constants/tabBar";
+import { TAB_BAR_HEIGHT, TAB_BAR_Z_INDEX } from "src/constants/tabBar";
 import themeColors from "src/utils/theme/colors";
 
 const AnimatedTouchableOpacity =
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-evenly",
     alignItems: "center",
-    zIndex: 999,
+    zIndex: TAB_BAR_Z_INDEX,
     width: "100%",
     height: TAB_BAR_HEIGHT,
     alignSelf: "center",

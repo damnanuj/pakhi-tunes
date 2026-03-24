@@ -10,6 +10,7 @@ import { Alert } from "react-native";
 import {
   createAudioPlayer,
   setAudioModeAsync,
+  setIsAudioActiveAsync,
   type AudioStatus,
 } from "expo-audio";
 import type { ArtistSong } from "src/types/artistSongs.types";
@@ -20,6 +21,8 @@ type PlayerContextValue = {
   playSong: (song: ArtistSong) => Promise<void>;
   togglePlayPause: () => Promise<void>;
   seekToMillis: (millis: number) => Promise<void>;
+  /** Stops native playback, releases the audio player, and clears track + playback state. */
+  stopPlaybackAndClear: () => Promise<void>;
 };
 
 const PlayerContext = createContext<PlayerContextValue | null>(null);
@@ -65,6 +68,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const p = playerRef.current;
     playerRef.current = null;
     if (p) {
+      try {
+        if (p.isLoaded) {
+          p.pause();
+        }
+      } catch {
+        /* ignore */
+      }
       try {
         p.remove();
       } catch {
@@ -254,10 +264,24 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const stopPlaybackAndClear = useCallback(async () => {
+    await unloadPlayer();
+    try {
+      await setIsAudioActiveAsync(false);
+      await setIsAudioActiveAsync(true);
+    } catch {
+      /* ignore */
+    }
+    usePlayerStore.getState().setActiveTrack(null);
+    usePlayerStore.getState().resetPlayback();
+    usePlayerStore.getState().setPlaybackLoading(false);
+  }, [unloadPlayer]);
+
   const value: PlayerContextValue = {
     playSong,
     togglePlayPause,
     seekToMillis,
+    stopPlaybackAndClear,
   };
 
   return (

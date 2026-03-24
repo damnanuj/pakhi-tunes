@@ -25,7 +25,7 @@ import {
   useThemeController,
 } from "src/contexts/ThemeContext/ThemeContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MiniPlayer, PlayerProvider } from "src/features/Player";
+import { MiniPlayerRootLayer, PlayerProvider } from "src/features/Player";
 
 export { ErrorBoundary } from "expo-router";
 
@@ -100,7 +100,7 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
         <PlayerProvider>
           <Provider>
             {children}
-            <MiniPlayer />
+            <MiniPlayerRootLayer />
           </Provider>
         </PlayerProvider>
       </QueryClientProvider>
