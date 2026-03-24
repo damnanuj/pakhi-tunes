@@ -40,6 +40,9 @@ export default function BottomTabBar({ state, descriptors, navigation }) {
         if (["_sitemap", "+not-found"].includes(route.name)) return null;
 
         const { options } = descriptors[route.key];
+        if ("href" in options && options.href === null) {
+          return null;
+        }
         const label =
           options.tabBarLabel !== undefined
             ? options.tabBarLabel

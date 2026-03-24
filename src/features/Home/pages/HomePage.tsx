@@ -7,7 +7,7 @@ import AppHeader from "src/components/AppHeader";
 import { useRefreshable } from "src/hooks";
 import SearchBar from "../components/SearchBar";
 import FeaturedCards from "../components/FeaturedCards";
-import TopMusicsSection from "../components/TopMusicsSection";
+import NewReleasesSection from "../components/NewReleasesSection";
 import TopArtistsSection from "../components/TopArtistsSection";
 import TopAlbumsSection from "../components/TopAlbumsSection";
 
@@ -15,7 +15,7 @@ const SECTION_GAP = verticalScale(20);
 
 export default function HomePage() {
   const { refreshControl } = useRefreshable({
-    queryKeys: ["topArtists"],
+    queryKeys: [["topArtists", 10], ["newReleases", 12]],
   });
   const miniPlayerInset = useMiniPlayerBottomInset();
 
@@ -36,7 +36,7 @@ export default function HomePage() {
           <FeaturedCards />
         </View>
         <View style={{ marginBottom: SECTION_GAP }}>
-          <TopMusicsSection />
+          <NewReleasesSection />
         </View>
         <View style={{ marginBottom: SECTION_GAP }}>
           <TopArtistsSection />

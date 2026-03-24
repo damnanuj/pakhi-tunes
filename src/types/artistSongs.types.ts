@@ -61,7 +61,7 @@ export interface ArtistSong {
   playCount: number;
   language: string;
   hasLyrics: boolean;
-  lyricsId: string;
+  lyricsId: string | null;
   lyrics: string | null;
   url: string;
   copyright: string;

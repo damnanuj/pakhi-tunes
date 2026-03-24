@@ -52,7 +52,7 @@ export default function TopArtistsPage() {
           refreshControl={refreshControl}
           showsVerticalScrollIndicator={false}
         >
-          <YStack px={scale(20)} py={verticalScale(24)} alignSelf="center">
+          <YStack px={scale(20)} py={verticalScale(24)} style={{ alignSelf: "center" }}>
             <MyText
               fontSize={moderateScale(14)}
               color={themeColors.dark.textMuted}

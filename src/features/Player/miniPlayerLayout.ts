@@ -8,6 +8,12 @@ export const MINI_PLAYER_MARGIN_BOTTOM = scale(10);
 export const MINI_PLAYER_RING = moderateScale(45);
 const CARD_PADDING_V = scale(10) * 2;
 const TIME_ROW_MARGIN_TOP = scale(4);
+/** Mini player XStack uses borderWidth: 1 */
+const MINI_PLAYER_BORDER_HEIGHT = 2;
+/**
+ * Extra scroll padding so list rows clear the real card (font line heights, rounding).
+ */
+const MINI_PLAYER_SCROLL_EXTRA_BUFFER = scale(10);
 
 /**
  * Approximate mini player card height (tallest of ring or text stack; artwork is square to that height).
@@ -19,7 +25,7 @@ export function getMiniPlayerCardHeight(): number {
   const timeRow = moderateScale(11);
   const textStack = title + artist + timeRow + TIME_ROW_MARGIN_TOP + scale(4);
   const inner = Math.max(MINI_PLAYER_RING, textStack);
-  return inner + CARD_PADDING_V;
+  return inner + CARD_PADDING_V + MINI_PLAYER_BORDER_HEIGHT;
 }
 
 /**
@@ -27,5 +33,8 @@ export function getMiniPlayerCardHeight(): number {
  */
 export function getMiniPlayerScrollExtraInset(onTabs: boolean): number {
   const h = getMiniPlayerCardHeight();
-  return onTabs ? MINI_PLAYER_GAP_ABOVE_TAB + h : MINI_PLAYER_MARGIN_BOTTOM + h;
+  const base = onTabs
+    ? MINI_PLAYER_GAP_ABOVE_TAB + h
+    : MINI_PLAYER_MARGIN_BOTTOM + h;
+  return base + MINI_PLAYER_SCROLL_EXTRA_BUFFER;
 }
