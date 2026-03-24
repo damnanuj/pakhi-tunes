@@ -7,35 +7,53 @@ import {
 } from "src/utils/functions/dimensions";
 import SkeletonPlaceholder from "src/components/SkeletonPlaceholder";
 
+/** Keep in sync with NewReleasesSection.tsx */
 const COLUMN_WIDTH = scale(320);
-const ROW_HEIGHT = moderateScale(56);
-const SKELETON_COLUMNS = 3;
+const IMAGE_SIZE = moderateScale(56);
+const ACTION_SIZE = moderateScale(40);
+const ROW_GAP = verticalScale(16);
+const ROW_INNER_GAP = verticalScale(6);
+const SKELETON_COLUMNS = 4;
 const ROWS_PER_COLUMN = 3;
 
 function SkeletonRow() {
   return (
-    <XStack items="center" gap={scale(12)} width="100%">
+    <XStack
+      items="center"
+      gap={scale(12)}
+      flex={1}
+      width="100%"
+      style={{ minWidth: 0 }}
+    >
       <SkeletonPlaceholder
-        width={ROW_HEIGHT}
-        height={ROW_HEIGHT}
+        width={IMAGE_SIZE}
+        height={IMAGE_SIZE}
         borderRadius={moderateScale(8)}
       />
-      <YStack flex={1} gap={verticalScale(6)}>
+      <YStack flex={1} style={{ minWidth: 0 }} gap={ROW_INNER_GAP}>
+        {/* Title — matches MyText 12 */}
         <SkeletonPlaceholder
-          width={scale(180)}
-          height={moderateScale(14)}
+          width={scale(200)}
+          height={moderateScale(12)}
           borderRadius={moderateScale(4)}
         />
+        {/* Type badge — small pill (Song / Album) */}
         <SkeletonPlaceholder
-          width={scale(120)}
-          height={moderateScale(12)}
+          width={scale(40)}
+          height={moderateScale(10)}
+          borderRadius={moderateScale(4)}
+        />
+        {/* Artist line — matches song row (11); album rows omit this in UI */}
+        <SkeletonPlaceholder
+          width={scale(140)}
+          height={moderateScale(11)}
           borderRadius={moderateScale(4)}
         />
       </YStack>
       <SkeletonPlaceholder
-        width={moderateScale(40)}
-        height={moderateScale(40)}
-        borderRadius={moderateScale(20)}
+        width={ACTION_SIZE}
+        height={ACTION_SIZE}
+        borderRadius={ACTION_SIZE / 2}
       />
     </XStack>
   );
@@ -46,12 +64,12 @@ export default function NewReleasesSectionSkeleton() {
     <YStack px={scale(20)}>
       <XStack justify="space-between" items="center" mb={verticalScale(16)}>
         <SkeletonPlaceholder
-          width={scale(120)}
+          width={scale(130)}
           height={moderateScale(18)}
           borderRadius={moderateScale(4)}
         />
         <SkeletonPlaceholder
-          width={scale(50)}
+          width={scale(52)}
           height={moderateScale(14)}
           borderRadius={moderateScale(4)}
         />
@@ -62,7 +80,7 @@ export default function NewReleasesSectionSkeleton() {
         contentContainerStyle={{ gap: scale(16), paddingRight: scale(20) }}
       >
         {Array.from({ length: SKELETON_COLUMNS }).map((_, col) => (
-          <YStack key={col} width={COLUMN_WIDTH} gap={verticalScale(16)}>
+          <YStack key={col} width={COLUMN_WIDTH} gap={ROW_GAP}>
             {Array.from({ length: ROWS_PER_COLUMN }).map((__, row) => (
               <SkeletonRow key={row} />
             ))}

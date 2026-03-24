@@ -1,5 +1,5 @@
 import { Image, TouchableOpacity, View } from "react-native";
-import { ArrowUpRight } from "@tamagui/lucide-icons";
+import { ArrowUpRight, Play } from "@tamagui/lucide-icons";
 import {
   scale,
   moderateScale,
@@ -12,14 +12,21 @@ export interface LibraryCardProps {
   id: string;
   imageUrl: string;
   title: string;
+  /** Optional line under the title (e.g. type or artists). */
+  subtitle?: string;
+  /** Right-side affordance: album-style arrow vs play (e.g. songs). */
+  trailingAction?: "arrow" | "play";
   onPress?: () => void;
 }
 
 export default function LibraryCard({
   imageUrl,
   title,
+  subtitle,
+  trailingAction = "arrow",
   onPress,
 }: LibraryCardProps) {
+  const isPlay = trailingAction === "play";
   return (
     <TouchableOpacity
       activeOpacity={0.85}
@@ -57,19 +64,31 @@ export default function LibraryCard({
         style={{
           paddingTop: verticalScale(12),
           flexDirection: "row",
-          alignItems: "center",
+          alignItems: subtitle ? "flex-start" : "center",
           justifyContent: "space-between",
         }}
       >
-        <MyText
-          fontSize={moderateScale(14)}
-          weight="700"
-          color={themeColors.dark.onSurface}
-          numberOfLines={1}
-          flex={1}
-        >
-          {title}
-        </MyText>
+        <View style={{ flex: 1, minWidth: 0, marginRight: scale(8) }}>
+          <MyText
+            fontSize={moderateScale(14)}
+            weight="700"
+            color={themeColors.dark.onSurface}
+            numberOfLines={subtitle ? 2 : 1}
+          >
+            {title}
+          </MyText>
+          {subtitle ? (
+            <MyText
+              fontSize={moderateScale(12)}
+              weight="500"
+              color={themeColors.dark.textMuted}
+              numberOfLines={1}
+              style={{ marginTop: verticalScale(4) }}
+            >
+              {subtitle}
+            </MyText>
+          ) : null}
+        </View>
         <View
           style={{
             width: moderateScale(28),
@@ -81,10 +100,17 @@ export default function LibraryCard({
             marginLeft: scale(8),
           }}
         >
-          <ArrowUpRight
-            size={moderateScale(16)}
-            color={themeColors.dark.onSurface}
-          />
+          {isPlay ? (
+            <Play
+              size={moderateScale(16)}
+              color={themeColors.dark.onSurface}
+            />
+          ) : (
+            <ArrowUpRight
+              size={moderateScale(16)}
+              color={themeColors.dark.onSurface}
+            />
+          )}
         </View>
       </View>
     </TouchableOpacity>

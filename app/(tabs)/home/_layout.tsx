@@ -8,6 +8,10 @@ export default function HomeLayout() {
         name="album/[id]"
         options={{ animation: "slide_from_right" }}
       />
+      <Stack.Screen
+        name="new-releases"
+        options={{ animation: "slide_from_right" }}
+      />
     </Stack>
   );
 }

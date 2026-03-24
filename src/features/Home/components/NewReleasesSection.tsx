@@ -246,7 +246,11 @@ export default function NewReleasesSection() {
         >
           New Releases
         </MyText>
-        <Pressable onPress={() => router.push("/explore" as never)}>
+        <Pressable
+          onPress={() =>
+            router.push("/home/new-releases" as never)
+          }
+        >
           <MyText fontSize={moderateScale(14)} color={themeColors.dark.accent}>
             See All
           </MyText>
