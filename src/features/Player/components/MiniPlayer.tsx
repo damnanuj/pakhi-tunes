@@ -15,6 +15,7 @@ import {
   moderateScale,
   scale,
   SCREEN_HEIGHT,
+  SCREEN_WIDTH,
   verticalScale,
 } from "src/utils/functions/dimensions";
 import MyText from "src/components/MyText";
@@ -30,8 +31,9 @@ import { formatMillisToClock } from "../utils/formatPlaybackTime";
 import PlayProgressRing from "./PlayProgressRing";
 
 const RING_STROKE = moderateScale(3);
-/** Swipe-down distance (px) to dismiss the mini player and stop playback. */
-const SWIPE_DOWN_DISMISS_THRESHOLD = verticalScale(48);
+/** Swipe distance (px) along the dominant axis to dismiss and stop playback. */
+const SWIPE_DISMISS_THRESHOLD = verticalScale(48);
+const OPACITY_DRAG_FADE_X = scale(120);
 const DISMISS_SLIDE_DURATION_MS = 320;
 const SPRING_BACK_FRICTION = 8;
 const SPRING_BACK_TENSION = 90;
@@ -45,36 +47,87 @@ function MiniPlayer() {
   const dismissSwipeRef = useRef(stopPlaybackAndClear);
   dismissSwipeRef.current = stopPlaybackAndClear;
 
+  const translateX = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(0)).current;
   const activeTrackId = usePlayerStore((s) => s.activeTrack?.id);
 
   useEffect(() => {
+    translateX.setValue(0);
     translateY.setValue(0);
-  }, [activeTrackId, translateY]);
+  }, [activeTrackId, translateX, translateY]);
 
-  const panelOpacity = useMemo(
-    () =>
-      translateY.interpolate({
-        inputRange: [0, verticalScale(120), SCREEN_HEIGHT],
-        outputRange: [1, 0.94, 0],
-        extrapolate: "clamp",
+  const panelOpacity = useMemo(() => {
+    const opacityY = translateY.interpolate({
+      inputRange: [0, verticalScale(120), SCREEN_HEIGHT],
+      outputRange: [1, 0.94, 0],
+      extrapolate: "clamp",
+    });
+    const opacityX = translateX.interpolate({
+      inputRange: [
+        -SCREEN_WIDTH,
+        -OPACITY_DRAG_FADE_X,
+        0,
+        OPACITY_DRAG_FADE_X,
+        SCREEN_WIDTH,
+      ],
+      outputRange: [0, 0.94, 1, 0.94, 0],
+      extrapolate: "clamp",
+    });
+    return Animated.multiply(opacityX, opacityY);
+  }, [translateX, translateY]);
+
+  const springBack = () => {
+    Animated.parallel([
+      Animated.spring(translateX, {
+        toValue: 0,
+        friction: SPRING_BACK_FRICTION,
+        tension: SPRING_BACK_TENSION,
+        useNativeDriver: true,
       }),
-    [translateY]
-  );
+      Animated.spring(translateY, {
+        toValue: 0,
+        friction: SPRING_BACK_FRICTION,
+        tension: SPRING_BACK_TENSION,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (_, gs) =>
-        Math.abs(gs.dy) > 12 && Math.abs(gs.dy) > Math.abs(gs.dx),
+        (Math.abs(gs.dy) > 12 && Math.abs(gs.dy) > Math.abs(gs.dx)) ||
+        (Math.abs(gs.dx) > 12 && Math.abs(gs.dx) > Math.abs(gs.dy)),
       onPanResponderTerminationRequest: () => true,
       onPanResponderMove: (_, gs) => {
-        translateY.setValue(Math.max(0, gs.dy));
+        if (Math.abs(gs.dy) >= Math.abs(gs.dx)) {
+          translateY.setValue(Math.max(0, gs.dy));
+          translateX.setValue(0);
+        } else {
+          translateX.setValue(gs.dx);
+          translateY.setValue(0);
+        }
       },
       onPanResponderRelease: (_, gs) => {
-        if (gs.dy > SWIPE_DOWN_DISMISS_THRESHOLD) {
-          Animated.timing(translateY, {
-            toValue: SCREEN_HEIGHT,
+        const verticalDominant = Math.abs(gs.dy) >= Math.abs(gs.dx);
+        if (verticalDominant) {
+          if (gs.dy > SWIPE_DISMISS_THRESHOLD) {
+            Animated.timing(translateY, {
+              toValue: SCREEN_HEIGHT,
+              duration: DISMISS_SLIDE_DURATION_MS,
+              easing: Easing.out(Easing.cubic),
+              useNativeDriver: true,
+            }).start(({ finished }) => {
+              if (finished) void dismissSwipeRef.current();
+            });
+          } else {
+            springBack();
+          }
+        } else if (Math.abs(gs.dx) > SWIPE_DISMISS_THRESHOLD) {
+          const toX = gs.dx > 0 ? SCREEN_WIDTH : -SCREEN_WIDTH;
+          Animated.timing(translateX, {
+            toValue: toX,
             duration: DISMISS_SLIDE_DURATION_MS,
             easing: Easing.out(Easing.cubic),
             useNativeDriver: true,
@@ -82,12 +135,7 @@ function MiniPlayer() {
             if (finished) void dismissSwipeRef.current();
           });
         } else {
-          Animated.spring(translateY, {
-            toValue: 0,
-            friction: SPRING_BACK_FRICTION,
-            tension: SPRING_BACK_TENSION,
-            useNativeDriver: true,
-          }).start();
+          springBack();
         }
       },
     })
@@ -136,7 +184,7 @@ function MiniPlayer() {
     >
       <Animated.View
         style={{
-          transform: [{ translateY }],
+          transform: [{ translateX }, { translateY }],
           opacity: panelOpacity,
         }}
         {...panResponder.panHandlers}
