@@ -1,4 +1,10 @@
-import { FlatList, ScrollView, View } from "react-native";
+import { useCallback, useMemo } from "react";
+import {
+  FlatList,
+  type ListRenderItem,
+  ScrollView,
+  View,
+} from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import {
@@ -144,15 +150,20 @@ const columnWrapperStyle = {
   marginBottom: verticalScale(12),
 } as const;
 
+const rowWrapperStyle = { flex: 1, minWidth: 0 } as const;
+
 export default function LibraryGrid({
   activeTab,
   onItemPress,
 }: LibraryGridProps) {
   const router = useRouter();
   const miniPlayerInset = useMiniPlayerBottomInset();
-  const listContentStyle = {
-    paddingBottom: verticalScale(24) + miniPlayerInset,
-  };
+  const listContentStyle = useMemo(
+    () => ({
+      paddingBottom: verticalScale(24) + miniPlayerInset,
+    }),
+    [miniPlayerInset]
+  );
   const { refreshControl } = useRefreshable({
     queryKeys: ["topArtists", TOP_ARTISTS_LIMIT],
   });
@@ -164,14 +175,50 @@ export default function LibraryGrid({
   });
 
   const artists = data?.data?.results ?? [];
-  const artistItems = artists.map(mapArtistToLibraryItem);
+  const artistItems = useMemo(
+    () => artists.map(mapArtistToLibraryItem),
+    [artists]
+  );
 
-  const handleArtistPress = (item: LibraryItem) => {
-    router.push({
-      pathname: "/top-artists/[id]",
-      params: { id: item.id, name: item.title },
-    });
-  };
+  const handleArtistPress = useCallback(
+    (item: LibraryItem) => {
+      router.push({
+        pathname: "/top-artists/[id]",
+        params: { id: item.id, name: item.title },
+      });
+    },
+    [router]
+  );
+
+  const renderArtistItem = useCallback<ListRenderItem<LibraryItem>>(
+    ({ item }) => (
+      <View style={rowWrapperStyle}>
+        <LibraryCard
+          id={item.id}
+          imageUrl={item.imageUrl}
+          title={item.title}
+          onPress={() => handleArtistPress(item)}
+        />
+      </View>
+    ),
+    [handleArtistPress]
+  );
+
+  const renderLibraryTabItem = useCallback<ListRenderItem<LibraryItem>>(
+    ({ item }) => (
+      <View style={rowWrapperStyle}>
+        <LibraryCard
+          id={item.id}
+          imageUrl={item.imageUrl}
+          title={item.title}
+          onPress={() => onItemPress?.(item)}
+        />
+      </View>
+    ),
+    [onItemPress]
+  );
+
+  const keyExtractor = useCallback((item: LibraryItem) => item.id, []);
 
   if (activeTab === "artists") {
     if (isLoading) {
@@ -201,46 +248,39 @@ export default function LibraryGrid({
     return (
       <FlatList
         data={artistItems}
-        keyExtractor={(item) => item.id}
+        keyExtractor={keyExtractor}
         numColumns={2}
         columnWrapperStyle={columnWrapperStyle}
         contentContainerStyle={listContentStyle}
         refreshControl={refreshControl}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <LibraryCard
-              id={item.id}
-              imageUrl={item.imageUrl}
-              title={item.title}
-              onPress={() => handleArtistPress(item)}
-            />
-          </View>
-        )}
+        renderItem={renderArtistItem}
+        initialNumToRender={10}
+        maxToRenderPerBatch={8}
+        windowSize={7}
+        removeClippedSubviews
       />
     );
   }
 
-  const items = TAB_DATA[activeTab] ?? RECENT_ITEMS;
+  const staticTabItems = useMemo(
+    () => TAB_DATA[activeTab] ?? RECENT_ITEMS,
+    [activeTab]
+  );
 
   return (
     <FlatList
-      data={items}
-      keyExtractor={(item) => item.id}
+      data={staticTabItems}
+      keyExtractor={keyExtractor}
       numColumns={2}
       columnWrapperStyle={columnWrapperStyle}
       contentContainerStyle={listContentStyle}
       showsVerticalScrollIndicator={false}
-      renderItem={({ item }) => (
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <LibraryCard
-            id={item.id}
-            imageUrl={item.imageUrl}
-            title={item.title}
-            onPress={() => onItemPress?.(item)}
-          />
-        </View>
-      )}
+      renderItem={renderLibraryTabItem}
+      initialNumToRender={10}
+      maxToRenderPerBatch={8}
+      windowSize={7}
+      removeClippedSubviews
     />
   );
 }

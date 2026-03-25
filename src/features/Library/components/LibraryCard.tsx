@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Image, TouchableOpacity, View } from "react-native";
 import { ArrowUpRight, Play } from "@tamagui/lucide-icons";
 import {
@@ -19,7 +20,7 @@ export interface LibraryCardProps {
   onPress?: () => void;
 }
 
-export default function LibraryCard({
+function LibraryCard({
   imageUrl,
   title,
   subtitle,
@@ -116,3 +117,5 @@ export default function LibraryCard({
     </TouchableOpacity>
   );
 }
+
+export default memo(LibraryCard);

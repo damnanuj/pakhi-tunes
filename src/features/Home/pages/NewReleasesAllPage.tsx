@@ -157,6 +157,28 @@ export default function NewReleasesAllPage() {
     return isNewReleaseAlbum(item) ? `album-${item.id}` : `song-${item.id}`;
   }, []);
 
+  const listHeader = useMemo(
+    () => (
+      <YStack mb={verticalScale(12)}>
+        <PillTabs
+          tabs={languageTabs}
+          activeId={language}
+          onTabChange={handleTabChange}
+        />
+      </YStack>
+    ),
+    [languageTabs, language, handleTabChange]
+  );
+
+  const renderSkeletonGridItem = useCallback(
+    () => (
+      <View style={{ flex: 1, minWidth: 0, marginBottom: verticalScale(12) }}>
+        <SkeletonCard />
+      </View>
+    ),
+    []
+  );
+
   const listContentStyle = useMemo(
     () => ({
       paddingTop: verticalScale(8),
@@ -211,24 +233,16 @@ export default function NewReleasesAllPage() {
           data={SKELETON_GRID_KEYS}
           numColumns={2}
           keyExtractor={(item) => String(item.key)}
-          ListHeaderComponent={
-            <YStack mb={verticalScale(12)}>
-              <PillTabs
-                tabs={languageTabs}
-                activeId={language}
-                onTabChange={handleTabChange}
-              />
-            </YStack>
-          }
-          renderItem={() => (
-            <View style={{ flex: 1, minWidth: 0, marginBottom: verticalScale(12) }}>
-              <SkeletonCard />
-            </View>
-          )}
+          ListHeaderComponent={listHeader}
+          renderItem={renderSkeletonGridItem}
           columnWrapperStyle={columnWrapperStyle}
           contentContainerStyle={listContentStyle}
           refreshControl={refreshControl}
           showsVerticalScrollIndicator={false}
+          initialNumToRender={8}
+          maxToRenderPerBatch={8}
+          windowSize={7}
+          removeClippedSubviews
         />
       </YStack>
     );
@@ -246,15 +260,11 @@ export default function NewReleasesAllPage() {
         refreshControl={refreshControl}
         showsVerticalScrollIndicator={false}
         renderItem={renderItem}
-        ListHeaderComponent={
-          <YStack mb={verticalScale(12)}>
-            <PillTabs
-              tabs={languageTabs}
-              activeId={language}
-              onTabChange={handleTabChange}
-            />
-          </YStack>
-        }
+        ListHeaderComponent={listHeader}
+        initialNumToRender={10}
+        maxToRenderPerBatch={8}
+        windowSize={7}
+        removeClippedSubviews
         ListEmptyComponent={
           <YStack px={scale(20)} py={verticalScale(24)} style={{ alignItems: "center" }}>
             <MyText fontSize={moderateScale(14)} color={themeColors.dark.textMuted}>
