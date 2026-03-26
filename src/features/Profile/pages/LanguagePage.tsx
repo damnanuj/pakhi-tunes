@@ -9,6 +9,7 @@ import { useScrollBottomInset } from "src/hooks";
 
 export default function LanguagePage() {
   const scrollBottomPadding = useScrollBottomInset({
+    includeTabBar: true,
     extra: verticalScale(32),
   });
 

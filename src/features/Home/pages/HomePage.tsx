@@ -17,6 +17,7 @@ export default function HomePage() {
     queryKeys: [["topArtists", 10], ["newReleases", 12]],
   });
   const scrollBottomPadding = useScrollBottomInset({
+    includeTabBar: true,
     extra: verticalScale(20),
   });
 

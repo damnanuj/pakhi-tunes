@@ -5,9 +5,9 @@ import { useMiniPlayerBottomInset } from "src/features/Player";
 
 export type UseScrollBottomInsetOptions = {
   /**
-   * Include bottom tab bar height. Use for screens **pushed onto a stack inside a tab**
-   * (e.g. `/home/top-artists`, `/home/new-releases`) where the bar sits over the scroll area.
-   * Omit or `false` for root tab screens whose content already sits above the bar.
+   * Include the bottom tab bar height (`TAB_BAR_HEIGHT`). Use whenever the custom tab bar
+   * can cover scroll content (`position: "absolute"` in the tabs layout): main tab screens
+   * (Home, Library, …) and pushed stacks inside a tab (e.g. new releases).
    */
   includeTabBar?: boolean;
   /**

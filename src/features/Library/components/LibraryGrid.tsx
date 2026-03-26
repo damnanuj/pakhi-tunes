@@ -156,7 +156,7 @@ export default function LibraryGrid({
   onItemPress,
 }: LibraryGridProps) {
   const router = useRouter();
-  const scrollBottomPadding = useScrollBottomInset();
+  const scrollBottomPadding = useScrollBottomInset({ includeTabBar: true });
   const listContentStyle = useMemo(
     () => ({
       paddingBottom: scrollBottomPadding,
@@ -219,6 +219,11 @@ export default function LibraryGrid({
 
   const keyExtractor = useCallback((item: LibraryItem) => item.id, []);
 
+  const staticTabItems = useMemo(() => {
+    if (activeTab === "artists") return RECENT_ITEMS;
+    return TAB_DATA[activeTab] ?? RECENT_ITEMS;
+  }, [activeTab]);
+
   if (activeTab === "artists") {
     if (isLoading) {
       return <LibraryGridSkeleton />;
@@ -261,11 +266,6 @@ export default function LibraryGrid({
       />
     );
   }
-
-  const staticTabItems = useMemo(
-    () => TAB_DATA[activeTab] ?? RECENT_ITEMS,
-    [activeTab]
-  );
 
   return (
     <FlatList

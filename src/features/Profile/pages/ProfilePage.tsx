@@ -27,6 +27,7 @@ const MENU_ITEMS = [
 
 export default function ProfilePage() {
   const scrollBottomPadding = useScrollBottomInset({
+    includeTabBar: true,
     extra: verticalScale(32),
   });
 
