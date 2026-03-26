@@ -15,6 +15,11 @@ const IMAGE_WIDTH = CARD_WIDTH - scale(12) * 2;
 const IMAGE_HEIGHT = IMAGE_WIDTH / 1.2;
 const SKELETON_COUNT = 8;
 
+export interface LibraryGridSkeletonProps {
+  /** Matches scroll list bottom inset (tab bar + mini player + gap). */
+  contentBottomPadding?: number;
+}
+
 function SkeletonCard() {
   const actionSize = moderateScale(28);
   const titleLineMax = IMAGE_WIDTH - actionSize - scale(8);
@@ -62,7 +67,9 @@ function SkeletonCard() {
   );
 }
 
-export default function LibraryGridSkeleton() {
+export default function LibraryGridSkeleton({
+  contentBottomPadding = verticalScale(100),
+}: LibraryGridSkeletonProps) {
   const data = Array.from({ length: SKELETON_COUNT }, (_, i) => ({ key: i }));
 
   return (
@@ -81,7 +88,7 @@ export default function LibraryGridSkeleton() {
         marginBottom: verticalScale(12),
       }}
       contentContainerStyle={{
-        paddingBottom: verticalScale(100),
+        paddingBottom: contentBottomPadding,
       }}
       showsVerticalScrollIndicator={false}
     />

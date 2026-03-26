@@ -22,7 +22,9 @@ export default function LibraryPage() {
       <View style={{ marginBottom: SECTION_GAP }}>
         <LibraryTabs activeTab={activeTab} onTabChange={setActiveTab} />
       </View>
-      <LibraryGrid activeTab={activeTab} />
+      <YStack flex={1}>
+        <LibraryGrid activeTab={activeTab} />
+      </YStack>
     </YStack>
   );
 }

@@ -2,34 +2,18 @@ import { useCallback, useMemo } from "react";
 import {
   FlatList,
   type ListRenderItem,
-  ScrollView,
+  StyleSheet,
   View,
 } from "react-native";
-import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
-import {
-  scale,
-  verticalScale,
-  moderateScale,
-} from "src/utils/functions/dimensions";
-import MyText from "src/components/MyText";
-import themeColors from "src/utils/theme/colors";
-import { useRefreshable, useScrollBottomInset } from "src/hooks";
-import { getTopArtists } from "src/services";
+import { useScrollBottomInset } from "src/hooks";
 import LibraryCard from "./LibraryCard";
-import LibraryGridSkeleton from "../skeletons/LibraryGridSkeleton";
+import LibraryArtistsGrid, {
+  LIBRARY_GRID_COLUMN_WRAPPER_STYLE,
+} from "./LibraryArtistsGrid";
 import type { LibraryTabId } from "./LibraryTabs";
-import type { TopArtist } from "src/types/topArtists.types";
+import type { LibraryItem } from "../types/libraryItem";
 
-const TOP_ARTISTS_LIMIT = 50;
-
-const CARD_GAP = scale(12);
-
-export interface LibraryItem {
-  id: string;
-  imageUrl: string;
-  title: string;
-}
+export type { LibraryItem } from "../types/libraryItem";
 
 const RECENT_ITEMS: LibraryItem[] = [
   {
@@ -130,24 +114,10 @@ const TAB_DATA: Record<Exclude<LibraryTabId, "artists">, LibraryItem[]> = {
   albums: ALBUMS_ITEMS,
 };
 
-function mapArtistToLibraryItem(artist: TopArtist): LibraryItem {
-  return {
-    id: artist.encrypted_id,
-    imageUrl: artist.image,
-    title: artist.name,
-  };
-}
-
 export interface LibraryGridProps {
   activeTab: LibraryTabId;
   onItemPress?: (item: LibraryItem) => void;
 }
-
-const columnWrapperStyle = {
-  gap: CARD_GAP,
-  paddingHorizontal: scale(20),
-  marginBottom: verticalScale(12),
-} as const;
 
 const rowWrapperStyle = { flex: 1, minWidth: 0 } as const;
 
@@ -155,52 +125,12 @@ export default function LibraryGrid({
   activeTab,
   onItemPress,
 }: LibraryGridProps) {
-  const router = useRouter();
   const scrollBottomPadding = useScrollBottomInset({ includeTabBar: true });
   const listContentStyle = useMemo(
     () => ({
       paddingBottom: scrollBottomPadding,
     }),
     [scrollBottomPadding]
-  );
-  const { refreshControl } = useRefreshable({
-    queryKeys: ["topArtists", TOP_ARTISTS_LIMIT],
-  });
-
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["topArtists", TOP_ARTISTS_LIMIT],
-    queryFn: () => getTopArtists({ limit: TOP_ARTISTS_LIMIT }),
-    enabled: activeTab === "artists",
-  });
-
-  const artists = data?.data?.results ?? [];
-  const artistItems = useMemo(
-    () => artists.map(mapArtistToLibraryItem),
-    [artists]
-  );
-
-  const handleArtistPress = useCallback(
-    (item: LibraryItem) => {
-      router.push({
-        pathname: "/home/top-artists/[id]",
-        params: { id: item.id, name: item.title },
-      });
-    },
-    [router]
-  );
-
-  const renderArtistItem = useCallback<ListRenderItem<LibraryItem>>(
-    ({ item }) => (
-      <View style={rowWrapperStyle}>
-        <LibraryCard
-          id={item.id}
-          imageUrl={item.imageUrl}
-          title={item.title}
-          onPress={() => handleArtistPress(item)}
-        />
-      </View>
-    ),
-    [handleArtistPress]
   );
 
   const renderLibraryTabItem = useCallback<ListRenderItem<LibraryItem>>(
@@ -225,54 +155,16 @@ export default function LibraryGrid({
   }, [activeTab]);
 
   if (activeTab === "artists") {
-    if (isLoading) {
-      return <LibraryGridSkeleton />;
-    }
-
-    if (isError) {
-      return (
-        <ScrollView
-          contentContainerStyle={{ flex: 1, justifyContent: "center" }}
-          refreshControl={refreshControl}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={{ paddingHorizontal: scale(20), paddingVertical: verticalScale(24), alignSelf: "center" }}>
-            <MyText
-              fontSize={moderateScale(14)}
-              color={themeColors.dark.textMuted}
-              textAlign="center"
-            >
-              Failed to load artists
-            </MyText>
-          </View>
-        </ScrollView>
-      );
-    }
-
-    return (
-      <FlatList
-        data={artistItems}
-        keyExtractor={keyExtractor}
-        numColumns={2}
-        columnWrapperStyle={columnWrapperStyle}
-        contentContainerStyle={listContentStyle}
-        refreshControl={refreshControl}
-        showsVerticalScrollIndicator={false}
-        renderItem={renderArtistItem}
-        initialNumToRender={10}
-        maxToRenderPerBatch={8}
-        windowSize={7}
-        removeClippedSubviews
-      />
-    );
+    return <LibraryArtistsGrid />;
   }
 
   return (
     <FlatList
+      style={styles.flex}
       data={staticTabItems}
       keyExtractor={keyExtractor}
       numColumns={2}
-      columnWrapperStyle={columnWrapperStyle}
+      columnWrapperStyle={LIBRARY_GRID_COLUMN_WRAPPER_STYLE}
       contentContainerStyle={listContentStyle}
       showsVerticalScrollIndicator={false}
       renderItem={renderLibraryTabItem}
@@ -283,3 +175,7 @@ export default function LibraryGrid({
     />
   );
 }
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+});
