@@ -183,7 +183,7 @@ export default function LibraryGrid({
   const handleArtistPress = useCallback(
     (item: LibraryItem) => {
       router.push({
-        pathname: "/top-artists/[id]",
+        pathname: "/home/top-artists/[id]",
         params: { id: item.id, name: item.title },
       });
     },

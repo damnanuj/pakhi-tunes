@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 
-export default function TopArtistsLayout() {
+export default function HomeTopArtistsLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />

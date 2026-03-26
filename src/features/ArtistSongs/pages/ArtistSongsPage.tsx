@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { FlatList, ListRenderItem, ScrollView } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { YStack } from "tamagui";
@@ -20,6 +20,7 @@ import ArtistSongsPageSkeleton, {
 import type { ArtistSong } from "src/types/artistSongs.types";
 import type { ArtistSongsResponse } from "src/types/artistSongs.types";
 import { useMiniPlayerBottomInset } from "src/features/Player";
+import { TAB_BAR_HEIGHT } from "src/constants/tabBar";
 
 const PAGE_SIZE = 20;
 
@@ -37,6 +38,10 @@ export default function ArtistSongsPage() {
   const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
   const artistName = name ?? "Artist";
   const miniPlayerInset = useMiniPlayerBottomInset();
+  const listBottomPadding = useMemo(
+    () => TAB_BAR_HEIGHT + miniPlayerInset,
+    [miniPlayerInset]
+  );
 
   const {
     items: songs,
@@ -141,7 +146,7 @@ export default function ArtistSongsPage() {
         windowSize={5}
         removeClippedSubviews={true}
         contentContainerStyle={{
-          paddingBottom: verticalScale(40) + miniPlayerInset,
+          paddingBottom: verticalScale(24) + listBottomPadding,
         }}
         showsVerticalScrollIndicator={false}
       />

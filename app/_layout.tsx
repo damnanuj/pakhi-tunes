@@ -121,10 +121,6 @@ function RootLayoutNav() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="login" />
         <Stack.Screen
-          name="top-artists"
-          options={{ animation: "slide_from_right" }}
-        />
-        <Stack.Screen
           name="player"
           options={{ animation: "slide_from_bottom", headerShown: false }}
         />

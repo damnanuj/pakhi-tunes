@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { FlatList, ScrollView } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
@@ -11,6 +12,7 @@ import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
 import ScreenHeader from "src/components/ScreenHeader";
 import { useMiniPlayerBottomInset } from "src/features/Player";
+import { TAB_BAR_HEIGHT } from "src/constants/tabBar";
 import { useRefreshable } from "src/hooks";
 import { getTopArtists } from "src/services";
 import ArtistGridItem from "../components/ArtistGridItem";
@@ -24,6 +26,10 @@ const GAP = scale(16);
 export default function TopArtistsPage() {
   const router = useRouter();
   const miniPlayerInset = useMiniPlayerBottomInset();
+  const listBottomPadding = useMemo(
+    () => TAB_BAR_HEIGHT + miniPlayerInset,
+    [miniPlayerInset]
+  );
   const { refreshControl } = useRefreshable({
     queryKeys: ["topArtists", TOP_ARTISTS_LIMIT],
   });
@@ -68,7 +74,7 @@ export default function TopArtistsPage() {
 
   const handleArtistPress = (artist: TopArtist) => {
     router.push({
-      pathname: "/top-artists/[id]",
+      pathname: "/home/top-artists/[id]",
       params: { id: artist.encrypted_id, name: artist.name },
     });
   };
@@ -88,7 +94,7 @@ export default function TopArtistsPage() {
         refreshControl={refreshControl}
         contentContainerStyle={{
           paddingHorizontal: HORIZONTAL_PADDING,
-          paddingBottom: verticalScale(40) + miniPlayerInset,
+          paddingBottom: verticalScale(24) + listBottomPadding,
         }}
         columnWrapperStyle={{ gap: GAP, justifyContent: "space-between" }}
         showsVerticalScrollIndicator={false}

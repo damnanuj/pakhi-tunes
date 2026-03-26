@@ -12,6 +12,10 @@ export default function HomeLayout() {
         name="new-releases"
         options={{ animation: "slide_from_right" }}
       />
+      <Stack.Screen
+        name="top-artists"
+        options={{ animation: "slide_from_right" }}
+      />
     </Stack>
   );
 }

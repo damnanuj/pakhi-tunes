@@ -48,7 +48,7 @@ export default function TopArtistsSection() {
         >
           Top Artists
         </MyText>
-        <Pressable onPress={() => router.push("/top-artists" as never)}>
+        <Pressable onPress={() => router.push("/home/top-artists" as never)}>
           <MyText fontSize={moderateScale(14)} color={themeColors.dark.accent}>
             See All
           </MyText>
@@ -64,7 +64,7 @@ export default function TopArtistsSection() {
             key={artist.id}
             onPress={() =>
               router.push({
-                pathname: "/top-artists/[id]",
+                pathname: "/home/top-artists/[id]",
                 params: { id: artist.encrypted_id, name: artist.name },
               })
             }
