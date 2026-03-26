@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { FlatList, ListRenderItem, ScrollView } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { YStack } from "tamagui";
@@ -10,7 +10,11 @@ import {
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
 import ScreenHeader from "src/components/ScreenHeader";
-import { useRefreshable, useInfinitePaginatedQuery } from "src/hooks";
+import {
+  useRefreshable,
+  useInfinitePaginatedQuery,
+  useScrollBottomInset,
+} from "src/hooks";
 import { getAlbumSongs } from "src/services";
 import SongListItem from "src/features/ArtistSongs/components/SongListItem";
 import AlbumProfileHeader from "../components/AlbumProfileHeader";
@@ -19,8 +23,6 @@ import ArtistSongsPageSkeleton, {
 } from "src/features/ArtistSongs/skeletons/ArtistSongsPageSkeleton";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import type { AlbumSongsResponse } from "src/types/albumSongs.types";
-import { useMiniPlayerBottomInset } from "src/features/Player";
-import { TAB_BAR_HEIGHT } from "src/constants/tabBar";
 import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
 
 const PAGE_SIZE = 20;
@@ -37,17 +39,10 @@ function getNextPageParam(res: AlbumSongsResponse): number | undefined {
 
 export default function AlbumSongsPage() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const miniPlayerInset = useMiniPlayerBottomInset();
-
-  /**
-   * Bottom tab bar is position:absolute over the list.
-   * - No mini player: clear the tab bar only.
-   * - Mini player: tab bar + gap + card (see useMiniPlayerBottomInset / MiniPlayer layout).
-   */
-  const listBottomPadding = useMemo(
-    () => TAB_BAR_HEIGHT + miniPlayerInset,
-    [miniPlayerInset]
-  );
+  const scrollBottomPadding = useScrollBottomInset({
+    includeTabBar: true,
+    extra: 0,
+  });
 
   const {
     items: songs,
@@ -155,7 +150,7 @@ export default function AlbumSongsPage() {
         windowSize={5}
         removeClippedSubviews={true}
         contentContainerStyle={{
-          paddingBottom: listBottomPadding,
+          paddingBottom: scrollBottomPadding,
         }}
         showsVerticalScrollIndicator={false}
       />

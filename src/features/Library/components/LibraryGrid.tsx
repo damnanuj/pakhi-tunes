@@ -14,9 +14,8 @@ import {
 } from "src/utils/functions/dimensions";
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
-import { useRefreshable } from "src/hooks";
+import { useRefreshable, useScrollBottomInset } from "src/hooks";
 import { getTopArtists } from "src/services";
-import { useMiniPlayerBottomInset } from "src/features/Player";
 import LibraryCard from "./LibraryCard";
 import LibraryGridSkeleton from "../skeletons/LibraryGridSkeleton";
 import type { LibraryTabId } from "./LibraryTabs";
@@ -157,12 +156,12 @@ export default function LibraryGrid({
   onItemPress,
 }: LibraryGridProps) {
   const router = useRouter();
-  const miniPlayerInset = useMiniPlayerBottomInset();
+  const scrollBottomPadding = useScrollBottomInset();
   const listContentStyle = useMemo(
     () => ({
-      paddingBottom: verticalScale(24) + miniPlayerInset,
+      paddingBottom: scrollBottomPadding,
     }),
-    [miniPlayerInset]
+    [scrollBottomPadding]
   );
   const { refreshControl } = useRefreshable({
     queryKeys: ["topArtists", TOP_ARTISTS_LIMIT],

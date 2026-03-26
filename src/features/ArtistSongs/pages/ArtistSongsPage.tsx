@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { FlatList, ListRenderItem, ScrollView } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { YStack } from "tamagui";
@@ -10,7 +10,11 @@ import {
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
 import ScreenHeader from "src/components/ScreenHeader";
-import { useRefreshable, useInfinitePaginatedQuery } from "src/hooks";
+import {
+  useRefreshable,
+  useInfinitePaginatedQuery,
+  useScrollBottomInset,
+} from "src/hooks";
 import { getArtistSongs } from "src/services";
 import SongListItem from "../components/SongListItem";
 import ArtistProfileHeader from "../components/ArtistProfileHeader";
@@ -19,9 +23,6 @@ import ArtistSongsPageSkeleton, {
 } from "../skeletons/ArtistSongsPageSkeleton";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import type { ArtistSongsResponse } from "src/types/artistSongs.types";
-import { useMiniPlayerBottomInset } from "src/features/Player";
-import { TAB_BAR_HEIGHT } from "src/constants/tabBar";
-
 const PAGE_SIZE = 20;
 
 function getItems(res: ArtistSongsResponse) {
@@ -37,11 +38,7 @@ function getNextPageParam(res: ArtistSongsResponse): number | undefined {
 export default function ArtistSongsPage() {
   const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
   const artistName = name ?? "Artist";
-  const miniPlayerInset = useMiniPlayerBottomInset();
-  const listBottomPadding = useMemo(
-    () => TAB_BAR_HEIGHT + miniPlayerInset,
-    [miniPlayerInset]
-  );
+  const scrollBottomPadding = useScrollBottomInset({ includeTabBar: true });
 
   const {
     items: songs,
@@ -146,7 +143,7 @@ export default function ArtistSongsPage() {
         windowSize={5}
         removeClippedSubviews={true}
         contentContainerStyle={{
-          paddingBottom: verticalScale(24) + listBottomPadding,
+          paddingBottom: scrollBottomPadding,
         }}
         showsVerticalScrollIndicator={false}
       />

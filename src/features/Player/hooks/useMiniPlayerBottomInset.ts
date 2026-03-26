@@ -5,6 +5,7 @@ import { getMiniPlayerScrollExtraInset } from "../miniPlayerLayout";
 /**
  * Returns extra bottom inset (px) for scroll content when the mini player is visible.
  * Matches tab vs stack positioning used by MiniPlayer.
+ * For full-screen scroll padding (tab bar + mini player + gap), use `useScrollBottomInset` from `src/hooks`.
  */
 export function useMiniPlayerBottomInset(): number {
   const pathname = usePathname();

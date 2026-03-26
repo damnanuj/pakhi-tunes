@@ -12,15 +12,13 @@ import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
 import ScreenHeader from "src/components/ScreenHeader";
 import PillTabs, { type PillTabItem } from "src/components/PillTabs";
-import { useRefreshable } from "src/hooks";
+import { useRefreshable, useScrollBottomInset } from "src/hooks";
 import { getNewReleases } from "src/services";
 import LibraryCard from "src/features/Library/components/LibraryCard";
 import { getSongCoverUrl } from "src/utils/functions/songImage";
 import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
 import { formatLanguageLabel } from "src/utils/functions/formatLanguageLabel";
 import { usePlayback } from "src/features/Player";
-import { useMiniPlayerBottomInset } from "src/features/Player";
-import { TAB_BAR_HEIGHT } from "src/constants/tabBar";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import {
   isNewReleaseAlbum,
@@ -44,15 +42,10 @@ const columnWrapperStyle = {
 export default function NewReleasesAllPage() {
   const router = useRouter();
   const { playSong } = usePlayback();
-  const miniPlayerInset = useMiniPlayerBottomInset();
+  const scrollBottomPadding = useScrollBottomInset({ includeTabBar: true });
   const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
   const [supportedLanguages, setSupportedLanguages] = useState<string[]>([]);
   const [tabSwitching, setTabSwitching] = useState(false);
-
-  const listBottomPadding = useMemo(
-    () => TAB_BAR_HEIGHT + miniPlayerInset,
-    [miniPlayerInset]
-  );
 
   const { data, isPending, isError, isFetching, refetch } = useQuery({
     queryKey: ["newReleases", LIST_LIMIT, language],
@@ -182,9 +175,9 @@ export default function NewReleasesAllPage() {
   const listContentStyle = useMemo(
     () => ({
       paddingTop: verticalScale(8),
-      paddingBottom: verticalScale(24) + listBottomPadding,
+      paddingBottom: scrollBottomPadding,
     }),
-    [listBottomPadding]
+    [scrollBottomPadding]
   );
 
   const showFullSkeleton =
