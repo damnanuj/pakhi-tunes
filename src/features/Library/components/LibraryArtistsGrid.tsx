@@ -19,21 +19,18 @@ import { useRefreshable, useScrollBottomInset } from "src/hooks";
 import { getTopArtists } from "src/services";
 import LibraryCard from "./LibraryCard";
 import LibraryGridSkeleton from "../skeletons/LibraryGridSkeleton";
+import {
+  LIBRARY_GRID_COLUMN_WRAPPER_STYLE,
+  LIBRARY_ROW_WRAPPER_STYLE,
+} from "../libraryGridLayout";
 import type { LibraryItem } from "../types/libraryItem";
 import type { TopArtist } from "src/types/topArtists.types";
 
 export const TOP_ARTISTS_LIMIT = 50;
 
-const CARD_GAP = scale(12);
+export { LIBRARY_GRID_COLUMN_WRAPPER_STYLE } from "../libraryGridLayout";
 
-/** Shared with Library grid tabs — same horizontal padding, column gap, and row spacing. */
-export const LIBRARY_GRID_COLUMN_WRAPPER_STYLE = {
-  gap: CARD_GAP,
-  paddingHorizontal: scale(20),
-  marginBottom: verticalScale(12),
-} as const;
-
-const rowWrapperStyle = { flex: 1, minWidth: 0 } as const;
+const rowWrapperStyle = LIBRARY_ROW_WRAPPER_STYLE;
 
 function mapArtistToLibraryItem(artist: TopArtist): LibraryItem {
   return {

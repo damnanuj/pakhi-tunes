@@ -7,20 +7,23 @@ import {
 } from "src/utils/functions/dimensions";
 import SkeletonPlaceholder from "src/components/SkeletonPlaceholder";
 
+/** Keep in sync with TopArtistsSection.tsx */
 const ARTIST_SIZE = moderateScale(72);
-const SKELETON_COUNT = 6;
+const TOP_ARTISTS_LIMIT = 10;
 
 export default function TopArtistsSectionSkeleton() {
   return (
     <YStack px={scale(20)}>
       <XStack justify="space-between" items="center" mb={verticalScale(16)}>
+        {/* Section title — MyText 18 / semibold */}
         <SkeletonPlaceholder
-          width={scale(100)}
+          width={scale(130)}
           height={moderateScale(18)}
           borderRadius={moderateScale(4)}
         />
+        {/* "See All" — MyText 14 */}
         <SkeletonPlaceholder
-          width={scale(50)}
+          width={scale(52)}
           height={moderateScale(14)}
           borderRadius={moderateScale(4)}
         />
@@ -28,9 +31,9 @@ export default function TopArtistsSectionSkeleton() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: scale(16) }}
+        contentContainerStyle={{ gap: scale(16), paddingRight: scale(20) }}
       >
-        {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
+        {Array.from({ length: TOP_ARTISTS_LIMIT }).map((_, i) => (
           <YStack
             key={i}
             items="center"
@@ -41,8 +44,9 @@ export default function TopArtistsSectionSkeleton() {
               height={ARTIST_SIZE}
               borderRadius={ARTIST_SIZE / 2}
             />
+            {/* Name — MyText 12 */}
             <SkeletonPlaceholder
-              width={ARTIST_SIZE * 0.8}
+              width={ARTIST_SIZE * 0.85}
               height={moderateScale(12)}
               borderRadius={moderateScale(4)}
               style={{ marginTop: verticalScale(8) }}

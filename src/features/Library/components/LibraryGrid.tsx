@@ -7,9 +7,8 @@ import {
 } from "react-native";
 import { useScrollBottomInset } from "src/hooks";
 import LibraryCard from "./LibraryCard";
-import LibraryArtistsGrid, {
-  LIBRARY_GRID_COLUMN_WRAPPER_STYLE,
-} from "./LibraryArtistsGrid";
+import LibraryArtistsGrid from "./LibraryArtistsGrid";
+import { LIBRARY_GRID_COLUMN_WRAPPER_STYLE } from "../libraryGridLayout";
 import type { LibraryTabId } from "./LibraryTabs";
 import type { LibraryItem } from "../types/libraryItem";
 

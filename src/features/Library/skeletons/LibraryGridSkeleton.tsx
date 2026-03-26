@@ -3,15 +3,17 @@ import {
   scale,
   verticalScale,
   moderateScale,
-  SCREEN_WIDTH,
 } from "src/utils/functions/dimensions";
 import SkeletonPlaceholder from "src/components/SkeletonPlaceholder";
 import themeColors from "src/utils/theme/colors";
+import {
+  getLibraryGridCardColumnWidth,
+  LIBRARY_GRID_COLUMN_WRAPPER_STYLE,
+  LIBRARY_ROW_WRAPPER_STYLE,
+} from "../libraryGridLayout";
 
-const CARD_GAP = scale(12);
-const HORIZONTAL_PADDING = scale(20);
-const CARD_WIDTH = (SCREEN_WIDTH - HORIZONTAL_PADDING * 2 - CARD_GAP) / 2;
-const IMAGE_WIDTH = CARD_WIDTH - scale(12) * 2;
+const CARD_INNER_PADDING = scale(12);
+const IMAGE_WIDTH = getLibraryGridCardColumnWidth() - CARD_INNER_PADDING * 2;
 const IMAGE_HEIGHT = IMAGE_WIDTH / 1.2;
 const SKELETON_COUNT = 8;
 
@@ -34,7 +36,7 @@ function SkeletonCard() {
         backgroundColor: themeColors.dark.surfaceSecondary,
         borderWidth: 1,
         borderColor: themeColors.dark.borderSecondary,
-        padding: scale(12),
+        padding: CARD_INNER_PADDING,
       }}
     >
       <SkeletonPlaceholder
@@ -57,11 +59,22 @@ function SkeletonCard() {
             borderRadius={moderateScale(4)}
           />
         </View>
-        <SkeletonPlaceholder
-          width={moderateScale(28)}
-          height={moderateScale(28)}
-          borderRadius={moderateScale(14)}
-        />
+        <View
+          style={{
+            width: actionSize,
+            height: actionSize,
+            borderRadius: moderateScale(14),
+            backgroundColor: themeColors.dark.surface,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <SkeletonPlaceholder
+            width={moderateScale(16)}
+            height={moderateScale(16)}
+            borderRadius={moderateScale(4)}
+          />
+        </View>
       </View>
     </View>
   );
@@ -78,15 +91,11 @@ export default function LibraryGridSkeleton({
       numColumns={2}
       keyExtractor={(item) => String(item.key)}
       renderItem={() => (
-        <View style={{ flex: 1, minWidth: 0, marginBottom: verticalScale(12) }}>
+        <View style={LIBRARY_ROW_WRAPPER_STYLE}>
           <SkeletonCard />
         </View>
       )}
-      columnWrapperStyle={{
-        gap: CARD_GAP,
-        paddingHorizontal: scale(20),
-        marginBottom: verticalScale(12),
-      }}
+      columnWrapperStyle={LIBRARY_GRID_COLUMN_WRAPPER_STYLE}
       contentContainerStyle={{
         paddingBottom: contentBottomPadding,
       }}
