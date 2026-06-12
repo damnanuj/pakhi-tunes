@@ -117,7 +117,8 @@ function NewReleaseRow({ item }: { item: NewReleaseListItem }) {
   const song = item as ArtistSong;
   const title = decodeHtmlEntities(song.name);
   const cover = getSongCoverUrl(song.image, "150x150");
-  const artistsLine = song.artists.primary.map((a) => a.name).join(", ");
+  const artistsLine =
+    song.artists?.primary?.map((a) => a.name).join(", ") ?? "";
 
   return (
     <Pressable onPress={() => void playSong(song)}>
@@ -187,12 +188,11 @@ function NewReleaseColumn({ items }: { items: NewReleaseListItem[] }) {
 export default function NewReleasesSection() {
   const router = useRouter();
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["newReleases", NEW_RELEASES_LIMIT],
+    queryKey: ["newReleases", NEW_RELEASES_LIMIT, "all"],
     queryFn: () =>
       getNewReleases({
         limit: NEW_RELEASES_LIMIT,
         offset: 0,
-        language: "",
       }),
   });
 

@@ -48,7 +48,7 @@ export default function NewReleasesAllPage() {
   const [tabSwitching, setTabSwitching] = useState(false);
 
   const { data, isPending, isError, isFetching, refetch } = useQuery({
-    queryKey: ["newReleases", LIST_LIMIT, language],
+    queryKey: ["newReleases", LIST_LIMIT, language, "all"],
     queryFn: () =>
       getNewReleases({
         limit: LIST_LIMIT,
@@ -129,7 +129,8 @@ export default function NewReleasesAllPage() {
         );
       }
       const song = item as ArtistSong;
-      const artists = song.artists.primary.map((a) => a.name).join(", ");
+      const artists =
+        song.artists?.primary?.map((a) => a.name).join(", ") ?? "";
       return (
         <View style={{ flex: 1, minWidth: 0 }}>
           <LibraryCard

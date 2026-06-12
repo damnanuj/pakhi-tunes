@@ -14,7 +14,7 @@ const SECTION_GAP = verticalScale(20);
 
 export default function HomePage() {
   const { refreshControl } = useRefreshable({
-    queryKeys: [["topArtists", 10], ["newReleases", 12]],
+    queryKeys: [["topArtists", 10], ["newReleases", 12, "all"]],
   });
   const scrollBottomPadding = useScrollBottomInset({
     includeTabBar: true,

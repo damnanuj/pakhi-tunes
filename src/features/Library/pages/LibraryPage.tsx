@@ -4,7 +4,7 @@ import { YStack } from "tamagui";
 import { verticalScale } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
 import AppHeader from "src/components/AppHeader";
-import SearchBar from "src/features/Home/components/SearchBar";
+// import SearchBar from "src/features/Home/components/SearchBar";
 import LibraryTabs, { type LibraryTabId } from "../components/LibraryTabs";
 import LibraryGrid from "../components/LibraryGrid";
 

@@ -8,9 +8,19 @@ import type {
 export async function getNewReleases(
   params?: NewReleasesParams
 ): Promise<NewReleasesResponse> {
+  const query: Record<string, string | number> = {};
+
+  if (params?.limit != null) query.limit = params.limit;
+  if (params?.offset != null) query.offset = params.offset;
+
+  const language = params?.language?.trim();
+  if (language) query.language = language;
+
+  if (params?.type) query.type = params.type;
+
   const { data } = await apiClient.get<NewReleasesResponse>(
     endpoints.newReleases,
-    { params }
+    { params: query }
   );
   return data;
 }

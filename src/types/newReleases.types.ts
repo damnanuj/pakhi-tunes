@@ -13,8 +13,11 @@ export interface NewReleaseAlbumItem {
 
 export type NewReleaseListItem = NewReleaseAlbumItem | ArtistSong;
 
+export type NewReleaseType = "song" | "album";
+
 export interface NewReleasesMeta {
   language: string | null;
+  type: NewReleaseType | null;
   pageUrl: string;
   supportedLanguages: string[];
   browseLanguage: string | null;
@@ -34,6 +37,8 @@ export interface NewReleasesResponse {
 
 export interface NewReleasesParams extends PaginationParams {
   language?: string;
+  /** Omit or leave unset to return both songs and albums. */
+  type?: NewReleaseType;
 }
 
 export function isNewReleaseAlbum(
