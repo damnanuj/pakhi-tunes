@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 
 /** Paginated API response shape - must have next and currentPage */
@@ -25,6 +26,8 @@ export interface UseInfinitePaginatedQueryOptions<TItem, TResponse> {
   pageSize: number;
   /** Whether the query is enabled */
   enabled?: boolean;
+  /** Dedupe key when flattening pages (keeps first occurrence). */
+  getItemKey?: (item: TItem) => string;
 }
 
 /**
@@ -49,6 +52,7 @@ export function useInfinitePaginatedQuery<TItem, TResponse>({
   getNextPageParam,
   pageSize,
   enabled = true,
+  getItemKey,
 }: UseInfinitePaginatedQueryOptions<TItem, TResponse>) {
   const query = useInfiniteQuery({
     queryKey,
@@ -58,7 +62,20 @@ export function useInfinitePaginatedQuery<TItem, TResponse>({
     enabled,
   });
 
-  const items = query.data?.pages.flatMap((page) => getItems(page)) ?? [];
+  const items = useMemo(() => {
+    const flat = query.data?.pages.flatMap((page) => getItems(page)) ?? [];
+    if (!getItemKey) return flat;
+
+    const seen = new Set<string>();
+    const deduped: TItem[] = [];
+    for (const item of flat) {
+      const key = getItemKey(item);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      deduped.push(item);
+    }
+    return deduped;
+  }, [query.data?.pages, getItemKey]);
   const firstPage = query.data?.pages[0];
 
   return {

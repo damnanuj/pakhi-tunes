@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   type ReactNode,
 } from "react";
 import type { ArtistSong } from "src/types/artistSongs.types";
@@ -31,10 +32,10 @@ export function QueueProvider({ songs, source, children }: QueueProviderProps) {
     syncQueueSongs(songs);
   }, [songs, source, syncQueueSongs]);
 
+  const value = useMemo(() => ({ songs, source }), [songs, source]);
+
   return (
-    <QueueContext.Provider value={{ songs, source }}>
-      {children}
-    </QueueContext.Provider>
+    <QueueContext.Provider value={value}>{children}</QueueContext.Provider>
   );
 }
 

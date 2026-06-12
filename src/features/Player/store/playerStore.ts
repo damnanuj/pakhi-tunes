@@ -38,6 +38,7 @@ type PlayerActions = {
   setOriginalQueue: (songs: ArtistSong[]) => void;
   updateQueueOrder: (songs: ArtistSong[], index: number) => void;
   syncQueueSongs: (songs: ArtistSong[]) => void;
+  appendQueueSongs: (newSongs: ArtistSong[]) => void;
 };
 
 const initialPlayback: PlaybackSlice = {
@@ -101,6 +102,25 @@ export const usePlayerStore = create<PlayerState & PlayerActions>((set, get) => 
     set({
       queue: songs,
       originalQueue: songs,
+      queueIndex: newIndex,
+    });
+  },
+  appendQueueSongs: (newSongs) => {
+    const state = get();
+    if (state.shuffleEnabled || !state.activeTrack || !state.queueSource) {
+      return;
+    }
+    const existingIds = new Set(state.queue.map((s) => s.id));
+    const toAppend = newSongs.filter((s) => !existingIds.has(s.id));
+    if (toAppend.length === 0) return;
+
+    const merged = [...state.queue, ...toAppend];
+    const newIndex = findSongIndex(merged, state.activeTrack.id);
+    if (newIndex < 0) return;
+
+    set({
+      queue: merged,
+      originalQueue: merged,
       queueIndex: newIndex,
     });
   },

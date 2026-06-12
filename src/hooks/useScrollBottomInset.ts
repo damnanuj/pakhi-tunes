@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { verticalScale } from "src/utils/functions/dimensions";
 import { TAB_BAR_HEIGHT } from "src/constants/tabBar";
-import { useMiniPlayerBottomInset } from "src/features/Player";
+import { useMiniPlayerBottomInset } from "src/features/Player/hooks/useMiniPlayerBottomInset";
 
 export type UseScrollBottomInsetOptions = {
   /**

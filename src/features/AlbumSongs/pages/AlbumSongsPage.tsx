@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { FlatList, ListRenderItem, ScrollView } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { YStack } from "tamagui";
@@ -15,7 +15,6 @@ import {
   useInfinitePaginatedQuery,
   useScrollBottomInset,
 } from "src/hooks";
-import { getAlbumSongs } from "src/services";
 import SongListItem from "src/features/ArtistSongs/components/SongListItem";
 import { QueueProvider } from "src/features/Player/context/QueueContext";
 import AlbumProfileHeader from "../components/AlbumProfileHeader";
@@ -23,20 +22,13 @@ import ArtistSongsPageSkeleton, {
   SongListItemSkeleton,
 } from "src/features/ArtistSongs/skeletons/ArtistSongsPageSkeleton";
 import type { ArtistSong } from "src/types/artistSongs.types";
-import type { AlbumSongsResponse } from "src/types/albumSongs.types";
 import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
-
-const PAGE_SIZE = 20;
-
-function getItems(res: AlbumSongsResponse) {
-  return res.data.results;
-}
-
-function getNextPageParam(res: AlbumSongsResponse): number | undefined {
-  const { next, currentPage } = res.data;
-  if (!next) return undefined;
-  return currentPage * PAGE_SIZE;
-}
+import {
+  ALBUM_SONGS_PAGE_SIZE,
+  getAlbumSongsQueryOptions,
+} from "../queries/albumSongsQuery";
+import { getSongListItemLayout } from "src/features/ArtistSongs/utils/songListItemLayout";
+import { getSongListKey } from "src/features/ArtistSongs/utils/songListKeys";
 
 export default function AlbumSongsPage() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -54,13 +46,8 @@ export default function AlbumSongsPage() {
     hasNextPage,
     isFetchingNextPage,
     refetch,
-  } = useInfinitePaginatedQuery<ArtistSong, AlbumSongsResponse>({
-    queryKey: ["albumSongs", id ?? "", PAGE_SIZE],
-    queryFn: ({ pageParam }) =>
-      getAlbumSongs(id!, { limit: PAGE_SIZE, offset: pageParam }),
-    getItems,
-    getNextPageParam,
-    pageSize: PAGE_SIZE,
+  } = useInfinitePaginatedQuery({
+    ...getAlbumSongsQueryOptions(id ?? ""),
     enabled: !!id,
   });
 
@@ -87,9 +74,17 @@ export default function AlbumSongsPage() {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const keyExtractor = useCallback(
-    (item: ArtistSong, index: number) =>
-      `${item.encrypted_id ?? item.id}-${index}`,
+    (item: ArtistSong) => getSongListKey(item),
     []
+  );
+
+  const queueSource = useMemo(
+    () => ({
+      type: "album" as const,
+      id: id ?? "",
+      name: headerTitle,
+    }),
+    [id, headerTitle]
   );
 
   if (isLoading) {
@@ -134,12 +129,6 @@ export default function AlbumSongsPage() {
     </YStack>
   ) : null;
 
-  const queueSource = {
-    type: "album" as const,
-    id: id ?? "",
-    name: headerTitle,
-  };
-
   return (
     <YStack flex={1} bg={themeColors.dark.background}>
       <ScreenHeader showBack title={headerTitle} />
@@ -153,10 +142,12 @@ export default function AlbumSongsPage() {
           refreshControl={refreshControl}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.4}
-          initialNumToRender={PAGE_SIZE}
-          maxToRenderPerBatch={PAGE_SIZE}
+          initialNumToRender={12}
+          maxToRenderPerBatch={8}
           windowSize={5}
-          removeClippedSubviews={true}
+          updateCellsBatchingPeriod={50}
+          getItemLayout={getSongListItemLayout}
+          removeClippedSubviews
           contentContainerStyle={{
             paddingBottom: scrollBottomPadding,
           }}

@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { FlatList, ListRenderItem, ScrollView } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { YStack } from "tamagui";
@@ -15,7 +15,6 @@ import {
   useInfinitePaginatedQuery,
   useScrollBottomInset,
 } from "src/hooks";
-import { getArtistSongs } from "src/services";
 import SongListItem from "../components/SongListItem";
 import { QueueProvider } from "src/features/Player/context/QueueContext";
 import ArtistProfileHeader from "../components/ArtistProfileHeader";
@@ -23,18 +22,12 @@ import ArtistSongsPageSkeleton, {
   SongListItemSkeleton,
 } from "../skeletons/ArtistSongsPageSkeleton";
 import type { ArtistSong } from "src/types/artistSongs.types";
-import type { ArtistSongsResponse } from "src/types/artistSongs.types";
-const PAGE_SIZE = 20;
-
-function getItems(res: ArtistSongsResponse) {
-  return res.data.results;
-}
-
-function getNextPageParam(res: ArtistSongsResponse): number | undefined {
-  const { next, currentPage } = res.data;
-  if (!next) return undefined;
-  return currentPage * PAGE_SIZE;
-}
+import {
+  ARTIST_SONGS_PAGE_SIZE,
+  getArtistSongsQueryOptions,
+} from "../queries/artistSongsQuery";
+import { getSongListItemLayout } from "../utils/songListItemLayout";
+import { getSongListKey } from "../utils/songListKeys";
 
 export default function ArtistSongsPage() {
   const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
@@ -50,13 +43,8 @@ export default function ArtistSongsPage() {
     hasNextPage,
     isFetchingNextPage,
     refetch,
-  } = useInfinitePaginatedQuery<ArtistSong, ArtistSongsResponse>({
-    queryKey: ["artistSongs", id ?? "", PAGE_SIZE],
-    queryFn: ({ pageParam }) =>
-      getArtistSongs(id!, { limit: PAGE_SIZE, offset: pageParam }),
-    getItems,
-    getNextPageParam,
-    pageSize: PAGE_SIZE,
+  } = useInfinitePaginatedQuery({
+    ...getArtistSongsQueryOptions(id ?? ""),
     enabled: !!id,
   });
 
@@ -80,9 +68,17 @@ export default function ArtistSongsPage() {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const keyExtractor = useCallback(
-    (item: ArtistSong, index: number) =>
-      `${item.encrypted_id ?? item.id}-${index}`,
+    (item: ArtistSong) => getSongListKey(item),
     []
+  );
+
+  const queueSource = useMemo(
+    () => ({
+      type: "artist" as const,
+      id: id ?? "",
+      name: artistName,
+    }),
+    [id, artistName]
   );
 
   if (isLoading) {
@@ -127,12 +123,6 @@ export default function ArtistSongsPage() {
     </YStack>
   ) : null;
 
-  const queueSource = {
-    type: "artist" as const,
-    id: id ?? "",
-    name: artistName,
-  };
-
   return (
     <YStack flex={1} bg={themeColors.dark.background}>
       <ScreenHeader showBack title={`${artistName} songs`} />
@@ -146,10 +136,12 @@ export default function ArtistSongsPage() {
           refreshControl={refreshControl}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.4}
-          initialNumToRender={PAGE_SIZE}
-          maxToRenderPerBatch={PAGE_SIZE}
+          initialNumToRender={12}
+          maxToRenderPerBatch={8}
           windowSize={5}
-          removeClippedSubviews={true}
+          updateCellsBatchingPeriod={50}
+          getItemLayout={getSongListItemLayout}
+          removeClippedSubviews
           contentContainerStyle={{
             paddingBottom: scrollBottomPadding,
           }}

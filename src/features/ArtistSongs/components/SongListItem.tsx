@@ -1,13 +1,13 @@
-import { memo, useCallback } from "react";
+import { memo, useCallback, useMemo } from "react";
 import { ActivityIndicator, Image, Pressable, View } from "react-native";
 import { XStack, YStack } from "tamagui";
 import {
   CirclePlay,
   MoreVertical,
-  Pause,
   PauseCircle,
   Play,
 } from "@tamagui/lucide-icons";
+import { useShallow } from "zustand/react/shallow";
 import {
   scale,
   verticalScale,
@@ -35,17 +35,38 @@ interface SongListItemProps {
 function SongListItem({ song }: SongListItemProps) {
   const { playSong, playSongFromQueue, togglePlayPause } = usePlayback();
   const queueContext = useQueueContext();
-  const activeId = usePlayerStore((s) => s.activeTrack?.id);
-  const isPlaying = usePlayerStore((s) => s.isPlaying);
-  const isPlaybackLoading = usePlayerStore((s) => s.isPlaybackLoading);
 
-  const songName = decodeHtmlEntities(song.name);
-  const artistNames = song.artists.primary.map((a) => a.name).join(", ");
-  const imageUrl = getSongCoverUrl(song.image);
+  const playbackState = usePlayerStore(
+    useShallow((s) => {
+      const isActive = s.activeTrack?.id === song.id;
+      if (!isActive) {
+        return { isActive: false as const };
+      }
+      return {
+        isActive: true as const,
+        isPlaying: s.isPlaying,
+        isPlaybackLoading: s.isPlaybackLoading,
+      };
+    })
+  );
 
-  const isThisTrack = activeId === song.id;
-  const showLoadingOnRow = isThisTrack && isPlaybackLoading;
-  const showPauseOnRow = isThisTrack && isPlaying && !isPlaybackLoading;
+  const songName = useMemo(() => decodeHtmlEntities(song.name), [song.name]);
+  const artistNames = useMemo(
+    () => song.artists.primary.map((a) => a.name).join(", "),
+    [song.artists.primary]
+  );
+  const imageUrl = useMemo(
+    () => getSongCoverUrl(song.image),
+    [song.image]
+  );
+
+  const isThisTrack = playbackState.isActive;
+  const showLoadingOnRow =
+    playbackState.isActive && playbackState.isPlaybackLoading;
+  const showPauseOnRow =
+    playbackState.isActive &&
+    playbackState.isPlaying &&
+    !playbackState.isPlaybackLoading;
 
   const handlePlayAction = useCallback(() => {
     if (isThisTrack) {
@@ -196,4 +217,18 @@ function SongListItem({ song }: SongListItemProps) {
   );
 }
 
-export default memo(SongListItem);
+function songListItemPropsAreEqual(
+  prev: SongListItemProps,
+  next: SongListItemProps
+): boolean {
+  const a = prev.song;
+  const b = next.song;
+  if (a.id !== b.id) return false;
+  if (a.name !== b.name) return false;
+  if (a.image !== b.image) return false;
+  const aArtists = a.artists.primary.map((artist) => artist.name).join(",");
+  const bArtists = b.artists.primary.map((artist) => artist.name).join(",");
+  return aArtists === bArtists;
+}
+
+export default memo(SongListItem, songListItemPropsAreEqual);

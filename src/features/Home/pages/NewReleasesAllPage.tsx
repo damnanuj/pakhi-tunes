@@ -29,8 +29,7 @@ import {
 import NewReleasesAllPageSkeleton, {
   SkeletonCard,
 } from "../skeletons/NewReleasesAllPageSkeleton";
-
-const LIST_LIMIT = 30;
+import { NEW_RELEASES_QUEUE_FETCH_LIMIT } from "src/utils/constants/newReleases";
 const DEFAULT_LANGUAGE = "hindi";
 const CARD_GAP = scale(12);
 const SKELETON_GRID_KEYS = Array.from({ length: 8 }, (_, i) => ({ key: i }));
@@ -50,10 +49,10 @@ export default function NewReleasesAllPage() {
   const [tabSwitching, setTabSwitching] = useState(false);
 
   const { data, isPending, isError, isFetching, refetch } = useQuery({
-    queryKey: ["newReleases", LIST_LIMIT, language, "all"],
+    queryKey: ["newReleases", NEW_RELEASES_QUEUE_FETCH_LIMIT, language, "all"],
     queryFn: () =>
       getNewReleases({
-        limit: LIST_LIMIT,
+        limit: NEW_RELEASES_QUEUE_FETCH_LIMIT,
         offset: 0,
         language,
       }),

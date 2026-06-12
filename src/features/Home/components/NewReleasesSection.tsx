@@ -23,11 +23,14 @@ import {
   type NewReleaseListItem,
 } from "src/types/newReleases.types";
 import NewReleasesSectionSkeleton from "../skeletons/NewReleasesSectionSkeleton";
+import {
+  NEW_RELEASES_DISPLAY_LIMIT_HOME,
+  NEW_RELEASES_QUEUE_FETCH_LIMIT,
+} from "src/utils/constants/newReleases";
 
 const COLUMN_WIDTH = scale(320);
 const IMAGE_SIZE = moderateScale(56);
 const ACTION_SIZE = moderateScale(40);
-const NEW_RELEASES_LIMIT = 12;
 
 function TypeBadge({ kind }: { kind: "song" | "album" }) {
   const isSong = kind === "song";
@@ -213,16 +216,23 @@ function NewReleaseColumn({
 export default function NewReleasesSection() {
   const router = useRouter();
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["newReleases", NEW_RELEASES_LIMIT, "all"],
+    queryKey: ["newReleases", NEW_RELEASES_QUEUE_FETCH_LIMIT, "home"],
     queryFn: () =>
       getNewReleases({
-        limit: NEW_RELEASES_LIMIT,
+        limit: NEW_RELEASES_QUEUE_FETCH_LIMIT,
         offset: 0,
       }),
   });
 
-  const results = data?.data?.results ?? [];
-  const songQueue = useMemo(() => getNewReleaseSongs(results), [results]);
+  const allResults = data?.data?.results ?? [];
+  const displayResults = useMemo(
+    () => allResults.slice(0, NEW_RELEASES_DISPLAY_LIMIT_HOME),
+    [allResults]
+  );
+  const songQueue = useMemo(
+    () => getNewReleaseSongs(allResults),
+    [allResults]
+  );
 
   if (isLoading) {
     return <NewReleasesSectionSkeleton />;
@@ -238,7 +248,7 @@ export default function NewReleasesSection() {
     );
   }
 
-  if (results.length === 0) {
+  if (displayResults.length === 0) {
     return (
       <YStack px={scale(20)} py={verticalScale(8)}>
         <XStack justify="space-between" items="center" mb={verticalScale(16)}>
@@ -258,8 +268,8 @@ export default function NewReleasesSection() {
   }
 
   const columns: NewReleaseListItem[][] = [];
-  for (let i = 0; i < results.length; i += 3) {
-    columns.push(results.slice(i, i + 3));
+  for (let i = 0; i < displayResults.length; i += 3) {
+    columns.push(displayResults.slice(i, i + 3));
   }
 
   return (

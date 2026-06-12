@@ -18,6 +18,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { YStack } from "tamagui";
+import { SongListItemSkeleton } from "src/features/ArtistSongs/skeletons/ArtistSongsPageSkeleton";
 import {
   moderateScale,
   scale,
@@ -26,8 +27,11 @@ import {
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
 import SongListItem from "src/features/ArtistSongs/components/SongListItem";
+import { getSongListItemLayout } from "src/features/ArtistSongs/utils/songListItemLayout";
+import { getSongListKey } from "src/features/ArtistSongs/utils/songListKeys";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import { QueueProvider } from "../context/QueueContext";
+import { useQueuePagination } from "../hooks/useQueuePagination";
 import { usePlayerStore } from "../store/playerStore";
 import { getQueueSourceLabel } from "../utils/queueHelpers";
 
@@ -53,6 +57,18 @@ function UpNextSheet({ open, onOpenChange }: UpNextSheetProps) {
 
   const queue = usePlayerStore((s) => s.queue);
   const queueSource = usePlayerStore((s) => s.queueSource);
+  const shuffleEnabled = usePlayerStore((s) => s.shuffleEnabled);
+
+  const {
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    supportsPagination,
+  } = useQueuePagination({
+    enabled: open,
+    queueSource,
+    shuffleEnabled,
+  });
 
   const translateY = useSharedValue(sheetHeight);
   const backdropOpacity = useSharedValue(0);
@@ -127,10 +143,30 @@ function UpNextSheet({ open, onOpenChange }: UpNextSheetProps) {
   );
 
   const keyExtractor = useCallback(
-    (item: ArtistSong, index: number) =>
-      `${item.encrypted_id ?? item.id}-${index}`,
+    (item: ArtistSong) => getSongListKey(item),
     []
   );
+
+  const handleEndReached = useCallback(() => {
+    if (!supportsPagination || !hasNextPage || isFetchingNextPage) return;
+    void fetchNextPage?.();
+  }, [
+    supportsPagination,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  ]);
+
+  const listFooter = useMemo(() => {
+    if (!isFetchingNextPage) return null;
+    return (
+      <YStack py={verticalScale(8)}>
+        {Array.from({ length: 3 }, (_, i) => (
+          <SongListItemSkeleton key={i} />
+        ))}
+      </YStack>
+    );
+  }, [isFetchingNextPage]);
 
   if (!open || !queueSource) return null;
 
@@ -182,6 +218,17 @@ function UpNextSheet({ open, onOpenChange }: UpNextSheetProps) {
               keyExtractor={keyExtractor}
               renderItem={renderItem}
               showsVerticalScrollIndicator={false}
+              onEndReached={
+                supportsPagination ? handleEndReached : undefined
+              }
+              onEndReachedThreshold={supportsPagination ? 0.4 : undefined}
+              ListFooterComponent={listFooter}
+              initialNumToRender={12}
+              maxToRenderPerBatch={8}
+              windowSize={5}
+              updateCellsBatchingPeriod={50}
+              getItemLayout={getSongListItemLayout}
+              removeClippedSubviews
               contentContainerStyle={{
                 paddingBottom: verticalScale(12),
               }}

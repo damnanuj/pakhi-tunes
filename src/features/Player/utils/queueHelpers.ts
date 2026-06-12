@@ -23,6 +23,12 @@ export function sourcesMatch(
   return false;
 }
 
+export function sourceSupportsQueuePagination(
+  source: QueueSource | null
+): boolean {
+  return source?.type === "artist" || source?.type === "album";
+}
+
 export function getQueueSourceLabel(source: QueueSource | null): string {
   if (!source) return "Your library";
   switch (source.type) {

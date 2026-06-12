@@ -11,15 +11,19 @@ import {
 import themeColors from "src/utils/theme/colors";
 import MyText from "src/components/MyText";
 import SongListItem from "src/features/ArtistSongs/components/SongListItem";
+import { getSongListKey } from "src/features/ArtistSongs/utils/songListKeys";
 import { QueueProvider } from "src/features/Player/context/QueueContext";
 import SearchPageSkeleton from "../skeletons/SearchPageSkeleton";
 import RecentSearchesSection from "./RecentSearchesSection";
 import { useRefreshable, useScrollBottomInset } from "src/hooks";
 import { getNewReleases } from "src/services";
 import type { ArtistSong } from "src/types/artistSongs.types";
-import { isNewReleaseAlbum } from "src/types/newReleases.types";
+import { getNewReleaseSongs } from "src/types/newReleases.types";
+import {
+  NEW_RELEASES_DISPLAY_LIMIT_EXPLORE,
+  NEW_RELEASES_QUEUE_FETCH_LIMIT,
+} from "src/utils/constants/newReleases";
 
-const NEW_RELEASES_LIMIT = 10;
 const STALE_TIME_MS = 60_000;
 
 interface ExploreNewReleasesListProps {
@@ -41,20 +45,30 @@ function ExploreNewReleasesList({
   });
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["newReleases", NEW_RELEASES_LIMIT, "song", "explore"],
+    queryKey: [
+      "newReleases",
+      NEW_RELEASES_QUEUE_FETCH_LIMIT,
+      "song",
+      "explore",
+    ],
     queryFn: () =>
       getNewReleases({
-        limit: NEW_RELEASES_LIMIT,
+        limit: NEW_RELEASES_QUEUE_FETCH_LIMIT,
         offset: 0,
         type: "song",
       }),
     staleTime: STALE_TIME_MS,
   });
 
-  const songs = useMemo(() => {
-    const results = data?.data?.results ?? [];
-    return results.filter((item) => !isNewReleaseAlbum(item)) as ArtistSong[];
-  }, [data?.data?.results]);
+  const allSongs = useMemo(
+    () => getNewReleaseSongs(data?.data?.results ?? []),
+    [data?.data?.results]
+  );
+
+  const displaySongs = useMemo(
+    () => allSongs.slice(0, NEW_RELEASES_DISPLAY_LIMIT_EXPLORE),
+    [allSongs]
+  );
 
   const { refreshControl } = useRefreshable({
     onRefresh: async () => {
@@ -67,9 +81,13 @@ function ExploreNewReleasesList({
     []
   );
 
+  const queueSource = useMemo(
+    () => ({ type: "newReleases" as const, scope: "explore" as const }),
+    []
+  );
+
   const keyExtractor = useCallback(
-    (item: ArtistSong, index: number) =>
-      `${item.encrypted_id ?? item.id}-${index}`,
+    (item: ArtistSong) => getSongListKey(item),
     []
   );
 
@@ -132,18 +150,16 @@ function ExploreNewReleasesList({
     );
   }
 
-  const queueSource = { type: "newReleases" as const, scope: "explore" as const };
-
   return (
-    <QueueProvider songs={songs} source={queueSource}>
+    <QueueProvider songs={allSongs} source={queueSource}>
       <FlatList
-        data={songs}
+        data={displaySongs}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
         ListHeaderComponent={listHeader}
         refreshControl={refreshControl}
-        initialNumToRender={NEW_RELEASES_LIMIT}
-        maxToRenderPerBatch={NEW_RELEASES_LIMIT}
+        initialNumToRender={NEW_RELEASES_DISPLAY_LIMIT_EXPLORE}
+        maxToRenderPerBatch={NEW_RELEASES_DISPLAY_LIMIT_EXPLORE}
         windowSize={5}
         removeClippedSubviews
         contentContainerStyle={{
