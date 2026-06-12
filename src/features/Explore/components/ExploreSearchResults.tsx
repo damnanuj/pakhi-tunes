@@ -12,7 +12,6 @@ import SongListItem from "src/features/ArtistSongs/components/SongListItem";
 import { SongListItemSkeleton } from "src/features/ArtistSongs/skeletons/ArtistSongsPageSkeleton";
 import SearchPageSkeleton from "../skeletons/SearchPageSkeleton";
 import {
-  useDebouncedValue,
   useRefreshable,
   useInfinitePaginatedQuery,
   useScrollBottomInset,
@@ -22,7 +21,6 @@ import type { ArtistSong } from "src/types/artistSongs.types";
 import type { SongSearchResponse } from "src/types/songSearch.types";
 
 const PAGE_SIZE = 20;
-const DEBOUNCE_MS = 350;
 
 function getItems(res: SongSearchResponse) {
   return res.data.results;
@@ -36,18 +34,19 @@ function getNextPageParam(res: SongSearchResponse): number | undefined {
 
 interface ExploreSearchResultsProps {
   query: string;
+  debouncedQuery: string;
 }
 
-function ExploreSearchResults({ query }: ExploreSearchResultsProps) {
-  const debouncedQuery = useDebouncedValue(query, DEBOUNCE_MS);
-  const trimmedDebouncedQuery = debouncedQuery.trim();
+function ExploreSearchResults({
+  query,
+  debouncedQuery,
+}: ExploreSearchResultsProps) {
   const scrollBottomPadding = useScrollBottomInset({
     includeTabBar: true,
     extra: verticalScale(20),
   });
 
-  const isDebouncing =
-    query.trim() !== trimmedDebouncedQuery && query.trim().length > 0;
+  const isDebouncing = query !== debouncedQuery && query.length > 0;
 
   const {
     items: songs,
@@ -59,22 +58,22 @@ function ExploreSearchResults({ query }: ExploreSearchResultsProps) {
     isFetchingNextPage,
     refetch,
   } = useInfinitePaginatedQuery<ArtistSong, SongSearchResponse>({
-    queryKey: ["songSearch", trimmedDebouncedQuery, PAGE_SIZE],
+    queryKey: ["songSearch", debouncedQuery, PAGE_SIZE],
     queryFn: ({ pageParam }) =>
       getSongSearch({
-        q: trimmedDebouncedQuery,
+        q: debouncedQuery,
         limit: PAGE_SIZE,
         offset: pageParam,
       }),
     getItems,
     getNextPageParam,
     pageSize: PAGE_SIZE,
-    enabled: trimmedDebouncedQuery.length > 0,
+    enabled: debouncedQuery.length > 0,
   });
 
   const { refreshControl } = useRefreshable({
     onRefresh: async () => {
-      if (trimmedDebouncedQuery.length > 0) {
+      if (debouncedQuery.length > 0) {
         await refetch();
       }
     },
@@ -101,7 +100,7 @@ function ExploreSearchResults({ query }: ExploreSearchResultsProps) {
     isDebouncing || isLoading || (isFetching && songs.length === 0);
 
   const showNoResults =
-    !showSkeleton && !isError && trimmedDebouncedQuery.length > 0 && songs.length === 0;
+    !showSkeleton && !isError && debouncedQuery.length > 0 && songs.length === 0;
 
   const listFooter = isFetchingNextPage ? (
     <YStack py={verticalScale(8)}>
@@ -143,7 +142,7 @@ function ExploreSearchResults({ query }: ExploreSearchResultsProps) {
           color={themeColors.dark.textMuted}
           textAlign="center"
         >
-          No results for &quot;{trimmedDebouncedQuery}&quot;
+          No results for &quot;{debouncedQuery}&quot;
         </MyText>
       </YStack>
     );

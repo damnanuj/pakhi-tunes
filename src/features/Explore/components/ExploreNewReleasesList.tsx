@@ -11,6 +11,7 @@ import themeColors from "src/utils/theme/colors";
 import MyText from "src/components/MyText";
 import SongListItem from "src/features/ArtistSongs/components/SongListItem";
 import SearchPageSkeleton from "../skeletons/SearchPageSkeleton";
+import RecentSearchesSection from "./RecentSearchesSection";
 import { useRefreshable, useScrollBottomInset } from "src/hooks";
 import { getNewReleases } from "src/services";
 import type { ArtistSong } from "src/types/artistSongs.types";
@@ -19,7 +20,13 @@ import { isNewReleaseAlbum } from "src/types/newReleases.types";
 const NEW_RELEASES_LIMIT = 10;
 const STALE_TIME_MS = 60_000;
 
-function ExploreNewReleasesList() {
+interface ExploreNewReleasesListProps {
+  onSelectRecentSearch: (term: string) => void;
+}
+
+function ExploreNewReleasesList({
+  onSelectRecentSearch,
+}: ExploreNewReleasesListProps) {
   const scrollBottomPadding = useScrollBottomInset({
     includeTabBar: true,
     extra: verticalScale(20),
@@ -60,21 +67,20 @@ function ExploreNewReleasesList() {
 
   const listHeader = useMemo(
     () => (
-      <YStack
-        px={scale(20)}
-        mt={verticalScale(6)}
-        mb={verticalScale(6)}
-      >
-        <MyText
-          fontSize={moderateScale(18)}
-          fontWeight="600"
-          color={themeColors.dark.onSurface}
-        >
-          New Releases
-        </MyText>
+      <YStack mt={verticalScale(6)}>
+        <RecentSearchesSection onSelect={onSelectRecentSearch} />
+        <YStack px={scale(20)} mb={verticalScale(6)}>
+          <MyText
+            fontSize={moderateScale(18)}
+            fontWeight="600"
+            color={themeColors.dark.onSurface}
+          >
+            New Releases
+          </MyText>
+        </YStack>
       </YStack>
     ),
-    []
+    [onSelectRecentSearch]
   );
 
   if (isLoading) {
