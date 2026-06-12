@@ -76,16 +76,30 @@ function syncStoreFromLoadedStatus(status: AudioStatus) {
 
   if (status.didJustFinish) {
     const activeId = usePlayerStore.getState().activeTrack?.id ?? null;
-    if (activeId && trackEndedHandledForId !== activeId) {
+    if (!activeId) return;
+
+    const repeatMode = usePlayerStore.getState().repeatMode;
+    if (repeatMode === "one") {
+      // Native loop should replay; still invoke handler as a fallback restart.
+      onTrackEndedCallback?.();
+      return;
+    }
+
+    if (trackEndedHandledForId !== activeId) {
       trackEndedHandledForId = activeId;
       onTrackEndedCallback?.();
     }
-  } else if (status.playing) {
+  } else if (status.playing || status.currentTime < 0.5) {
     trackEndedHandledForId = null;
   }
 }
 
 type PlayerRef = ReturnType<typeof createAudioPlayer>;
+
+function applyLoopForRepeatMode(player: PlayerRef | null) {
+  if (!player?.isLoaded) return;
+  player.loop = usePlayerStore.getState().repeatMode === "one";
+}
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const playerRef = useRef<PlayerRef | null>(null);
@@ -151,6 +165,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           });
           statusSubRef.current = sub;
           playerRef.current = player;
+          applyLoopForRepeatMode(player);
 
           player.play();
 
@@ -357,32 +372,43 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [playQueueAtIndex, seekToMillis]);
 
   const handleTrackEnded = useCallback(async () => {
-    const state = usePlayerStore.getState();
-    const { repeatMode } = state;
+    try {
+      const state = usePlayerStore.getState();
+      const { repeatMode } = state;
 
-    if (repeatMode === "one") {
-      await seekToMillis(0);
-      const player = playerRef.current;
-      if (player?.isLoaded) {
-        try {
-          player.play();
-        } catch {
-          /* ignore */
+      if (repeatMode === "one") {
+        const player = playerRef.current;
+        if (player?.isLoaded) {
+          applyLoopForRepeatMode(player);
+          // Native loop replays automatically; only manual-restart if playback stopped.
+          if (player.loop && player.playing) return;
+          try {
+            await player.seekTo(0);
+            player.play();
+            usePlayerStore.getState().setPlayback({
+              positionMillis: 0,
+              isPlaying: true,
+            });
+          } catch {
+            /* ignore */
+          }
+        }
+        return;
+      }
+
+      if (!hasQueue(state)) return;
+
+      if (hasNext(state)) {
+        if (state.queueIndex < state.queue.length - 1) {
+          await playQueueAtIndex(state.queueIndex + 1);
+        } else if (state.repeatMode === "all") {
+          await playQueueAtIndex(0);
         }
       }
-      return;
+    } finally {
+      trackEndedHandledForId = null;
     }
-
-    if (!hasQueue(state)) return;
-
-    if (hasNext(state)) {
-      if (state.queueIndex < state.queue.length - 1) {
-        await playQueueAtIndex(state.queueIndex + 1);
-      } else if (state.repeatMode === "all") {
-        await playQueueAtIndex(0);
-      }
-    }
-  }, [playQueueAtIndex, seekToMillis]);
+  }, [playQueueAtIndex]);
 
   useEffect(() => {
     onTrackEndedCallback = () => {
@@ -435,6 +461,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const cycleRepeatMode = useCallback(() => {
     const current = usePlayerStore.getState().repeatMode;
     usePlayerStore.getState().setRepeatMode(getNextRepeatMode(current));
+    applyLoopForRepeatMode(playerRef.current);
   }, []);
 
   const stopPlaybackAndClear = useCallback(async () => {
