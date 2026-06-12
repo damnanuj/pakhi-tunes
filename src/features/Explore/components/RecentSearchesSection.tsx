@@ -69,33 +69,19 @@ function RecentSearchesSection({ onSelect }: RecentSearchesSectionProps) {
   }
 
   return (
-    <YStack mb={verticalScale(12)}>
+    <YStack mb={verticalScale(12)} px={scale(20)}>
       <XStack
+        justify="space-between"
         items="center"
-        px={scale(20)}
-        gap={scale(12)}
         mb={verticalScale(8)}
       >
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ flex: 1 }}
-          contentContainerStyle={{
-            gap: scale(8),
-            flexDirection: "row",
-            alignItems: "center",
-          }}
-          keyboardShouldPersistTaps="handled"
+        <MyText
+          fontSize={moderateScale(12)}
+          weight="500"
+          color={themeColors.dark.textMuted}
         >
-          {searches.map((term) => (
-            <RecentSearchChip
-              key={term.toLowerCase()}
-              term={term}
-              onSelect={onSelect}
-              onRemove={removeSearch}
-            />
-          ))}
-        </ScrollView>
+          Your recent searches
+        </MyText>
         <Pressable onPress={clearAll} hitSlop={8}>
           <MyText
             fontSize={moderateScale(12)}
@@ -106,6 +92,25 @@ function RecentSearchesSection({ onSelect }: RecentSearchesSectionProps) {
           </MyText>
         </Pressable>
       </XStack>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{
+          gap: scale(8),
+          flexDirection: "row",
+          alignItems: "center",
+        }}
+        keyboardShouldPersistTaps="handled"
+      >
+        {searches.map((term) => (
+          <RecentSearchChip
+            key={term.toLowerCase()}
+            term={term}
+            onSelect={onSelect}
+            onRemove={removeSearch}
+          />
+        ))}
+      </ScrollView>
     </YStack>
   );
 }
