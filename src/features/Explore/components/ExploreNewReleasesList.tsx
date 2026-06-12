@@ -1,7 +1,8 @@
 import { memo, useCallback, useMemo } from "react";
-import { FlatList, ListRenderItem, ScrollView } from "react-native";
+import { FlatList, ListRenderItem, Pressable, ScrollView } from "react-native";
+import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { YStack } from "tamagui";
+import { XStack, YStack } from "tamagui";
 import {
   scale,
   verticalScale,
@@ -27,6 +28,12 @@ interface ExploreNewReleasesListProps {
 function ExploreNewReleasesList({
   onSelectRecentSearch,
 }: ExploreNewReleasesListProps) {
+  const router = useRouter();
+
+  const handleSeeAll = useCallback(() => {
+    router.push("/home/new-releases" as never);
+  }, [router]);
+
   const scrollBottomPadding = useScrollBottomInset({
     includeTabBar: true,
     extra: verticalScale(20),
@@ -69,7 +76,12 @@ function ExploreNewReleasesList({
     () => (
       <YStack mt={verticalScale(6)}>
         <RecentSearchesSection onSelect={onSelectRecentSearch} />
-        <YStack px={scale(20)} mb={verticalScale(6)}>
+        <XStack
+          px={scale(20)}
+          mb={verticalScale(6)}
+          justify="space-between"
+          items="center"
+        >
           <MyText
             fontSize={moderateScale(18)}
             fontWeight="600"
@@ -77,10 +89,18 @@ function ExploreNewReleasesList({
           >
             New Releases
           </MyText>
-        </YStack>
+          <Pressable onPress={handleSeeAll}>
+            <MyText
+              fontSize={moderateScale(14)}
+              color={themeColors.dark.accent}
+            >
+              See All
+            </MyText>
+          </Pressable>
+        </XStack>
       </YStack>
     ),
-    [onSelectRecentSearch]
+    [onSelectRecentSearch, handleSeeAll]
   );
 
   if (isLoading) {
