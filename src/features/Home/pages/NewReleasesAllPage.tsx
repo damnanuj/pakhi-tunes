@@ -18,9 +18,11 @@ import LibraryCard from "src/features/Library/components/LibraryCard";
 import { getSongCoverUrl } from "src/utils/functions/songImage";
 import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
 import { formatLanguageLabel } from "src/utils/functions/formatLanguageLabel";
-import { usePlayback } from "src/features/Player";
+import { usePlayback } from "src/features/Player/context/PlayerContext";
+import { findSongIndex } from "src/features/Player/utils/queueHelpers";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import {
+  getNewReleaseSongs,
   isNewReleaseAlbum,
   type NewReleaseListItem,
 } from "src/types/newReleases.types";
@@ -41,7 +43,7 @@ const columnWrapperStyle = {
 
 export default function NewReleasesAllPage() {
   const router = useRouter();
-  const { playSong } = usePlayback();
+  const { playSongFromQueue } = usePlayback();
   const scrollBottomPadding = useScrollBottomInset({ includeTabBar: true });
   const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
   const [supportedLanguages, setSupportedLanguages] = useState<string[]>([]);
@@ -96,6 +98,7 @@ export default function NewReleasesAllPage() {
   }, [language]);
 
   const results = data?.data?.results ?? [];
+  const songQueue = useMemo(() => getNewReleaseSongs(results), [results]);
 
   const handlePress = useCallback(
     (item: NewReleaseListItem) => {
@@ -106,9 +109,16 @@ export default function NewReleasesAllPage() {
         });
         return;
       }
-      void playSong(item as ArtistSong);
+      const song = item as ArtistSong;
+      const index = findSongIndex(songQueue, song.id);
+      if (index < 0) return;
+      void playSongFromQueue(songQueue, index, {
+        type: "newReleases",
+        scope: "all",
+        language,
+      });
     },
-    [router, playSong]
+    [router, playSongFromQueue, songQueue, language]
   );
 
   const renderItem: ListRenderItem<NewReleaseListItem> = useCallback(

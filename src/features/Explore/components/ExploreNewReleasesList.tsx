@@ -132,7 +132,7 @@ function ExploreNewReleasesList({
     );
   }
 
-  const queueSource = { type: "newReleases" as const };
+  const queueSource = { type: "newReleases" as const, scope: "explore" as const };
 
   return (
     <QueueProvider songs={songs} source={queueSource}>

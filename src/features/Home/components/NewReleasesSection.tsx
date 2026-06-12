@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { ScrollView, Image, Pressable } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
@@ -13,9 +14,11 @@ import themeColors from "src/utils/theme/colors";
 import { getNewReleases } from "src/services";
 import { getSongCoverUrl } from "src/utils/functions/songImage";
 import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
-import { usePlayback } from "src/features/Player";
+import { usePlayback } from "src/features/Player/context/PlayerContext";
+import { findSongIndex } from "src/features/Player/utils/queueHelpers";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import {
+  getNewReleaseSongs,
   isNewReleaseAlbum,
   type NewReleaseListItem,
 } from "src/types/newReleases.types";
@@ -56,9 +59,15 @@ function TypeBadge({ kind }: { kind: "song" | "album" }) {
   );
 }
 
-function NewReleaseRow({ item }: { item: NewReleaseListItem }) {
+function NewReleaseRow({
+  item,
+  songQueue,
+}: {
+  item: NewReleaseListItem;
+  songQueue: ArtistSong[];
+}) {
   const router = useRouter();
-  const { playSong } = usePlayback();
+  const { playSongFromQueue } = usePlayback();
 
   if (isNewReleaseAlbum(item)) {
     const title = decodeHtmlEntities(item.name);
@@ -120,8 +129,17 @@ function NewReleaseRow({ item }: { item: NewReleaseListItem }) {
   const artistsLine =
     song.artists?.primary?.map((a) => a.name).join(", ") ?? "";
 
+  const handlePlaySong = () => {
+    const index = findSongIndex(songQueue, song.id);
+    if (index < 0) return;
+    void playSongFromQueue(songQueue, index, {
+      type: "newReleases",
+      scope: "home",
+    });
+  };
+
   return (
-    <Pressable onPress={() => void playSong(song)}>
+    <Pressable onPress={handlePlaySong}>
       <XStack items="center" gap={scale(12)} flex={1} width="100%">
         <Image
           source={{ uri: cover }}
@@ -168,7 +186,13 @@ function NewReleaseRow({ item }: { item: NewReleaseListItem }) {
   );
 }
 
-function NewReleaseColumn({ items }: { items: NewReleaseListItem[] }) {
+function NewReleaseColumn({
+  items,
+  songQueue,
+}: {
+  items: NewReleaseListItem[];
+  songQueue: ArtistSong[];
+}) {
   return (
     <YStack width={COLUMN_WIDTH} gap={verticalScale(16)}>
       {items.map((item) => (
@@ -179,6 +203,7 @@ function NewReleaseColumn({ items }: { items: NewReleaseListItem[] }) {
               : `song-${item.id}`
           }
           item={item}
+          songQueue={songQueue}
         />
       ))}
     </YStack>
@@ -197,6 +222,7 @@ export default function NewReleasesSection() {
   });
 
   const results = data?.data?.results ?? [];
+  const songQueue = useMemo(() => getNewReleaseSongs(results), [results]);
 
   if (isLoading) {
     return <NewReleasesSectionSkeleton />;
@@ -265,7 +291,11 @@ export default function NewReleasesSection() {
         }}
       >
         {columns.map((columnItems, index) => (
-          <NewReleaseColumn key={index} items={columnItems} />
+          <NewReleaseColumn
+            key={index}
+            items={columnItems}
+            songQueue={songQueue}
+          />
         ))}
       </ScrollView>
     </YStack>

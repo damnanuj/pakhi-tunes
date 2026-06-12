@@ -7,7 +7,12 @@ export {
   MiniPlayerRootLayer,
 } from "./components/MiniPlayer";
 export { default as UpNextSheet } from "./components/UpNextSheet";
-export type { ActiveTrack, QueueSource, RepeatMode } from "./types";
+export type {
+  ActiveTrack,
+  NewReleasesQueueScope,
+  QueueSource,
+  RepeatMode,
+} from "./types";
 export {
   getQueueSourceLabel,
   hasNext,

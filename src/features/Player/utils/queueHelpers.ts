@@ -11,7 +11,13 @@ export function sourcesMatch(
 ): boolean {
   if (!a || !b) return false;
   if (a.type !== b.type) return false;
-  if (a.type === "newReleases" && b.type === "newReleases") return true;
+  if (a.type === "newReleases" && b.type === "newReleases") {
+    if (a.scope !== b.scope) return false;
+    if (a.scope === "all" && b.scope === "all") {
+      return a.language === b.language;
+    }
+    return true;
+  }
   if (a.type === "album" && b.type === "album") return a.id === b.id;
   if (a.type === "artist" && b.type === "artist") return a.id === b.id;
   return false;

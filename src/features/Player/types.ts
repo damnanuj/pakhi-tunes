@@ -11,9 +11,11 @@ export type ActiveTrack = {
   label?: string;
 };
 
+export type NewReleasesQueueScope = "explore" | "home" | "all";
+
 export type QueueSource =
   | { type: "album"; id: string; name: string }
-  | { type: "newReleases" }
+  | { type: "newReleases"; scope: NewReleasesQueueScope; language?: string }
   | { type: "artist"; id: string; name: string };
 
 export type RepeatMode = "off" | "one" | "all";

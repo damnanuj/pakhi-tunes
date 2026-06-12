@@ -46,3 +46,10 @@ export function isNewReleaseAlbum(
 ): item is NewReleaseAlbumItem {
   return item.type === "album";
 }
+
+/** Song-type items from new-releases results, preserving API order. */
+export function getNewReleaseSongs(
+  results: NewReleaseListItem[]
+): ArtistSong[] {
+  return results.filter((item) => !isNewReleaseAlbum(item)) as ArtistSong[];
+}

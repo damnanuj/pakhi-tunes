@@ -405,7 +405,7 @@ export default function FullPlayerPage() {
 
   const queueState = { queue, queueIndex, queueSource, repeatMode };
   const canSkipNext = hasNext(queueState);
-  const showUpNext = hasQueue(queueState);
+  const canOpenUpNext = hasQueue(queueState);
 
   const contextTitle = queueSource
     ? getQueueSourceLabel(queueSource)
@@ -536,10 +536,10 @@ export default function FullPlayerPage() {
             px={scale(2)}
             mt={verticalScale(8)}
           >
-            <IconControl onPress={onToggleShuffle} disabled={!showUpNext}>
+            <IconControl onPress={onToggleShuffle} disabled={!canOpenUpNext}>
               <Shuffle
                 size={moderateScale(20)}
-                color={shuffleEnabled && showUpNext ? accent : onSurface}
+                color={shuffleEnabled && canOpenUpNext ? accent : onSurface}
               />
             </IconControl>
             <IconControl onPress={onSkipPrevious}>
@@ -617,38 +617,40 @@ export default function FullPlayerPage() {
             pt={verticalScale(16)}
             px={scale(4)}
           >
-            {showUpNext ? (
-              <Pressable
-                onPress={onOpenUpNext}
-                accessibilityRole="button"
-                accessibilityLabel="Up next queue"
-                android_ripple={rippleLight}
-                style={({ pressed }: PressableStateCallbackType) => ({
-                  flex: 1,
-                  minWidth: 0,
-                  opacity: pressed ? 0.85 : 1,
-                })}
-              >
-                <XStack gap={scale(10)} items="center" style={{ minWidth: 0 }}>
-                  <View style={ghostControlStyle(false)}>
-                    <ListMusic
-                      size={moderateScale(20)}
-                      color={themeColors.dark.onSurface}
-                    />
-                  </View>
-                  <MyText
-                    fontSize={moderateScale(14)}
-                    weight="700"
-                    color={themeColors.dark.onSurface}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                    style={{ flex: 1, minWidth: 0 }}
-                  >
-                    Up next
-                  </MyText>
-                </XStack>
-              </Pressable>
-            ) : null}
+            <Pressable
+              disabled={!canOpenUpNext}
+              onPress={canOpenUpNext ? onOpenUpNext : undefined}
+              accessibilityRole="button"
+              accessibilityLabel="Up next queue"
+              accessibilityState={{ disabled: !canOpenUpNext }}
+              android_ripple={canOpenUpNext ? rippleLight : undefined}
+              style={({ pressed }: PressableStateCallbackType) => ({
+                flex: 1,
+                minWidth: 0,
+                opacity: !canOpenUpNext ? 0.35 : pressed ? 0.85 : 1,
+              })}
+            >
+              <XStack gap={scale(10)} items="center" style={{ minWidth: 0 }}>
+                <View style={ghostControlStyle(false)}>
+                  <ListMusic
+                    size={moderateScale(20)}
+                    color={
+                      canOpenUpNext ? themeColors.dark.onSurface : muted
+                    }
+                  />
+                </View>
+                <MyText
+                  fontSize={moderateScale(14)}
+                  weight="700"
+                  color={canOpenUpNext ? themeColors.dark.onSurface : muted}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  style={{ flex: 1, minWidth: 0 }}
+                >
+                  Up next
+                </MyText>
+              </XStack>
+            </Pressable>
 
             <XStack
               flex={1}
@@ -688,7 +690,7 @@ export default function FullPlayerPage() {
           </XStack>
         </YStack>
       </YStack>
-      {showUpNext ? (
+      {canOpenUpNext ? (
         <UpNextSheet open={isUpNextOpen} onOpenChange={setIsUpNextOpen} />
       ) : null}
     </YStack>
