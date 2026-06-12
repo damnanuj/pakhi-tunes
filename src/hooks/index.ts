@@ -4,3 +4,4 @@ export {
   useScrollBottomInset,
   type UseScrollBottomInsetOptions,
 } from "./useScrollBottomInset";
+export { useDebouncedValue } from "./useDebouncedValue";

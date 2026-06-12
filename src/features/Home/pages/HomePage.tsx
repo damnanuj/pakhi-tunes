@@ -32,7 +32,7 @@ export default function HomePage() {
         refreshControl={refreshControl}
       >
         <View style={{ marginBottom: SECTION_GAP }}>
-          <SearchBar />
+          <SearchBar mode="navigate" />
         </View>
         <View style={{ marginBottom: SECTION_GAP }}>
           <FeaturedCards />
