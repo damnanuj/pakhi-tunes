@@ -11,6 +11,7 @@ import {
 import themeColors from "src/utils/theme/colors";
 import MyText from "src/components/MyText";
 import SongListItem from "src/features/ArtistSongs/components/SongListItem";
+import { QueueProvider } from "src/features/Player/context/QueueContext";
 import SearchPageSkeleton from "../skeletons/SearchPageSkeleton";
 import RecentSearchesSection from "./RecentSearchesSection";
 import { useRefreshable, useScrollBottomInset } from "src/hooks";
@@ -131,37 +132,41 @@ function ExploreNewReleasesList({
     );
   }
 
+  const queueSource = { type: "newReleases" as const };
+
   return (
-    <FlatList
-      data={songs}
-      keyExtractor={keyExtractor}
-      renderItem={renderItem}
-      ListHeaderComponent={listHeader}
-      refreshControl={refreshControl}
-      initialNumToRender={NEW_RELEASES_LIMIT}
-      maxToRenderPerBatch={NEW_RELEASES_LIMIT}
-      windowSize={5}
-      removeClippedSubviews
-      contentContainerStyle={{
-        paddingBottom: scrollBottomPadding,
-      }}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-      ListEmptyComponent={
-        <YStack
-          px={scale(20)}
-          py={verticalScale(24)}
-          style={{ alignItems: "center" }}
-        >
-          <MyText
-            fontSize={moderateScale(14)}
-            color={themeColors.dark.textMuted}
+    <QueueProvider songs={songs} source={queueSource}>
+      <FlatList
+        data={songs}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        ListHeaderComponent={listHeader}
+        refreshControl={refreshControl}
+        initialNumToRender={NEW_RELEASES_LIMIT}
+        maxToRenderPerBatch={NEW_RELEASES_LIMIT}
+        windowSize={5}
+        removeClippedSubviews
+        contentContainerStyle={{
+          paddingBottom: scrollBottomPadding,
+        }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        ListEmptyComponent={
+          <YStack
+            px={scale(20)}
+            py={verticalScale(24)}
+            style={{ alignItems: "center" }}
           >
-            No new releases right now
-          </MyText>
-        </YStack>
-      }
-    />
+            <MyText
+              fontSize={moderateScale(14)}
+              color={themeColors.dark.textMuted}
+            >
+              No new releases right now
+            </MyText>
+          </YStack>
+        }
+      />
+    </QueueProvider>
   );
 }
 

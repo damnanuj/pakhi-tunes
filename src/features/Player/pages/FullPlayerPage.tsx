@@ -25,6 +25,7 @@ import {
   Pause,
   Play,
   Repeat,
+  Repeat1,
   Shuffle,
   SkipBack,
   SkipForward,
@@ -42,7 +43,9 @@ import {
 import { usePlayback } from "../context/PlayerContext";
 import { usePlayerStore } from "../store/playerStore";
 import { formatMillisToClock } from "../utils/formatPlaybackTime";
+import { getQueueSourceLabel, hasNext, hasQueue } from "../utils/queueHelpers";
 import ArtworkProgressRing from "../components/ArtworkProgressRing";
+import UpNextSheet from "../components/UpNextSheet";
 
 const ART_RING_STROKE = moderateScale(3);
 
@@ -270,18 +273,22 @@ function ghostControlStyle(pressed: boolean): ViewStyle {
 function IconControl({
   onPress,
   children,
+  disabled = false,
 }: {
   onPress: () => void;
   children: ReactNode;
+  disabled?: boolean;
 }) {
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled}
       accessibilityRole="button"
-      android_ripple={rippleLight}
-      style={({ pressed }: PressableStateCallbackType) =>
-        ghostControlStyle(pressed)
-      }
+      android_ripple={disabled ? undefined : rippleLight}
+      style={({ pressed }: PressableStateCallbackType) => ({
+        ...ghostControlStyle(pressed && !disabled),
+        opacity: disabled ? 0.35 : 1,
+      })}
     >
       {children}
     </Pressable>
@@ -302,16 +309,29 @@ export default function FullPlayerPage() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { togglePlayPause, seekToMillis } = usePlayback();
+  const {
+    togglePlayPause,
+    seekToMillis,
+    skipToNext,
+    skipToPrevious,
+    toggleShuffle,
+    cycleRepeatMode,
+  } = usePlayback();
 
   const seekGenerationRef = useRef(0);
   const [isSeekInProgress, setIsSeekInProgress] = useState(false);
+  const [isUpNextOpen, setIsUpNextOpen] = useState(false);
 
   const activeTrack = usePlayerStore((s) => s.activeTrack);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const isPlaybackLoading = usePlayerStore((s) => s.isPlaybackLoading);
   const positionMillis = usePlayerStore((s) => s.positionMillis);
   const durationMillis = usePlayerStore((s) => s.durationMillis);
+  const queue = usePlayerStore((s) => s.queue);
+  const queueIndex = usePlayerStore((s) => s.queueIndex);
+  const queueSource = usePlayerStore((s) => s.queueSource);
+  const shuffleEnabled = usePlayerStore((s) => s.shuffleEnabled);
+  const repeatMode = usePlayerStore((s) => s.repeatMode);
 
   useEffect(() => {
     if (!activeTrack) {
@@ -355,18 +375,47 @@ export default function FullPlayerPage() {
     [seekToMillis]
   );
 
+  const onSkipPrevious = useCallback(() => {
+    void skipToPrevious();
+  }, [skipToPrevious]);
+
+  const onSkipNext = useCallback(() => {
+    void skipToNext();
+  }, [skipToNext]);
+
+  const onToggleShuffle = useCallback(() => {
+    toggleShuffle();
+  }, [toggleShuffle]);
+
+  const onCycleRepeat = useCallback(() => {
+    cycleRepeatMode();
+  }, [cycleRepeatMode]);
+
+  const onOpenUpNext = useCallback(() => {
+    setIsUpNextOpen(true);
+  }, []);
+
   const noop = useCallback(() => {
-    /* secondary controls */
+    /* download / like placeholders */
   }, []);
 
   if (!activeTrack) {
     return null;
   }
 
-  const contextTitle =
-    activeTrack.albumName?.trim() ||
-    activeTrack.label?.trim() ||
-    "Your library";
+  const queueState = { queue, queueIndex, queueSource, repeatMode };
+  const canSkipNext = hasNext(queueState);
+  const showUpNext = hasQueue(queueState);
+
+  const contextTitle = queueSource
+    ? getQueueSourceLabel(queueSource)
+    : activeTrack.albumName?.trim() ||
+      activeTrack.label?.trim() ||
+      "Your library";
+
+  const accent = themeColors.dark.accent;
+  const onSurface = themeColors.dark.onSurface;
+  const muted = themeColors.dark.textMuted;
 
   const totalMillis =
     durationMillis > 0 ? durationMillis : activeTrack.durationSec * 1000;
@@ -487,17 +536,14 @@ export default function FullPlayerPage() {
             px={scale(2)}
             mt={verticalScale(8)}
           >
-            <IconControl onPress={noop}>
+            <IconControl onPress={onToggleShuffle} disabled={!showUpNext}>
               <Shuffle
                 size={moderateScale(20)}
-                color={themeColors.dark.onSurface}
+                color={shuffleEnabled && showUpNext ? accent : onSurface}
               />
             </IconControl>
-            <IconControl onPress={noop}>
-              <SkipBack
-                size={moderateScale(26)}
-                color={themeColors.dark.onSurface}
-              />
+            <IconControl onPress={onSkipPrevious}>
+              <SkipBack size={moderateScale(26)} color={onSurface} />
             </IconControl>
             <Pressable
               disabled={showMainFabSpinner}
@@ -545,17 +591,21 @@ export default function FullPlayerPage() {
                 />
               )}
             </Pressable>
-            <IconControl onPress={noop}>
+            <IconControl onPress={onSkipNext} disabled={!canSkipNext}>
               <SkipForward
                 size={moderateScale(26)}
-                color={themeColors.dark.onSurface}
+                color={canSkipNext ? onSurface : muted}
               />
             </IconControl>
-            <IconControl onPress={noop}>
-              <Repeat
-                size={moderateScale(20)}
-                color={themeColors.dark.onSurface}
-              />
+            <IconControl onPress={onCycleRepeat}>
+              {repeatMode === "one" ? (
+                <Repeat1 size={moderateScale(20)} color={accent} />
+              ) : (
+                <Repeat
+                  size={moderateScale(20)}
+                  color={repeatMode === "all" ? accent : onSurface}
+                />
+              )}
             </IconControl>
           </XStack>
 
@@ -567,39 +617,45 @@ export default function FullPlayerPage() {
             pt={verticalScale(16)}
             px={scale(4)}
           >
-            <XStack
-              flex={1}
-              gap={scale(10)}
-              items="center"
-              style={{ minWidth: 0 }}
-            >
+            {showUpNext ? (
               <Pressable
-                onPress={noop}
+                onPress={onOpenUpNext}
                 accessibilityRole="button"
                 accessibilityLabel="Up next queue"
                 android_ripple={rippleLight}
-                style={({ pressed }: PressableStateCallbackType) =>
-                  ghostControlStyle(pressed)
-                }
+                style={({ pressed }: PressableStateCallbackType) => ({
+                  flex: 1,
+                  minWidth: 0,
+                  opacity: pressed ? 0.85 : 1,
+                })}
               >
-                <ListMusic
-                  size={moderateScale(20)}
-                  color={themeColors.dark.onSurface}
-                />
+                <XStack gap={scale(10)} items="center" style={{ minWidth: 0 }}>
+                  <View style={ghostControlStyle(false)}>
+                    <ListMusic
+                      size={moderateScale(20)}
+                      color={themeColors.dark.onSurface}
+                    />
+                  </View>
+                  <MyText
+                    fontSize={moderateScale(14)}
+                    weight="700"
+                    color={themeColors.dark.onSurface}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                    style={{ flex: 1, minWidth: 0 }}
+                  >
+                    Up next
+                  </MyText>
+                </XStack>
               </Pressable>
-              <MyText
-                fontSize={moderateScale(14)}
-                weight="700"
-                color={themeColors.dark.onSurface}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-                style={{ flex: 1, minWidth: 0 }}
-              >
-                Up next
-              </MyText>
-            </XStack>
+            ) : null}
 
-            <XStack flex={1} gap={scale(8)} items="center" justify="flex-end">
+            <XStack
+              flex={1}
+              gap={scale(8)}
+              items="center"
+              justify="flex-end"
+            >
               <Pressable
                 onPress={noop}
                 accessibilityRole="button"
@@ -632,6 +688,9 @@ export default function FullPlayerPage() {
           </XStack>
         </YStack>
       </YStack>
+      {showUpNext ? (
+        <UpNextSheet open={isUpNextOpen} onOpenChange={setIsUpNextOpen} />
+      ) : null}
     </YStack>
   );
 }

@@ -17,7 +17,10 @@ import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
 import { getSongCoverUrl } from "src/utils/functions/songImage";
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
-import { usePlayback, usePlayerStore } from "src/features/Player";
+import { usePlayback } from "src/features/Player/context/PlayerContext";
+import { usePlayerStore } from "src/features/Player/store/playerStore";
+import { useQueueContext } from "src/features/Player/context/QueueContext";
+import { findSongIndex } from "src/features/Player/utils/queueHelpers";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import { PlayingArtworkIndicator } from "./PlayingArtworkIndicator";
 
@@ -30,7 +33,8 @@ interface SongListItemProps {
 }
 
 function SongListItem({ song }: SongListItemProps) {
-  const { playSong, togglePlayPause } = usePlayback();
+  const { playSong, playSongFromQueue, togglePlayPause } = usePlayback();
+  const queueContext = useQueueContext();
   const activeId = usePlayerStore((s) => s.activeTrack?.id);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const isPlaybackLoading = usePlayerStore((s) => s.isPlaybackLoading);
@@ -44,9 +48,32 @@ function SongListItem({ song }: SongListItemProps) {
   const showPauseOnRow = isThisTrack && isPlaying && !isPlaybackLoading;
 
   const handlePlayAction = useCallback(() => {
-    if (isThisTrack) void togglePlayPause();
-    else void playSong(song);
-  }, [isThisTrack, togglePlayPause, playSong, song]);
+    if (isThisTrack) {
+      void togglePlayPause();
+      return;
+    }
+
+    if (queueContext) {
+      const index = findSongIndex(queueContext.songs, song.id);
+      if (index >= 0) {
+        void playSongFromQueue(
+          queueContext.songs,
+          index,
+          queueContext.source
+        );
+        return;
+      }
+    }
+
+    void playSong(song);
+  }, [
+    isThisTrack,
+    togglePlayPause,
+    playSong,
+    playSongFromQueue,
+    queueContext,
+    song,
+  ]);
 
   return (
     <XStack

@@ -17,6 +17,7 @@ import {
 } from "src/hooks";
 import { getAlbumSongs } from "src/services";
 import SongListItem from "src/features/ArtistSongs/components/SongListItem";
+import { QueueProvider } from "src/features/Player/context/QueueContext";
 import AlbumProfileHeader from "../components/AlbumProfileHeader";
 import ArtistSongsPageSkeleton, {
   SongListItemSkeleton,
@@ -133,27 +134,35 @@ export default function AlbumSongsPage() {
     </YStack>
   ) : null;
 
+  const queueSource = {
+    type: "album" as const,
+    id: id ?? "",
+    name: headerTitle,
+  };
+
   return (
     <YStack flex={1} bg={themeColors.dark.background}>
       <ScreenHeader showBack title={headerTitle} />
-      <FlatList
-        data={songs}
-        keyExtractor={keyExtractor}
-        renderItem={renderItem}
-        ListHeaderComponent={listHeader}
-        ListFooterComponent={listFooter}
-        refreshControl={refreshControl}
-        onEndReached={handleEndReached}
-        onEndReachedThreshold={0.4}
-        initialNumToRender={PAGE_SIZE}
-        maxToRenderPerBatch={PAGE_SIZE}
-        windowSize={5}
-        removeClippedSubviews={true}
-        contentContainerStyle={{
-          paddingBottom: scrollBottomPadding,
-        }}
-        showsVerticalScrollIndicator={false}
-      />
+      <QueueProvider songs={songs} source={queueSource}>
+        <FlatList
+          data={songs}
+          keyExtractor={keyExtractor}
+          renderItem={renderItem}
+          ListHeaderComponent={listHeader}
+          ListFooterComponent={listFooter}
+          refreshControl={refreshControl}
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.4}
+          initialNumToRender={PAGE_SIZE}
+          maxToRenderPerBatch={PAGE_SIZE}
+          windowSize={5}
+          removeClippedSubviews={true}
+          contentContainerStyle={{
+            paddingBottom: scrollBottomPadding,
+          }}
+          showsVerticalScrollIndicator={false}
+        />
+      </QueueProvider>
     </YStack>
   );
 }
