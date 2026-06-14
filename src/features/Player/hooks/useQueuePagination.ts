@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useInfinitePaginatedQuery } from "src/hooks/useInfinitePaginatedQuery";
 import { getArtistSongsQueryOptions } from "src/features/ArtistSongs/queries/artistSongsQuery";
 import { getAlbumSongsQueryOptions } from "src/features/AlbumSongs/queries/albumSongsQuery";
@@ -21,6 +21,7 @@ export function useQueuePagination({
   shuffleEnabled,
 }: UseQueuePaginationOptions) {
   const syncQueueSongs = usePlayerStore((s) => s.syncQueueSongs);
+  const lastSyncedLengthRef = useRef(0);
 
   const supportsPagination =
     enabled &&
@@ -45,29 +46,69 @@ export function useQueuePagination({
     enabled: supportsPagination && queueSource?.type === "album",
   });
 
-  const activeQuery =
-    queueSource?.type === "artist"
-      ? artistQuery
-      : queueSource?.type === "album"
-        ? albumQuery
-        : null;
+  const isArtist = queueSource?.type === "artist";
+  const isAlbum = queueSource?.type === "album";
 
-  const items = activeQuery?.items ?? [];
+  const itemsLength = isArtist
+    ? artistQuery.items.length
+    : isAlbum
+      ? albumQuery.items.length
+      : 0;
+
+  const fetchNextPage = isArtist
+    ? artistQuery.fetchNextPage
+    : isAlbum
+      ? albumQuery.fetchNextPage
+      : undefined;
+
+  const hasNextPage = isArtist
+    ? artistQuery.hasNextPage
+    : isAlbum
+      ? albumQuery.hasNextPage
+      : false;
+
+  const isLoadingMore = isArtist
+    ? artistQuery.isLoadingMore
+    : isAlbum
+      ? albumQuery.isLoadingMore
+      : false;
 
   useEffect(() => {
-    if (!supportsPagination || !queueSource || !activeQuery) return;
+    if (!supportsPagination || !queueSource) return;
 
     const state = usePlayerStore.getState();
-    if (!sourcesMatch(state.queueSource, queueSource)) return;
+    if (!sourcesMatch(state.queueSource, queueSource)) {
+      lastSyncedLengthRef.current = 0;
+      return;
+    }
+
+    if (itemsLength <= lastSyncedLengthRef.current) return;
+
+    const items = isArtist
+      ? artistQuery.items
+      : isAlbum
+        ? albumQuery.items
+        : [];
+
     if (items.length > state.queue.length) {
       syncQueueSongs(items);
+      lastSyncedLengthRef.current = items.length;
     }
-  }, [supportsPagination, queueSource, activeQuery, items, syncQueueSongs]);
+  }, [
+    supportsPagination,
+    queueSource,
+    itemsLength,
+    isArtist,
+    isAlbum,
+    artistQuery.items,
+    albumQuery.items,
+    syncQueueSongs,
+  ]);
 
   return {
-    fetchNextPage: activeQuery?.fetchNextPage,
-    hasNextPage: activeQuery?.hasNextPage ?? false,
-    isFetchingNextPage: activeQuery?.isFetchingNextPage ?? false,
+    fetchNextPage: supportsPagination ? fetchNextPage : undefined,
+    hasNextPage: hasNextPage ?? false,
+    isLoadingMore: supportsPagination ? isLoadingMore : false,
     supportsPagination,
   };
 }

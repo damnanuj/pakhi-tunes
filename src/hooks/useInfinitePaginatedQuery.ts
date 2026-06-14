@@ -1,5 +1,9 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import {
+  resetPaginationGuard,
+  useGuardedFetchNextPage,
+} from "./useGuardedFetchNextPage";
 
 /** Paginated API response shape - must have next and currentPage */
 export interface PaginatedResponse<T> {
@@ -21,29 +25,25 @@ export interface UseInfinitePaginatedQueryOptions<TItem, TResponse> {
   /** Extract items from response */
   getItems: (response: TResponse) => TItem[];
   /** Return next offset or undefined when no more pages */
-  getNextPageParam: (response: TResponse) => number | undefined;
+  getNextPageParam: (
+    response: TResponse,
+    allPages: TResponse[]
+  ) => number | undefined;
   /** Page size (limit) - used for initial offset and next page calculation */
   pageSize: number;
   /** Whether the query is enabled */
   enabled?: boolean;
   /** Dedupe key when flattening pages (keeps first occurrence). */
   getItemKey?: (item: TItem) => string;
+  /** How long cached pages stay fresh before refetch (default 5 min). */
+  staleTime?: number;
 }
+
+const DEFAULT_STALE_TIME_MS = 5 * 60 * 1000;
 
 /**
  * Reusable infinite scroll hook for offset-based paginated APIs.
  * Supports any API that returns { data: { results, next, currentPage } }.
- *
- * @example Artist songs:
- *   const { items, fetchNextPage, hasNextPage, isFetchingNextPage, ... } =
- *     useInfinitePaginatedQuery({
- *       queryKey: ["artistSongs", artistId, 20],
- *       queryFn: ({ pageParam }) => getArtistSongs(artistId, { limit: 20, offset: pageParam }),
- *       getItems: (res) => res.data.results,
- *       getNextPageParam: (res) => res.data.next ? res.data.currentPage * 20 : undefined,
- *       pageSize: 20,
- *       enabled: !!artistId,
- *     });
  */
 export function useInfinitePaginatedQuery<TItem, TResponse>({
   queryKey,
@@ -53,17 +53,23 @@ export function useInfinitePaginatedQuery<TItem, TResponse>({
   pageSize,
   enabled = true,
   getItemKey,
+  staleTime = DEFAULT_STALE_TIME_MS,
 }: UseInfinitePaginatedQueryOptions<TItem, TResponse>) {
   const query = useInfiniteQuery({
     queryKey,
     queryFn: ({ pageParam }) => queryFn({ pageParam }),
     initialPageParam: 0,
-    getNextPageParam,
+    getNextPageParam: (lastPage, allPages) =>
+      getNextPageParam(lastPage, allPages),
     enabled,
+    staleTime,
   });
 
+  const pages = query.data?.pages;
+  const pagesCount = pages?.length ?? 0;
+
   const items = useMemo(() => {
-    const flat = query.data?.pages.flatMap((page) => getItems(page)) ?? [];
+    const flat = pages?.flatMap((page) => getItems(page)) ?? [];
     if (!getItemKey) return flat;
 
     const seen = new Set<string>();
@@ -75,12 +81,33 @@ export function useInfinitePaginatedQuery<TItem, TResponse>({
       deduped.push(item);
     }
     return deduped;
-  }, [query.data?.pages, getItemKey]);
+  }, [pages, getItems, getItemKey]);
   const firstPage = query.data?.pages[0];
+
+  const queryKeySignature = JSON.stringify(queryKey);
+
+  const { fetchNextPage, isLoadingMore } = useGuardedFetchNextPage(
+    query.fetchNextPage,
+    query.hasNextPage,
+    pagesCount,
+    enabled,
+    query.isFetchingNextPage,
+    query.isFetchNextPageError,
+    queryKeySignature
+  );
+
+  const refetch = useCallback(async () => {
+    resetPaginationGuard(queryKeySignature);
+    return query.refetch();
+  }, [query.refetch, queryKeySignature]);
 
   return {
     ...query,
     items,
     firstPage,
+    fetchNextPage,
+    isLoadingMore,
+    hasNextPage: query.hasNextPage,
+    refetch,
   };
 }

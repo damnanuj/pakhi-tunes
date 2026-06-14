@@ -8,17 +8,19 @@ import {
 } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
 import MyText from "src/components/MyText";
+import ListFooterSpinner from "src/components/ListFooterSpinner";
 import SongListItem from "src/features/ArtistSongs/components/SongListItem";
-import { SongListItemSkeleton } from "src/features/ArtistSongs/skeletons/ArtistSongsPageSkeleton";
 import SearchPageSkeleton from "../skeletons/SearchPageSkeleton";
 import {
   useRefreshable,
   useInfinitePaginatedQuery,
   useScrollBottomInset,
+  useScrollEndReached,
 } from "src/hooks";
 import { getSongSearch } from "src/services";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import type { SongSearchResponse } from "src/types/songSearch.types";
+import { getNextOffsetFromPagination } from "src/utils/pagination/getNextOffsetFromPagination";
 
 const PAGE_SIZE = 20;
 
@@ -26,10 +28,11 @@ function getItems(res: SongSearchResponse) {
   return res.data.results;
 }
 
-function getNextPageParam(res: SongSearchResponse): number | undefined {
-  const { next, currentPage } = res.data;
-  if (!next) return undefined;
-  return currentPage * PAGE_SIZE;
+function getNextPageParam(
+  res: SongSearchResponse,
+  _allPages: SongSearchResponse[]
+): number | undefined {
+  return getNextOffsetFromPagination<ArtistSong>(res, PAGE_SIZE);
 }
 
 interface ExploreSearchResultsProps {
@@ -55,7 +58,7 @@ function ExploreSearchResults({
     isError,
     fetchNextPage,
     hasNextPage,
-    isFetchingNextPage,
+    isLoadingMore,
     refetch,
   } = useInfinitePaginatedQuery<ArtistSong, SongSearchResponse>({
     queryKey: ["songSearch", debouncedQuery, PAGE_SIZE],
@@ -84,12 +87,6 @@ function ExploreSearchResults({
     []
   );
 
-  const handleEndReached = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-
   const keyExtractor = useCallback(
     (item: ArtistSong, index: number) =>
       `${item.encrypted_id ?? item.id}-${index}`,
@@ -102,13 +99,12 @@ function ExploreSearchResults({
   const showNoResults =
     !showSkeleton && !isError && debouncedQuery.length > 0 && songs.length === 0;
 
-  const listFooter = isFetchingNextPage ? (
-    <YStack py={verticalScale(8)}>
-      {Array.from({ length: 5 }, (_, i) => (
-        <SongListItemSkeleton key={i} />
-      ))}
-    </YStack>
-  ) : null;
+  const listFooter = isLoadingMore ? <ListFooterSpinner /> : null;
+
+  const { onScroll, onEndReached } = useScrollEndReached(fetchNextPage, {
+    enabled: hasNextPage,
+    isLoadingMore,
+  });
 
   if (showSkeleton) {
     return <SearchPageSkeleton />;
@@ -155,7 +151,9 @@ function ExploreSearchResults({
       renderItem={renderItem}
       ListFooterComponent={listFooter}
       refreshControl={refreshControl}
-      onEndReached={handleEndReached}
+      onScroll={onScroll}
+      scrollEventThrottle={16}
+      onEndReached={onEndReached}
       onEndReachedThreshold={0.4}
       initialNumToRender={PAGE_SIZE}
       maxToRenderPerBatch={PAGE_SIZE}

@@ -10,23 +10,19 @@ import {
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
 import ScreenHeader from "src/components/ScreenHeader";
+import ListFooterSpinner from "src/components/ListFooterSpinner";
 import {
   useRefreshable,
   useInfinitePaginatedQuery,
   useScrollBottomInset,
+  useScrollEndReached,
 } from "src/hooks";
 import SongListItem from "../components/SongListItem";
 import { QueueProvider } from "src/features/Player/context/QueueContext";
 import ArtistProfileHeader from "../components/ArtistProfileHeader";
-import ArtistSongsPageSkeleton, {
-  SongListItemSkeleton,
-} from "../skeletons/ArtistSongsPageSkeleton";
+import ArtistSongsPageSkeleton from "../skeletons/ArtistSongsPageSkeleton";
 import type { ArtistSong } from "src/types/artistSongs.types";
-import {
-  ARTIST_SONGS_PAGE_SIZE,
-  getArtistSongsQueryOptions,
-} from "../queries/artistSongsQuery";
-import { getSongListItemLayout } from "../utils/songListItemLayout";
+import { getArtistSongsQueryOptions } from "../queries/artistSongsQuery";
 import { getSongListKey } from "../utils/songListKeys";
 
 export default function ArtistSongsPage() {
@@ -41,7 +37,7 @@ export default function ArtistSongsPage() {
     isError,
     fetchNextPage,
     hasNextPage,
-    isFetchingNextPage,
+    isLoadingMore,
     refetch,
   } = useInfinitePaginatedQuery({
     ...getArtistSongsQueryOptions(id ?? ""),
@@ -61,12 +57,6 @@ export default function ArtistSongsPage() {
     []
   );
 
-  const handleEndReached = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-
   const keyExtractor = useCallback(
     (item: ArtistSong) => getSongListKey(item),
     []
@@ -80,6 +70,11 @@ export default function ArtistSongsPage() {
     }),
     [id, artistName]
   );
+
+  const { onScroll, onEndReached } = useScrollEndReached(fetchNextPage, {
+    enabled: hasNextPage,
+    isLoadingMore,
+  });
 
   if (isLoading) {
     return (
@@ -115,13 +110,7 @@ export default function ArtistSongsPage() {
 
   const listHeader = artist ? <ArtistProfileHeader artist={artist} /> : null;
 
-  const listFooter = isFetchingNextPage ? (
-    <YStack py={verticalScale(8)}>
-      {Array.from({ length: 5 }, (_, i) => (
-        <SongListItemSkeleton key={i} />
-      ))}
-    </YStack>
-  ) : null;
+  const listFooter = isLoadingMore ? <ListFooterSpinner /> : null;
 
   return (
     <YStack flex={1} bg={themeColors.dark.background}>
@@ -134,13 +123,14 @@ export default function ArtistSongsPage() {
           ListHeaderComponent={listHeader}
           ListFooterComponent={listFooter}
           refreshControl={refreshControl}
-          onEndReached={handleEndReached}
-          onEndReachedThreshold={0.4}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.2}
           initialNumToRender={12}
           maxToRenderPerBatch={8}
           windowSize={5}
           updateCellsBatchingPeriod={50}
-          getItemLayout={getSongListItemLayout}
           removeClippedSubviews
           contentContainerStyle={{
             paddingBottom: scrollBottomPadding,

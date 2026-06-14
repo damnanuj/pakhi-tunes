@@ -18,7 +18,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { YStack } from "tamagui";
-import { SongListItemSkeleton } from "src/features/ArtistSongs/skeletons/ArtistSongsPageSkeleton";
+import ListFooterSpinner from "src/components/ListFooterSpinner";
 import {
   moderateScale,
   scale,
@@ -34,6 +34,7 @@ import { QueueProvider } from "../context/QueueContext";
 import { useQueuePagination } from "../hooks/useQueuePagination";
 import { usePlayerStore } from "../store/playerStore";
 import { getQueueSourceLabel } from "../utils/queueHelpers";
+import { useScrollEndReached } from "src/hooks";
 
 const SHEET_HEIGHT_RATIO = 0.7;
 const DISMISS_DRAG_THRESHOLD = verticalScale(80);
@@ -60,14 +61,19 @@ function UpNextSheet({ open, onOpenChange }: UpNextSheetProps) {
   const shuffleEnabled = usePlayerStore((s) => s.shuffleEnabled);
 
   const {
-    fetchNextPage,
+    fetchNextPage: handleEndReached,
     hasNextPage,
-    isFetchingNextPage,
+    isLoadingMore,
     supportsPagination,
   } = useQueuePagination({
     enabled: open,
     queueSource,
     shuffleEnabled,
+  });
+
+  const { onScroll, onEndReached } = useScrollEndReached(handleEndReached, {
+    enabled: supportsPagination && hasNextPage,
+    isLoadingMore,
   });
 
   const translateY = useSharedValue(sheetHeight);
@@ -147,26 +153,10 @@ function UpNextSheet({ open, onOpenChange }: UpNextSheetProps) {
     []
   );
 
-  const handleEndReached = useCallback(() => {
-    if (!supportsPagination || !hasNextPage || isFetchingNextPage) return;
-    void fetchNextPage?.();
-  }, [
-    supportsPagination,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-  ]);
-
   const listFooter = useMemo(() => {
-    if (!isFetchingNextPage) return null;
-    return (
-      <YStack py={verticalScale(8)}>
-        {Array.from({ length: 3 }, (_, i) => (
-          <SongListItemSkeleton key={i} />
-        ))}
-      </YStack>
-    );
-  }, [isFetchingNextPage]);
+    if (!isLoadingMore) return null;
+    return <ListFooterSpinner />;
+  }, [isLoadingMore]);
 
   if (!open || !queueSource) return null;
 
@@ -218,10 +208,10 @@ function UpNextSheet({ open, onOpenChange }: UpNextSheetProps) {
               keyExtractor={keyExtractor}
               renderItem={renderItem}
               showsVerticalScrollIndicator={false}
-              onEndReached={
-                supportsPagination ? handleEndReached : undefined
-              }
-              onEndReachedThreshold={supportsPagination ? 0.4 : undefined}
+              onScroll={onScroll}
+              scrollEventThrottle={16}
+              onEndReached={supportsPagination ? onEndReached : undefined}
+              onEndReachedThreshold={0.4}
               ListFooterComponent={listFooter}
               initialNumToRender={12}
               maxToRenderPerBatch={8}

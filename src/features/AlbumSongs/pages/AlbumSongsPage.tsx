@@ -10,24 +10,20 @@ import {
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
 import ScreenHeader from "src/components/ScreenHeader";
+import ListFooterSpinner from "src/components/ListFooterSpinner";
 import {
   useRefreshable,
   useInfinitePaginatedQuery,
   useScrollBottomInset,
+  useScrollEndReached,
 } from "src/hooks";
 import SongListItem from "src/features/ArtistSongs/components/SongListItem";
 import { QueueProvider } from "src/features/Player/context/QueueContext";
 import AlbumProfileHeader from "../components/AlbumProfileHeader";
-import ArtistSongsPageSkeleton, {
-  SongListItemSkeleton,
-} from "src/features/ArtistSongs/skeletons/ArtistSongsPageSkeleton";
+import ArtistSongsPageSkeleton from "src/features/ArtistSongs/skeletons/ArtistSongsPageSkeleton";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
-import {
-  ALBUM_SONGS_PAGE_SIZE,
-  getAlbumSongsQueryOptions,
-} from "../queries/albumSongsQuery";
-import { getSongListItemLayout } from "src/features/ArtistSongs/utils/songListItemLayout";
+import { getAlbumSongsQueryOptions } from "../queries/albumSongsQuery";
 import { getSongListKey } from "src/features/ArtistSongs/utils/songListKeys";
 
 export default function AlbumSongsPage() {
@@ -44,7 +40,7 @@ export default function AlbumSongsPage() {
     isError,
     fetchNextPage,
     hasNextPage,
-    isFetchingNextPage,
+    isLoadingMore,
     refetch,
   } = useInfinitePaginatedQuery({
     ...getAlbumSongsQueryOptions(id ?? ""),
@@ -67,12 +63,6 @@ export default function AlbumSongsPage() {
     []
   );
 
-  const handleEndReached = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-
   const keyExtractor = useCallback(
     (item: ArtistSong) => getSongListKey(item),
     []
@@ -86,6 +76,11 @@ export default function AlbumSongsPage() {
     }),
     [id, headerTitle]
   );
+
+  const { onScroll, onEndReached } = useScrollEndReached(fetchNextPage, {
+    enabled: hasNextPage,
+    isLoadingMore,
+  });
 
   if (isLoading) {
     return (
@@ -121,13 +116,7 @@ export default function AlbumSongsPage() {
 
   const listHeader = <AlbumProfileHeader album={album} />;
 
-  const listFooter = isFetchingNextPage ? (
-    <YStack py={verticalScale(8)}>
-      {Array.from({ length: 5 }, (_, i) => (
-        <SongListItemSkeleton key={i} />
-      ))}
-    </YStack>
-  ) : null;
+  const listFooter = isLoadingMore ? <ListFooterSpinner /> : null;
 
   return (
     <YStack flex={1} bg={themeColors.dark.background}>
@@ -140,13 +129,14 @@ export default function AlbumSongsPage() {
           ListHeaderComponent={listHeader}
           ListFooterComponent={listFooter}
           refreshControl={refreshControl}
-          onEndReached={handleEndReached}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+          onEndReached={onEndReached}
           onEndReachedThreshold={0.4}
           initialNumToRender={12}
           maxToRenderPerBatch={8}
           windowSize={5}
           updateCellsBatchingPeriod={50}
-          getItemLayout={getSongListItemLayout}
           removeClippedSubviews
           contentContainerStyle={{
             paddingBottom: scrollBottomPadding,

@@ -2,6 +2,7 @@ import { getAlbumSongs } from "src/services";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import type { AlbumSongsResponse } from "src/types/albumSongs.types";
 import type { UseInfinitePaginatedQueryOptions } from "src/hooks/useInfinitePaginatedQuery";
+import { getNextOffsetFromPagination } from "src/utils/pagination/getNextOffsetFromPagination";
 import { getSongListKey } from "src/features/ArtistSongs/utils/songListKeys";
 
 export const ALBUM_SONGS_PAGE_SIZE = 20;
@@ -10,10 +11,11 @@ function getItems(res: AlbumSongsResponse) {
   return res.data.results;
 }
 
-function getNextPageParam(res: AlbumSongsResponse): number | undefined {
-  const { next, currentPage } = res.data;
-  if (!next) return undefined;
-  return currentPage * ALBUM_SONGS_PAGE_SIZE;
+function getNextPageParam(
+  res: AlbumSongsResponse,
+  _allPages: AlbumSongsResponse[]
+): number | undefined {
+  return getNextOffsetFromPagination<ArtistSong>(res, ALBUM_SONGS_PAGE_SIZE);
 }
 
 export function getAlbumSongsQueryOptions(
