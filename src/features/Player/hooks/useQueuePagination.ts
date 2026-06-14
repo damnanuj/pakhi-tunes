@@ -20,7 +20,7 @@ export function useQueuePagination({
   queueSource,
   shuffleEnabled,
 }: UseQueuePaginationOptions) {
-  const syncQueueSongs = usePlayerStore((s) => s.syncQueueSongs);
+  const appendQueueSongs = usePlayerStore((s) => s.appendQueueSongs);
   const lastSyncedLengthRef = useRef(0);
 
   const supportsPagination =
@@ -91,7 +91,7 @@ export function useQueuePagination({
         : [];
 
     if (items.length > state.queue.length) {
-      syncQueueSongs(items);
+      appendQueueSongs(items.slice(state.queue.length));
       lastSyncedLengthRef.current = items.length;
     }
   }, [
@@ -102,7 +102,7 @@ export function useQueuePagination({
     isAlbum,
     artistQuery.items,
     albumQuery.items,
-    syncQueueSongs,
+    appendQueueSongs,
   ]);
 
   return {

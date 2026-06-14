@@ -27,7 +27,10 @@ import {
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
 import SongListItem from "src/features/ArtistSongs/components/SongListItem";
-import { getSongListItemLayout } from "src/features/ArtistSongs/utils/songListItemLayout";
+import {
+  getSongListItemLayout,
+  SONG_LIST_ITEM_HEIGHT,
+} from "src/features/ArtistSongs/utils/songListItemLayout";
 import { getSongListKey } from "src/features/ArtistSongs/utils/songListKeys";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import { QueueProvider } from "../context/QueueContext";
@@ -39,6 +42,9 @@ import { useScrollEndReached } from "src/hooks";
 const SHEET_HEIGHT_RATIO = 0.7;
 const DISMISS_DRAG_THRESHOLD = verticalScale(80);
 const DISMISS_VELOCITY_THRESHOLD = 0.75;
+const ACTIVE_ITEM_VIEW_POSITION = 0.35;
+const PREFETCH_NEAR_END_THRESHOLD = 5;
+const SCROLL_TO_INDEX_RETRY_MS = 100;
 
 const SPRING_CONFIG = {
   damping: 22,
@@ -57,8 +63,14 @@ function UpNextSheet({ open, onOpenChange }: UpNextSheetProps) {
   const sheetHeight = windowHeight * SHEET_HEIGHT_RATIO;
 
   const queue = usePlayerStore((s) => s.queue);
+  const queueIndex = usePlayerStore((s) => s.queueIndex);
   const queueSource = usePlayerStore((s) => s.queueSource);
   const shuffleEnabled = usePlayerStore((s) => s.shuffleEnabled);
+
+  const flatListRef = useRef<FlatList<ArtistSong>>(null);
+  const hasScrolledToActiveRef = useRef(false);
+  const lastScrolledQueueIndexRef = useRef(-1);
+  const hasPrefetchedRef = useRef(false);
 
   const {
     fetchNextPage: handleEndReached,
@@ -71,10 +83,92 @@ function UpNextSheet({ open, onOpenChange }: UpNextSheetProps) {
     shuffleEnabled,
   });
 
-  const { onScroll, onEndReached } = useScrollEndReached(handleEndReached, {
-    enabled: supportsPagination && hasNextPage,
+  const { onScroll, onEndReached, resetScrollTracking } = useScrollEndReached(
+    handleEndReached,
+    {
+      enabled: supportsPagination && hasNextPage,
+      isLoadingMore,
+    }
+  );
+
+  const scrollToActiveItem = useCallback(
+    (animated = false) => {
+      if (queueIndex < 0 || queue.length === 0) return;
+      const index = Math.min(queueIndex, queue.length - 1);
+      flatListRef.current?.scrollToIndex({
+        index,
+        animated,
+        viewPosition: ACTIVE_ITEM_VIEW_POSITION,
+      });
+    },
+    [queueIndex, queue.length]
+  );
+
+  const onScrollToIndexFailed = useCallback(
+    (info: { index: number }) => {
+      const offset = SONG_LIST_ITEM_HEIGHT * info.index;
+      flatListRef.current?.scrollToOffset({ offset, animated: false });
+      setTimeout(() => {
+        flatListRef.current?.scrollToIndex({
+          index: info.index,
+          animated: false,
+          viewPosition: ACTIVE_ITEM_VIEW_POSITION,
+        });
+      }, SCROLL_TO_INDEX_RETRY_MS);
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (!open) {
+      hasScrolledToActiveRef.current = false;
+      lastScrolledQueueIndexRef.current = -1;
+      hasPrefetchedRef.current = false;
+      return;
+    }
+
+    resetScrollTracking();
+  }, [open, resetScrollTracking]);
+
+  // Scroll to active only on drawer open or when skip next/prev changes queueIndex.
+  // Do NOT re-scroll when queue.length grows from pagination.
+  useEffect(() => {
+    if (!open || queueIndex < 0 || queue.length === 0) return;
+
+    const isInitialOpen = !hasScrolledToActiveRef.current;
+    const queueIndexChanged =
+      lastScrolledQueueIndexRef.current !== queueIndex;
+
+    if (!isInitialOpen && !queueIndexChanged) return;
+
+    hasScrolledToActiveRef.current = true;
+    lastScrolledQueueIndexRef.current = queueIndex;
+
+    const frame = requestAnimationFrame(() => {
+      scrollToActiveItem(false);
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [open, queueIndex, scrollToActiveItem]);
+
+  // Prefetch once per drawer open when playing near the end of the loaded queue.
+  useEffect(() => {
+    if (!open || hasPrefetchedRef.current) return;
+    if (!supportsPagination || !hasNextPage || isLoadingMore) return;
+    if (queueIndex < 0 || queue.length === 0) return;
+    if (queueIndex < queue.length - PREFETCH_NEAR_END_THRESHOLD) return;
+
+    hasPrefetchedRef.current = true;
+    handleEndReached?.();
+  }, [
+    open,
+    queueIndex,
+    queue.length,
+    supportsPagination,
+    hasNextPage,
     isLoadingMore,
-  });
+    handleEndReached,
+  ]);
 
   const translateY = useSharedValue(sheetHeight);
   const backdropOpacity = useSharedValue(0);
@@ -204,6 +298,7 @@ function UpNextSheet({ open, onOpenChange }: UpNextSheetProps) {
           </View>
           <QueueProvider songs={queue} source={queueSource}>
             <FlatList
+              ref={flatListRef}
               data={queue}
               keyExtractor={keyExtractor}
               renderItem={renderItem}
@@ -212,13 +307,13 @@ function UpNextSheet({ open, onOpenChange }: UpNextSheetProps) {
               scrollEventThrottle={16}
               onEndReached={supportsPagination ? onEndReached : undefined}
               onEndReachedThreshold={0.4}
+              onScrollToIndexFailed={onScrollToIndexFailed}
               ListFooterComponent={listFooter}
-              initialNumToRender={12}
-              maxToRenderPerBatch={8}
-              windowSize={5}
+              initialNumToRender={15}
+              maxToRenderPerBatch={10}
+              windowSize={9}
               updateCellsBatchingPeriod={50}
               getItemLayout={getSongListItemLayout}
-              removeClippedSubviews
               contentContainerStyle={{
                 paddingBottom: verticalScale(12),
               }}
