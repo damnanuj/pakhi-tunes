@@ -174,7 +174,7 @@ export default function SignInForm({ onSwitchMode }: { onSwitchMode: () => void 
             disabled={isLoading}
             opacity={isLoading ? 0.7 : 1}
           >
-            <MyText color={"$textPrimary"}>
+            <MyText color={"$accentBlack"}>
               {isLoading ? "Signing in..." : "Sign In"}
             </MyText>
           </Button>

@@ -1,13 +1,5 @@
 import { useState } from "react";
-import {
-  Button,
-  Input,
-  YStack,
-  XStack,
-  Stack,
-  useTheme,
-  Form,
-} from "tamagui";
+import { Button, Input, YStack, XStack, Stack, useTheme, Form } from "tamagui";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import MyText from "src/components/MyText";
 import {
@@ -203,7 +195,7 @@ export default function SignUpForm({
             opacity={isLoading ? 0.7 : 1}
             mt={verticalScale(16)}
           >
-            <MyText color={"$textPrimary"}>
+            <MyText color={"$accentBlack"}>
               {isLoading ? "Creating account..." : "Create Account"}
             </MyText>
           </Button>
