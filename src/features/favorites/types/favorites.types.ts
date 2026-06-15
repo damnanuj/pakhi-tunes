@@ -43,6 +43,16 @@ export interface FavoriteStatusResponse {
   isSuccess: boolean;
 }
 
+export interface FavoriteBulkResponse {
+  data: {
+    added: number;
+    skipped: number;
+    favorites: FavoriteSong[];
+  };
+  error: Record<string, unknown>;
+  isSuccess: boolean;
+}
+
 export type FavoriteSongPayload = {
   songId: string;
   encryptedId?: string;
@@ -52,6 +62,8 @@ export type FavoriteSongPayload = {
   durationSec?: number;
   uri?: string;
 };
+
+export type LocalFavorite = FavoriteSongPayload & { savedAt: number };
 
 export type FavoritesParams = PaginationParams;
 

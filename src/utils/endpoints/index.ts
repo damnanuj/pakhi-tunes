@@ -11,6 +11,7 @@ export const endpoints = {
   },
   favorites: {
     list: "/favorites",
+    bulk: "/favorites/bulk",
     item: (songId: string) => `/favorites/${encodeURIComponent(songId)}`,
     status: (songId: string) =>
       `/favorites/${encodeURIComponent(songId)}/status`,

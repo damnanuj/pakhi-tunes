@@ -11,7 +11,6 @@ import themeColors from "src/utils/theme/colors";
 import ScreenHeader from "src/components/ScreenHeader";
 import { useScrollBottomInset } from "src/hooks";
 import { useAuth } from "src/features/auth/hooks/useAuth";
-import { useRequireAuth } from "src/features/auth/hooks/useRequireAuth";
 import GuestProfileSection from "../components/GuestProfileSection";
 import AuthenticatedProfileSection from "../components/AuthenticatedProfileSection";
 import ProfileMenu from "../components/ProfileMenu";
@@ -21,7 +20,6 @@ export default function ProfilePage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user, isAuthenticated, logout } = useAuth();
-  const { requireAuth } = useRequireAuth("/(tabs)/profile");
 
   const scrollBottomPadding = useScrollBottomInset({
     includeTabBar: true,
@@ -36,9 +34,7 @@ export default function ProfilePage() {
   };
 
   const handleFavouritesPress = () => {
-    requireAuth(() => {
-      router.push("/(tabs)/profile/favourites");
-    });
+    router.push("/(tabs)/profile/favourites");
   };
 
   const handleLogoutPress = () => {

@@ -28,6 +28,7 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MiniPlayerRootLayer, PlayerProvider } from "src/features/Player";
 import AuthProvider from "src/features/auth/providers/AuthProvider";
+import FavoritesSyncProvider from "src/features/favorites/providers/FavoritesSyncProvider";
 
 export { ErrorBoundary } from "expo-router";
 
@@ -103,8 +104,10 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
           <PlayerProvider>
             <Provider>
               <AuthProvider>
-                {children}
-                <MiniPlayerRootLayer />
+                <FavoritesSyncProvider>
+                  {children}
+                  <MiniPlayerRootLayer />
+                </FavoritesSyncProvider>
               </AuthProvider>
             </Provider>
           </PlayerProvider>

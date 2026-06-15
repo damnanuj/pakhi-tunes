@@ -8,17 +8,15 @@ import { useToggleFavorite } from "../hooks/useToggleFavorite";
 
 type FavoriteButtonProps = {
   track: ActiveTrack | null;
-  redirectPath?: string;
   size?: number;
 };
 
 export default function FavoriteButton({
   track,
-  redirectPath = "/player",
   size = moderateScale(20),
 }: FavoriteButtonProps) {
   const { isFavorited } = useFavoriteSongIds();
-  const { toggleFavorite, isPending } = useToggleFavorite(redirectPath);
+  const { toggleFavorite, isPending } = useToggleFavorite();
 
   if (!track) return null;
 

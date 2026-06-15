@@ -1,6 +1,7 @@
 import apiClient from "src/utils/api/client";
 import { endpoints } from "src/utils/endpoints";
 import type {
+  FavoriteBulkResponse,
   FavoriteMutationResponse,
   FavoriteSongPayload,
   FavoritesParams,
@@ -19,6 +20,14 @@ export async function addFavorite(payload: FavoriteSongPayload) {
   const { data } = await apiClient.post<FavoriteMutationResponse>(
     endpoints.favorites.list,
     payload
+  );
+  return data.data;
+}
+
+export async function bulkAddFavorites(songs: FavoriteSongPayload[]) {
+  const { data } = await apiClient.post<FavoriteBulkResponse>(
+    endpoints.favorites.bulk,
+    { songs }
   );
   return data.data;
 }

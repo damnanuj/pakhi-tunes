@@ -17,7 +17,7 @@ export default function GuestProfileSection({ onLoginPress }: GuestProfileSectio
       <ProfileSection
         avatarSource={GUEST_AVATAR}
         name="Guest"
-        subtitle="Sign in to save favourites"
+        subtitle="Sign in to sync favourites across devices"
         showEditButton={false}
       />
       <TouchableOpacity

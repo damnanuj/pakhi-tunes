@@ -2,21 +2,22 @@ import { useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ActiveTrack } from "src/features/Player/types";
 import { useAuth } from "src/features/auth/hooks/useAuth";
-import { useRequireAuth } from "src/features/auth/hooks/useRequireAuth";
 import {
   addFavorite,
   removeFavorite,
 } from "../services/favorites.service";
+import { useLocalFavoriteActions } from "./useLocalFavorites";
 import {
   activeTrackToFavoritePayload,
   type FavoriteSongPayload,
 } from "../types/favorites.types";
 import { FAVORITES_QUERY_KEY } from "./useFavorites";
 
-export function useToggleFavorite(redirectPath = "/player") {
+export function useToggleFavorite() {
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
-  const { requireAuth } = useRequireAuth(redirectPath);
+  const { addFavorite: addLocalFavorite, removeFavorite: removeLocalFavorite } =
+    useLocalFavoriteActions();
 
   const addMutation = useMutation({
     mutationFn: (payload: FavoriteSongPayload) => addFavorite(payload),
@@ -34,7 +35,15 @@ export function useToggleFavorite(redirectPath = "/player") {
 
   const toggleFavorite = useCallback(
     async (track: ActiveTrack, isFavorited: boolean) => {
-      if (!requireAuth()) return;
+      if (!isAuthenticated) {
+        if (isFavorited) {
+          removeLocalFavorite(track.id);
+          return;
+        }
+
+        addLocalFavorite(activeTrackToFavoritePayload(track));
+        return;
+      }
 
       if (isFavorited) {
         await removeMutation.mutateAsync(track.id);
@@ -43,7 +52,13 @@ export function useToggleFavorite(redirectPath = "/player") {
 
       await addMutation.mutateAsync(activeTrackToFavoritePayload(track));
     },
-    [addMutation, removeMutation, requireAuth]
+    [
+      addLocalFavorite,
+      addMutation,
+      isAuthenticated,
+      removeLocalFavorite,
+      removeMutation,
+    ]
   );
 
   return {

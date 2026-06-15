@@ -672,7 +672,7 @@ export default function FullPlayerPage() {
                   color={themeColors.dark.onSurface}
                 />
               </Pressable>
-              <FavoriteButton track={activeTrack} redirectPath="/player" />
+              <FavoriteButton track={activeTrack} />
             </XStack>
           </XStack>
         </YStack>
