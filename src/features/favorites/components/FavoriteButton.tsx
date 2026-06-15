@@ -7,7 +7,7 @@ import {
   ghostControlStyle,
   playerRippleLight,
 } from "src/features/Player/utils/ghostControlStyle";
-import { useFavoriteSongIds } from "../hooks/useFavorites";
+import { useFavoriteStatus } from "../hooks/useFavoriteStatus";
 import { useToggleFavorite } from "../hooks/useToggleFavorite";
 
 type FavoriteButtonProps = {
@@ -19,25 +19,24 @@ export default function FavoriteButton({
   track,
   size = moderateScale(20),
 }: FavoriteButtonProps) {
-  const { isFavorited } = useFavoriteSongIds();
+  const { isFavorited: favorited, isLoading: isStatusLoading } =
+    useFavoriteStatus(track?.id);
   const { toggleFavorite, isPending } = useToggleFavorite();
 
   if (!track) return null;
-
-  const favorited = isFavorited(track.id);
 
   return (
     <Pressable
       onPress={() => {
         void toggleFavorite(track, favorited);
       }}
-      disabled={isPending}
+      disabled={isPending || isStatusLoading}
       accessibilityRole="button"
       accessibilityLabel={favorited ? "Remove from favourites" : "Add to favourites"}
       android_ripple={isPending ? undefined : playerRippleLight}
       style={({ pressed }: PressableStateCallbackType) => ({
-        ...ghostControlStyle(pressed && !isPending),
-        opacity: isPending ? 0.6 : 1,
+        ...ghostControlStyle(pressed && !isPending && !isStatusLoading),
+        opacity: isPending || isStatusLoading ? 0.6 : 1,
       })}
     >
       <Heart

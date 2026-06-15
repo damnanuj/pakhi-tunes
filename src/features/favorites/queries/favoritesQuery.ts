@@ -8,7 +8,19 @@ import { getNextOffsetFromPagination } from "src/utils/pagination/getNextOffsetF
 
 export const FAVORITES_PAGE_SIZE = 20;
 export const FAVORITES_QUERY_KEY = ["favorites"] as const;
-const FAVORITES_STALE_TIME_MS = 30_000;
+export const FAVORITES_STATUS_QUERY_KEY = [
+  ...FAVORITES_QUERY_KEY,
+  "status",
+] as const;
+export const FAVORITES_STALE_TIME_MS = 30_000;
+
+export function getFavoritesInfiniteQueryKey() {
+  return [...FAVORITES_QUERY_KEY, FAVORITES_PAGE_SIZE];
+}
+
+export function getFavoriteStatusQueryKey(songId: string) {
+  return [...FAVORITES_STATUS_QUERY_KEY, songId] as const;
+}
 
 function getItems(res: FavoritesResponse) {
   return res.data.results;
@@ -26,7 +38,7 @@ export function getFavoritesQueryOptions(): UseInfinitePaginatedQueryOptions<
   FavoritesResponse
 > {
   return {
-    queryKey: [...FAVORITES_QUERY_KEY, FAVORITES_PAGE_SIZE],
+    queryKey: getFavoritesInfiniteQueryKey(),
     queryFn: ({ pageParam }) =>
       getFavorites({ limit: FAVORITES_PAGE_SIZE, offset: pageParam }),
     getItems,

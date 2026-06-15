@@ -11,7 +11,12 @@ import {
   activeTrackToFavoritePayload,
   type FavoriteSongPayload,
 } from "../types/favorites.types";
-import { FAVORITES_QUERY_KEY } from "../queries/favoritesQuery";
+import {
+  addFavoriteToListCache,
+  patchFavoriteStatusCache,
+  payloadToFavoriteSong,
+  removeFavoriteFromListCache,
+} from "../utils/favoritesCacheUpdates";
 
 export function useToggleFavorite() {
   const queryClient = useQueryClient();
@@ -21,15 +26,20 @@ export function useToggleFavorite() {
 
   const addMutation = useMutation({
     mutationFn: (payload: FavoriteSongPayload) => addFavorite(payload),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: FAVORITES_QUERY_KEY });
+    onSuccess: (data, payload) => {
+      const songId = data.songId ?? payload.songId;
+      const favorite = data.favorite ?? payloadToFavoriteSong(payload);
+
+      patchFavoriteStatusCache(queryClient, songId, true);
+      addFavoriteToListCache(queryClient, favorite);
     },
   });
 
   const removeMutation = useMutation({
     mutationFn: (songId: string) => removeFavorite(songId),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: FAVORITES_QUERY_KEY });
+    onSuccess: (data) => {
+      patchFavoriteStatusCache(queryClient, data.songId, false);
+      removeFavoriteFromListCache(queryClient, data.songId);
     },
   });
 
