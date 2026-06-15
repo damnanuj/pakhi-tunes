@@ -10,8 +10,13 @@ import {
   Form,
 } from "tamagui";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { Ban } from "@tamagui/lucide-icons";
 import MyText from "src/components/MyText";
-import { scale, verticalScale, moderateScale } from "src/utils/functions/dimensions";
+import {
+  scale,
+  verticalScale,
+  moderateScale,
+} from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
 import { register } from "../services/auth.service";
 import { useAuth } from "../hooks/useAuth";
@@ -23,7 +28,11 @@ import {
 } from "../utils/validation";
 import AuthSwitchLink from "./AuthSwitchLink";
 
-export default function SignUpForm({ onSwitchMode }: { onSwitchMode: () => void }) {
+export default function SignUpForm({
+  onSwitchMode,
+}: {
+  onSwitchMode: () => void;
+}) {
   const theme = useTheme();
   const router = useRouter();
   const { redirect } = useLocalSearchParams<{ redirect?: string }>();
@@ -49,7 +58,9 @@ export default function SignUpForm({ onSwitchMode }: { onSwitchMode: () => void 
     const updated = { ...form, [name]: value };
     setForm(updated);
     if (hasSubmitted) {
-      setErrors(validateSignUpForm(updated.name, updated.email, updated.password));
+      setErrors(
+        validateSignUpForm(updated.name, updated.email, updated.password)
+      );
     }
     if (apiError) setApiError("");
   };
@@ -77,10 +88,6 @@ export default function SignUpForm({ onSwitchMode }: { onSwitchMode: () => void 
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleGoogleSignUp = () => {
-    /* Google Sign-In not integrated yet */
   };
 
   return (
@@ -159,11 +166,7 @@ export default function SignUpForm({ onSwitchMode }: { onSwitchMode: () => void 
           {errors.email ? <MyText color={"red"}>{errors.email}</MyText> : null}
         </YStack>
 
-        <YStack
-          width="100%"
-          gap={verticalScale(10)}
-          borderColor={"white"}
-        >
+        <YStack width="100%" gap={verticalScale(10)} borderColor={"white"}>
           <MyText color={"$textPrimary"} fontSize={moderateScale(16)}>
             Password
           </MyText>
@@ -186,7 +189,9 @@ export default function SignUpForm({ onSwitchMode }: { onSwitchMode: () => void 
               color: theme.textPrimary.val,
             }}
           />
-          {errors.password ? <MyText color={"red"}>{errors.password}</MyText> : null}
+          {errors.password ? (
+            <MyText color={"red"}>{errors.password}</MyText>
+          ) : null}
         </YStack>
 
         <Form.Trigger asChild>
@@ -227,19 +232,32 @@ export default function SignUpForm({ onSwitchMode }: { onSwitchMode: () => void 
           />
         </XStack>
 
-        <Button
-          width="100%"
-          borderWidth={moderateScale(1.5, 0.3)}
-          borderColor={themeColors.dark.textMuted}
-          size="$4"
-          bg="transparent"
-          icon={<GoogleIcon size={30} />}
-          onPress={handleGoogleSignUp}
-          disabled={isLoading}
-          opacity={isLoading ? 0.7 : 1}
-        >
-          <MyText color={"$textPrimary"}>Sign up with Google</MyText>
-        </Button>
+        <Stack width="100%" position="relative">
+          <Button
+            width="100%"
+            borderWidth={moderateScale(1.5, 0.3)}
+            borderColor={themeColors.dark.textMuted}
+            size="$4"
+            bg="transparent"
+            icon={<GoogleIcon size={30} />}
+            disabled
+            opacity={0.45}
+            pointerEvents="none"
+          >
+            <MyText color={"$textSecondary"}>Sign up with Google</MyText>
+          </Button>
+          <Stack
+            position="absolute"
+            t={-moderateScale(6)}
+            r={scale(10)}
+            bg="$background"
+            rounded={999}
+            items="center"
+            justify="center"
+          >
+            <Ban size={moderateScale(12)} color={themeColors.dark.textMuted} />
+          </Stack>
+        </Stack>
 
         <AuthSwitchLink
           prompt="Already have an account?"
