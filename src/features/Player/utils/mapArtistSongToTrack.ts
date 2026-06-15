@@ -10,6 +10,7 @@ export function mapArtistSongToTrack(song: ArtistSong): ActiveTrack | null {
 
   return {
     id: song.id,
+    encryptedId: song.encrypted_id,
     uri,
     title: decodeHtmlEntities(song.name),
     artist: song.artists.primary.map((a) => a.name).join(", "),

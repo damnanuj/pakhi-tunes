@@ -1,39 +1,54 @@
 import React from "react";
 import { ScrollView } from "react-native";
 import { YStack } from "tamagui";
-import { Heart, Download, Globe, Trash2, LogOut } from "@tamagui/lucide-icons";
+import { useRouter } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   scale,
-  moderateScale,
   verticalScale,
 } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
 import ScreenHeader from "src/components/ScreenHeader";
 import { useScrollBottomInset } from "src/hooks";
-import ProfileSection from "../components/ProfileSection";
-import ProfileMenuItem from "../components/ProfileMenuItem";
-
-const PLACEHOLDER_AVATAR = {
-  uri: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop",
-};
-
-const MENU_ITEMS = [
-  { icon: Heart, label: "Favourites", onPress: () => {} },
-  { icon: Download, label: "Downloads", onPress: () => {} },
-  { icon: Globe, label: "Language", onPress: () => {} },
-  { icon: Trash2, label: "Clear cache", onPress: () => {} },
-  { icon: LogOut, label: "Log out", onPress: () => {} },
-];
+import { useAuth } from "src/features/auth/hooks/useAuth";
+import { useRequireAuth } from "src/features/auth/hooks/useRequireAuth";
+import GuestProfileSection from "../components/GuestProfileSection";
+import AuthenticatedProfileSection from "../components/AuthenticatedProfileSection";
+import ProfileMenu from "../components/ProfileMenu";
+import { FAVORITES_QUERY_KEY } from "src/features/favorites/hooks/useFavorites";
 
 export default function ProfilePage() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { user, isAuthenticated, logout } = useAuth();
+  const { requireAuth } = useRequireAuth("/(tabs)/profile");
+
   const scrollBottomPadding = useScrollBottomInset({
     includeTabBar: true,
     extra: verticalScale(32),
   });
 
+  const handleLoginPress = () => {
+    router.push({
+      pathname: "/auth",
+      params: { mode: "signin", redirect: "/(tabs)/profile" },
+    });
+  };
+
+  const handleFavouritesPress = () => {
+    requireAuth(() => {
+      router.push("/(tabs)/profile/favourites");
+    });
+  };
+
+  const handleLogoutPress = () => {
+    logout();
+    void queryClient.removeQueries({ queryKey: FAVORITES_QUERY_KEY });
+  };
+
   return (
     <YStack flex={1} bg={themeColors.dark.background}>
-      <ScreenHeader title="My profile" showBack={false} showSettings />
+      <ScreenHeader title="My profile" showBack={false} showSettings={false} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -42,29 +57,17 @@ export default function ProfilePage() {
           paddingBottom: scrollBottomPadding,
         }}
       >
-        <ProfileSection
-          avatarSource={PLACEHOLDER_AVATAR}
-          name="Charlotte King"
-          username="@johnkinggraphics"
-          onEditPress={() => {}}
-        />
+        {isAuthenticated && user ? (
+          <AuthenticatedProfileSection user={user} />
+        ) : (
+          <GuestProfileSection onLoginPress={handleLoginPress} />
+        )}
 
-        {/* Menu items */}
-        <YStack gap={verticalScale(12)}>
-          {MENU_ITEMS.map((item) => (
-            <ProfileMenuItem
-              key={item.label}
-              icon={
-                <item.icon
-                  size={moderateScale(18)}
-                  color={themeColors.dark.onSurface}
-                />
-              }
-              label={item.label}
-              onPress={item.onPress}
-            />
-          ))}
-        </YStack>
+        <ProfileMenu
+          isAuthenticated={isAuthenticated}
+          onFavouritesPress={handleFavouritesPress}
+          onLogoutPress={handleLogoutPress}
+        />
       </ScrollView>
     </YStack>
   );

@@ -45,7 +45,7 @@ const ALBUM_SIZE = moderateScale(72);
 
 export default function TopAlbumsSection() {
   return (
-    <YStack px={scale(20)} pb={verticalScale(100)}>
+    <YStack px={scale(20)} pb={verticalScale(12)}>
       <XStack
         justify="space-between"
         items="center"

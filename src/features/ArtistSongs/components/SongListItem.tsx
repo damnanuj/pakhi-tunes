@@ -175,12 +175,12 @@ function SongListItem({ song }: SongListItemProps) {
           </MyText>
         </YStack>
       </Pressable>
-      <Pressable hitSlop={8}>
+      {/* <Pressable hitSlop={8}>
         <MoreVertical
           size={moderateScale(20)}
           color={themeColors.dark.onSurface}
         />
-      </Pressable>
+      </Pressable> */}
       <Pressable hitSlop={8} onPress={handlePlayAction}>
         {showLoadingOnRow ? (
           <View

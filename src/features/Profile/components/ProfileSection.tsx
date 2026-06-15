@@ -14,15 +14,17 @@ import themeColors from "src/utils/theme/colors";
 interface ProfileSectionProps {
   avatarSource: ImageSourcePropType;
   name: string;
-  username: string;
+  subtitle: string;
   onEditPress?: () => void;
+  showEditButton?: boolean;
 }
 
 export default function ProfileSection({
   avatarSource,
   name,
-  username,
+  subtitle,
   onEditPress,
+  showEditButton = true,
 }: ProfileSectionProps) {
   return (
     <XStack items="center" gap={scale(20)} mb={verticalScale(24)}>
@@ -40,11 +42,13 @@ export default function ProfileSection({
           weight="400"
           color={themeColors.dark.textMuted}
         >
-          {username}
+          {subtitle}
         </MyText>
-        <View style={{ marginTop: verticalScale(12), alignSelf: "flex-start" }}>
-          <EditProfileButton onPress={onEditPress} />
-        </View>
+        {showEditButton ? (
+          <View style={{ marginTop: verticalScale(12), alignSelf: "flex-start" }}>
+            <EditProfileButton onPress={onEditPress} />
+          </View>
+        ) : null}
       </YStack>
     </XStack>
   );

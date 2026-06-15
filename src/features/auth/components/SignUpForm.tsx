@@ -5,142 +5,128 @@ import {
   YStack,
   XStack,
   Stack,
-  Checkbox,
-  CheckboxProps,
   Image,
   useTheme,
   Form,
 } from "tamagui";
-import { ScrollView } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import MyText from "src/components/MyText";
 import { scale, verticalScale, moderateScale } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
-import { Check as CheckIcon } from "@tamagui/lucide-icons";
-import { Label } from "tamagui";
+import { register } from "../services/auth.service";
+import { useAuth } from "../hooks/useAuth";
+import {
+  getApiErrorMessage,
+  hasFormErrors,
+  sanitizeRedirectPath,
+  validateSignUpForm,
+} from "../utils/validation";
+import AuthSwitchLink from "./AuthSwitchLink";
 
-const LoginPage = () => {
-  return (
-    <ScrollView
-      contentContainerStyle={{
-        flexGrow: 1,
-      }}
-    >
-      <YStack
-        px={scale(25)}
-        py={verticalScale(60)}
-        bg={"$background"}
-        height={"100%"}
-        flex={1}
-        items={"center"}
-        borderColor={"blue"}
-      >
-        <YStack
-          justify={"center"}
-          items={"center"}
-          gap={verticalScale(10)}
-        >
-          <MyText
-            borderColor={"red"}
-            fontSize={moderateScale(100)}
-            color={"$accentYellow"}
-            style={{ fontFamily: "Sparkle" }}
-          >
-            P
-          </MyText>
-
-          <MyText
-            borderColor={"green"}
-            style={{ fontFamily: "NeoNeon" }}
-            color={themeColors.dark.accent}
-            fontSize={moderateScale(60)}
-          >
-            Pakhi Tunes
-          </MyText>
-          <MyText color={"$textSecondary"}>
-            Your music, your way
-          </MyText>
-        </YStack>
-
-        <SigninForm />
-      </YStack>
-    </ScrollView>
-  );
-};
-
-export default LoginPage;
-
-function SigninForm() {
+export default function SignUpForm({ onSwitchMode }: { onSwitchMode: () => void }) {
   const theme = useTheme();
   const router = useRouter();
+  const { redirect } = useLocalSearchParams<{ redirect?: string }>();
+  const { setSession } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState("");
 
-  const [signInForm, setSignInForm] = useState({
+  const [form, setForm] = useState({
+    name: "",
     email: "",
     password: "",
   });
 
   const [errors, setErrors] = useState({
+    name: "",
     email: "",
     password: "",
   });
 
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
-  const handleChange = (name: string, value: string) => {
-    const updatedForm = {
-      ...signInForm,
-      [name]: value,
-    };
-    setSignInForm(updatedForm);
+  const handleChange = (name: keyof typeof form, value: string) => {
+    const updated = { ...form, [name]: value };
+    setForm(updated);
     if (hasSubmitted) {
-      validateForm(updatedForm);
+      setErrors(validateSignUpForm(updated.name, updated.email, updated.password));
     }
+    if (apiError) setApiError("");
   };
 
-  const validateForm = (formData = signInForm) => {
-    const newErrors: { email: string; password: string } = { email: "", password: "" };
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!emailRegex.test(formData.email)) {
-      newErrors.email = "Invalid email format";
-    }
-
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 4) {
-      newErrors.password = "Password must be at least 4 characters";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSignIn = () => {
-    const isValid = validateForm();
+  const handleSignUp = async () => {
+    const nextErrors = validateSignUpForm(form.name, form.email, form.password);
+    setErrors(nextErrors);
     setHasSubmitted(true);
-    if (!isValid) return;
+    if (hasFormErrors(nextErrors)) return;
+
     setIsLoading(true);
-    router.replace("/(tabs)/home");
-    setIsLoading(false);
+    setApiError("");
+    try {
+      const session = await register({
+        name: form.name.trim(),
+        email: form.email.trim(),
+        password: form.password,
+      });
+      setSession(session);
+      router.replace(sanitizeRedirectPath(redirect));
+    } catch (error) {
+      setApiError(
+        getApiErrorMessage(error, "Unable to create account. Please try again.")
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleGoogleSignIn = () => {
-    setIsLoading(true);
-    router.replace("/(tabs)/home");
-    setIsLoading(false);
+  const handleGoogleSignUp = () => {
+    /* Google Sign-In not integrated yet */
   };
 
   return (
     <>
       <Form
-        mt={verticalScale(60)}
+        mt={verticalScale(40)}
         width="100%"
         items="center"
         borderColor={"red"}
       >
+        {apiError ? (
+          <MyText color="red" mb={verticalScale(12)} width="100%">
+            {apiError}
+          </MyText>
+        ) : null}
+
+        <YStack
+          width="100%"
+          gap={verticalScale(10)}
+          borderColor={"white"}
+          mb={verticalScale(20)}
+        >
+          <MyText color={"$textPrimary"} fontSize={moderateScale(16)}>
+            Full Name
+          </MyText>
+          <Input
+            placeholderTextColor={"$textSecondary"}
+            focusStyle={{ borderColor: theme.accentYellow }}
+            value={form.name}
+            onChangeText={(text) => handleChange("name", text)}
+            bg={"transparent"}
+            placeholder="Enter Your Name"
+            width="100%"
+            height={moderateScale(50)}
+            rounded={moderateScale(8)}
+            borderWidth={moderateScale(1.5, 0.3)}
+            borderColor={errors.name ? "red" : "$borderPrimary"}
+            style={{
+              fontFamily: "MPlusRounded500",
+              fontSize: moderateScale(14),
+              color: theme.textPrimary.val,
+            }}
+          />
+          {errors.name ? <MyText color={"red"}>{errors.name}</MyText> : null}
+        </YStack>
+
         <YStack
           width="100%"
           gap={verticalScale(10)}
@@ -150,13 +136,13 @@ function SigninForm() {
           <MyText color={"$textPrimary"} fontSize={moderateScale(16)}>
             Email Address
           </MyText>
-
           <Input
             placeholderTextColor={"$textSecondary"}
             focusStyle={{ borderColor: theme.accentYellow }}
-            value={signInForm.email}
+            value={form.email}
             onChangeText={(text) => handleChange("email", text)}
-            htmlFor="email"
+            autoCapitalize="none"
+            keyboardType="email-address"
             bg={"transparent"}
             placeholder="Enter Your Email"
             width="100%"
@@ -170,7 +156,7 @@ function SigninForm() {
               color: theme.textPrimary.val,
             }}
           />
-          {errors.email && <MyText color={"red"}>{errors.email}</MyText>}
+          {errors.email ? <MyText color={"red"}>{errors.email}</MyText> : null}
         </YStack>
 
         <YStack
@@ -184,11 +170,10 @@ function SigninForm() {
           <Input
             placeholderTextColor={"$textSecondary"}
             focusStyle={{ borderColor: theme.accentYellow }}
-            value={signInForm.password}
+            value={form.password}
             onChangeText={(text) => handleChange("password", text)}
-            htmlFor="password"
             bg={"transparent"}
-            placeholder="Enter Your Password"
+            placeholder="Create a Password"
             secureTextEntry
             width="100%"
             height={moderateScale(50)}
@@ -201,28 +186,25 @@ function SigninForm() {
               color: theme.textPrimary.val,
             }}
           />
-          {errors.password && <MyText color={"red"}>{errors.password}</MyText>}
+          {errors.password ? <MyText color={"red"}>{errors.password}</MyText> : null}
         </YStack>
-        <XStack width="100%" items={"center"} justify={"space-between"}>
-          <CheckboxWithLabel size="$3" />
-          <MyText color="#3BB154" fontSize="$2" fontWeight="500">
-            Forgot password?
-          </MyText>
-        </XStack>
+
         <Form.Trigger asChild>
           <Button
             width="100%"
             bg={themeColors.dark.accent}
             size="$4"
-            onPress={handleSignIn}
+            onPress={handleSignUp}
             disabled={isLoading}
             opacity={isLoading ? 0.7 : 1}
+            mt={verticalScale(16)}
           >
             <MyText color={"$textPrimary"}>
-              {isLoading ? "Signing in..." : "Sign In"}
+              {isLoading ? "Creating account..." : "Create Account"}
             </MyText>
           </Button>
         </Form.Trigger>
+
         <XStack
           my={verticalScale(15)}
           borderColor={"red"}
@@ -244,6 +226,7 @@ function SigninForm() {
             borderColor={"#fff"}
           />
         </XStack>
+
         <Button
           width="100%"
           borderWidth={moderateScale(1.5, 0.3)}
@@ -251,44 +234,20 @@ function SigninForm() {
           size="$4"
           bg="transparent"
           icon={<GoogleIcon size={30} />}
-          onPress={handleGoogleSignIn}
+          onPress={handleGoogleSignUp}
           disabled={isLoading}
           opacity={isLoading ? 0.7 : 1}
         >
-          <MyText color={"$textPrimary"}>
-            {isLoading ? "Signing in with Google" : "Sign in with Google"}
-          </MyText>
+          <MyText color={"$textPrimary"}>Sign up with Google</MyText>
         </Button>
+
+        <AuthSwitchLink
+          prompt="Already have an account?"
+          linkText="Sign in here"
+          onPress={onSwitchMode}
+        />
       </Form>
     </>
-  );
-}
-
-function CheckboxWithLabel({
-  size,
-  label = "Remember Me",
-  ...checkboxProps
-}: CheckboxProps & { label?: string }) {
-  const id = `checkbox-${(size || "").toString().slice(1)}`;
-  return (
-    <XStack
-      my={verticalScale(5)}
-      borderColor={"red"}
-      items="center"
-      gap={scale(5)}
-    >
-      <Checkbox id={id} size={size} {...checkboxProps}>
-        <Checkbox.Indicator>
-          <CheckIcon />
-        </Checkbox.Indicator>
-      </Checkbox>
-
-      <Label htmlFor={id}>
-        <MyText color={"$textPrimary"} htmlFor={id}>
-          {label}
-        </MyText>
-      </Label>
-    </XStack>
   );
 }
 

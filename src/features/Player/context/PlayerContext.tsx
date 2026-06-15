@@ -15,7 +15,7 @@ import {
 } from "expo-audio";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import { usePlayerStore } from "../store/playerStore";
-import type { QueueSource } from "../types";
+import type { QueueSource, ActiveTrack } from "../types";
 import { mapArtistSongToTrack } from "../utils/mapArtistSongToTrack";
 import {
   findSongIndex,
@@ -27,6 +27,7 @@ import {
 
 type PlayerContextValue = {
   playSong: (song: ArtistSong) => Promise<void>;
+  playActiveTrack: (track: ActiveTrack) => Promise<void>;
   playSongFromQueue: (
     songs: ArtistSong[],
     startIndex: number,
@@ -136,11 +137,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     };
   }, [unloadPlayer]);
 
-  const loadAndPlayTrack = useCallback(
-    async (song: ArtistSong) => {
-      const track = mapArtistSongToTrack(song);
-      if (!track) return;
-
+  const loadAndPlayActiveTrack = useCallback(
+    async (track: ActiveTrack) => {
       const requestGen = ++playRequestGenerationRef.current;
       trackEndedHandledForId = null;
       usePlayerStore.getState().setPlaybackLoading(true);
@@ -198,12 +196,29 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     [unloadPlayer]
   );
 
+  const loadAndPlayTrack = useCallback(
+    async (song: ArtistSong) => {
+      const track = mapArtistSongToTrack(song);
+      if (!track) return;
+      await loadAndPlayActiveTrack(track);
+    },
+    [loadAndPlayActiveTrack]
+  );
+
   const playSong = useCallback(
     async (song: ArtistSong) => {
       usePlayerStore.getState().clearQueue();
       await loadAndPlayTrack(song);
     },
     [loadAndPlayTrack]
+  );
+
+  const playActiveTrack = useCallback(
+    async (track: ActiveTrack) => {
+      usePlayerStore.getState().clearQueue();
+      await loadAndPlayActiveTrack(track);
+    },
+    [loadAndPlayActiveTrack]
   );
 
   const playSongFromQueue = useCallback(
@@ -480,6 +495,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const value: PlayerContextValue = {
     playSong,
+    playActiveTrack,
     playSongFromQueue,
     playQueueAtIndex,
     togglePlayPause,

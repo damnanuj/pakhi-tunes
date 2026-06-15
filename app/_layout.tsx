@@ -26,6 +26,7 @@ import {
 } from "src/contexts/ThemeContext/ThemeContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MiniPlayerRootLayer, PlayerProvider } from "src/features/Player";
+import AuthProvider from "src/features/auth/providers/AuthProvider";
 
 export { ErrorBoundary } from "expo-router";
 
@@ -99,8 +100,10 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
       <QueryClientProvider client={queryClient}>
         <PlayerProvider>
           <Provider>
-            {children}
-            <MiniPlayerRootLayer />
+            <AuthProvider>
+              {children}
+              <MiniPlayerRootLayer />
+            </AuthProvider>
           </Provider>
         </PlayerProvider>
       </QueryClientProvider>
@@ -119,7 +122,7 @@ function RootLayoutNav() {
         <Stack.Screen name="index" />
         <Stack.Screen name="entry" />
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="login" />
+        <Stack.Screen name="auth" />
         <Stack.Screen
           name="player"
           options={{ animation: "slide_from_bottom", headerShown: false }}

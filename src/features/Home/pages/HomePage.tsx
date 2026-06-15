@@ -43,7 +43,7 @@ export default function HomePage() {
         <View style={{ marginBottom: SECTION_GAP }}>
           <TopArtistsSection />
         </View>
-        <TopAlbumsSection />
+        {/* <TopAlbumsSection /> */}
       </ScrollView>
     </YStack>
   );

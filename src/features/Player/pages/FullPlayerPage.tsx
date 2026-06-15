@@ -20,7 +20,6 @@ import {
 import { useRouter } from "expo-router";
 import {
   Download,
-  Heart,
   ListMusic,
   Pause,
   Play,
@@ -46,6 +45,7 @@ import { formatMillisToClock } from "../utils/formatPlaybackTime";
 import { getQueueSourceLabel, hasNext, hasQueue } from "../utils/queueHelpers";
 import ArtworkProgressRing from "../components/ArtworkProgressRing";
 import UpNextSheet from "../components/UpNextSheet";
+import FavoriteButton from "src/features/favorites/components/FavoriteButton";
 
 const ART_RING_STROKE = moderateScale(3);
 
@@ -396,7 +396,7 @@ export default function FullPlayerPage() {
   }, []);
 
   const noop = useCallback(() => {
-    /* download / like placeholders */
+    /* download placeholder */
   }, []);
 
   if (!activeTrack) {
@@ -672,20 +672,7 @@ export default function FullPlayerPage() {
                   color={themeColors.dark.onSurface}
                 />
               </Pressable>
-              <Pressable
-                onPress={noop}
-                accessibilityRole="button"
-                accessibilityLabel="Like"
-                android_ripple={rippleLight}
-                style={({ pressed }: PressableStateCallbackType) =>
-                  ghostControlStyle(pressed)
-                }
-              >
-                <Heart
-                  size={moderateScale(20)}
-                  color={themeColors.dark.onSurface}
-                />
-              </Pressable>
+              <FavoriteButton track={activeTrack} redirectPath="/player" />
             </XStack>
           </XStack>
         </YStack>

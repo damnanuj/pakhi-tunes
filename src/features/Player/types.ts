@@ -1,5 +1,6 @@
 export type ActiveTrack = {
   id: string;
+  encryptedId?: string;
   uri: string;
   title: string;
   /** Primary artists, comma-separated */
