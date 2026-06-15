@@ -1,8 +1,12 @@
-import { Pressable } from "react-native";
+import { Pressable, type PressableStateCallbackType } from "react-native";
 import { Heart } from "@tamagui/lucide-icons";
 import { moderateScale } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
 import type { ActiveTrack } from "src/features/Player/types";
+import {
+  ghostControlStyle,
+  playerRippleLight,
+} from "src/features/Player/utils/ghostControlStyle";
 import { useFavoriteSongIds } from "../hooks/useFavorites";
 import { useToggleFavorite } from "../hooks/useToggleFavorite";
 
@@ -30,7 +34,11 @@ export default function FavoriteButton({
       disabled={isPending}
       accessibilityRole="button"
       accessibilityLabel={favorited ? "Remove from favourites" : "Add to favourites"}
-      style={{ opacity: isPending ? 0.6 : 1 }}
+      android_ripple={isPending ? undefined : playerRippleLight}
+      style={({ pressed }: PressableStateCallbackType) => ({
+        ...ghostControlStyle(pressed && !isPending),
+        opacity: isPending ? 0.6 : 1,
+      })}
     >
       <Heart
         size={size}

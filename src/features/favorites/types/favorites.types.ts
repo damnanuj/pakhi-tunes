@@ -8,8 +8,6 @@ export interface FavoriteSong {
   title: string;
   artist: string;
   artworkUrl: string;
-  durationSec: number;
-  uri: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -59,26 +57,11 @@ export type FavoriteSongPayload = {
   title: string;
   artist: string;
   artworkUrl?: string;
-  durationSec?: number;
-  uri?: string;
 };
 
 export type LocalFavorite = FavoriteSongPayload & { savedAt: number };
 
 export type FavoritesParams = PaginationParams;
-
-export function favoriteToActiveTrack(favorite: FavoriteSong): ActiveTrack | null {
-  if (!favorite.uri) return null;
-  return {
-    id: favorite.songId,
-    encryptedId: favorite.encryptedId || undefined,
-    uri: favorite.uri,
-    title: favorite.title,
-    artist: favorite.artist,
-    artworkUrl: favorite.artworkUrl,
-    durationSec: favorite.durationSec,
-  };
-}
 
 export function activeTrackToFavoritePayload(track: ActiveTrack): FavoriteSongPayload {
   return {
@@ -87,7 +70,5 @@ export function activeTrackToFavoritePayload(track: ActiveTrack): FavoriteSongPa
     title: track.title,
     artist: track.artist,
     artworkUrl: track.artworkUrl,
-    durationSec: track.durationSec,
-    uri: track.uri,
   };
 }

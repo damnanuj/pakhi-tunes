@@ -10,8 +10,6 @@ export function localFavoriteToFavoriteSong(
     title: local.title,
     artist: local.artist,
     artworkUrl: local.artworkUrl ?? "",
-    durationSec: local.durationSec ?? 0,
-    uri: local.uri ?? "",
   };
 }
 

@@ -4,6 +4,10 @@ export const endpoints = {
   newReleases: "/new-releases",
   albumSongs: (albumId: string) => `/albums/${albumId}/songs`,
   songSearch: "/songs/search",
+  songs: {
+    search: "/songs/search",
+    item: (id: string) => `/songs/${encodeURIComponent(id)}`,
+  },
   auth: {
     register: "/auth/register",
     login: "/auth/login",

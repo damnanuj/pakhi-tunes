@@ -46,10 +46,12 @@ import { getQueueSourceLabel, hasNext, hasQueue } from "../utils/queueHelpers";
 import ArtworkProgressRing from "../components/ArtworkProgressRing";
 import UpNextSheet from "../components/UpNextSheet";
 import FavoriteButton from "src/features/favorites/components/FavoriteButton";
+import {
+  ghostControlStyle,
+  playerRippleLight,
+} from "../utils/ghostControlStyle";
 
 const ART_RING_STROKE = moderateScale(3);
-
-const rippleLight = { color: "rgba(255,255,255,0.12)", borderless: true };
 
 function SimpleLineProgressBar({
   progress,
@@ -255,21 +257,6 @@ function SimpleLineProgressBar({
 }
 
 
-function ghostControlStyle(pressed: boolean): ViewStyle {
-  return {
-    width: moderateScale(46),
-    height: moderateScale(46),
-    borderRadius: moderateScale(23),
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: pressed
-      ? "rgba(255,255,255,0.1)"
-      : "rgba(255,255,255,0.05)",
-    borderWidth: 1,
-    borderColor: pressed ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.06)",
-  };
-}
-
 function IconControl({
   onPress,
   children,
@@ -284,7 +271,7 @@ function IconControl({
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
-      android_ripple={disabled ? undefined : rippleLight}
+      android_ripple={disabled ? undefined : playerRippleLight}
       style={({ pressed }: PressableStateCallbackType) => ({
         ...ghostControlStyle(pressed && !disabled),
         opacity: disabled ? 0.35 : 1,
@@ -623,7 +610,7 @@ export default function FullPlayerPage() {
               accessibilityRole="button"
               accessibilityLabel="Up next queue"
               accessibilityState={{ disabled: !canOpenUpNext }}
-              android_ripple={canOpenUpNext ? rippleLight : undefined}
+              android_ripple={canOpenUpNext ? playerRippleLight : undefined}
               style={({ pressed }: PressableStateCallbackType) => ({
                 flex: 1,
                 minWidth: 0,
@@ -662,7 +649,7 @@ export default function FullPlayerPage() {
                 onPress={noop}
                 accessibilityRole="button"
                 accessibilityLabel="Download"
-                android_ripple={rippleLight}
+                android_ripple={playerRippleLight}
                 style={({ pressed }: PressableStateCallbackType) =>
                   ghostControlStyle(pressed)
                 }

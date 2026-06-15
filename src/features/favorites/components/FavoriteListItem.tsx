@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { Image, Pressable } from "react-native";
+import { ActivityIndicator, Image, Pressable } from "react-native";
 import { XStack, YStack } from "tamagui";
 import { Play } from "@tamagui/lucide-icons";
 import MyText from "src/components/MyText";
@@ -9,34 +9,29 @@ import {
   scale,
   verticalScale,
 } from "src/utils/functions/dimensions";
-import { usePlayback } from "src/features/Player/context/PlayerContext";
 import { usePlayerStore } from "src/features/Player/store/playerStore";
 import type { FavoriteSong } from "../types/favorites.types";
-import { favoriteToActiveTrack } from "../types/favorites.types";
+import { usePlayFavorite } from "../hooks/usePlayFavorite";
 
 type FavoriteListItemProps = {
   favorite: FavoriteSong;
 };
 
 export default function FavoriteListItem({ favorite }: FavoriteListItemProps) {
-  const { playActiveTrack, togglePlayPause } = usePlayback();
+  const { playFavorite, isResolving } = usePlayFavorite();
   const activeTrack = usePlayerStore((state) => state.activeTrack);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
+  const isPlaybackLoading = usePlayerStore((state) => state.isPlaybackLoading);
   const isActive = activeTrack?.id === favorite.songId;
+  const resolving = isResolving(favorite.songId);
+  const showLoading = resolving || (isActive && isPlaybackLoading);
 
   const handlePress = useCallback(() => {
-    if (isActive) {
-      void togglePlayPause();
-      return;
-    }
-
-    const track = favoriteToActiveTrack(favorite);
-    if (!track) return;
-    void playActiveTrack(track);
-  }, [favorite, isActive, playActiveTrack, togglePlayPause]);
+    void playFavorite(favorite);
+  }, [favorite, playFavorite]);
 
   return (
-    <Pressable onPress={handlePress}>
+    <Pressable onPress={handlePress} disabled={resolving}>
       <XStack
         items="center"
         gap={scale(12)}
@@ -80,11 +75,18 @@ export default function FavoriteListItem({ favorite }: FavoriteListItemProps) {
           </MyText>
         </YStack>
 
-        <Play
-          size={moderateScale(18)}
-          color={themeColors.dark.onSurface}
-          fill={isActive && isPlaying ? themeColors.dark.onSurface : "transparent"}
-        />
+        {showLoading ? (
+          <ActivityIndicator
+            size="small"
+            color={themeColors.dark.onSurface}
+          />
+        ) : (
+          <Play
+            size={moderateScale(18)}
+            color={themeColors.dark.onSurface}
+            fill={isActive && isPlaying ? themeColors.dark.onSurface : "transparent"}
+          />
+        )}
       </XStack>
     </Pressable>
   );
