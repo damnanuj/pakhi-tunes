@@ -7,7 +7,6 @@ import {
   Stack,
   Checkbox,
   CheckboxProps,
-  Image,
   useTheme,
   Form,
 } from "tamagui";
@@ -26,6 +25,7 @@ import {
   validateSignInForm,
 } from "../utils/validation";
 import AuthSwitchLink from "./AuthSwitchLink";
+import DisabledGoogleAuthButton from "./DisabledGoogleAuthButton";
 
 export default function SignInForm({ onSwitchMode }: { onSwitchMode: () => void }) {
   const theme = useTheme();
@@ -79,10 +79,6 @@ export default function SignInForm({ onSwitchMode }: { onSwitchMode: () => void 
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleGoogleSignIn = () => {
-    /* Google Sign-In not integrated yet */
   };
 
   return (
@@ -204,21 +200,7 @@ export default function SignInForm({ onSwitchMode }: { onSwitchMode: () => void 
             borderColor={"#fff"}
           />
         </XStack>
-        <Button
-          width="100%"
-          borderWidth={moderateScale(1.5, 0.3)}
-          borderColor={themeColors.dark.textMuted}
-          size="$4"
-          bg="transparent"
-          icon={<GoogleIcon size={30} />}
-          onPress={handleGoogleSignIn}
-          disabled={isLoading}
-          opacity={isLoading ? 0.7 : 1}
-        >
-          <MyText color={"$textPrimary"}>
-            Sign in with Google
-          </MyText>
-        </Button>
+        <DisabledGoogleAuthButton label="Sign in with Google" />
 
         <AuthSwitchLink
           prompt="Don't have an account?"
@@ -255,16 +237,5 @@ function CheckboxWithLabel({
         </MyText>
       </Label>
     </XStack>
-  );
-}
-
-function GoogleIcon({ size }: { size: number }) {
-  return (
-    <Image
-      src={"https://img.icons8.com/fluency/48/google-logo.png"}
-      alt="google-logo"
-      height={moderateScale(size)}
-      width={moderateScale(size)}
-    />
   );
 }

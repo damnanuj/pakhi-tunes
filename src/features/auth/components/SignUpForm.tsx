@@ -5,12 +5,10 @@ import {
   YStack,
   XStack,
   Stack,
-  Image,
   useTheme,
   Form,
 } from "tamagui";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ban } from "@tamagui/lucide-icons";
 import MyText from "src/components/MyText";
 import {
   scale,
@@ -27,6 +25,7 @@ import {
   validateSignUpForm,
 } from "../utils/validation";
 import AuthSwitchLink from "./AuthSwitchLink";
+import DisabledGoogleAuthButton from "./DisabledGoogleAuthButton";
 
 export default function SignUpForm({
   onSwitchMode,
@@ -232,32 +231,7 @@ export default function SignUpForm({
           />
         </XStack>
 
-        <Stack width="100%" position="relative">
-          <Button
-            width="100%"
-            borderWidth={moderateScale(1.5, 0.3)}
-            borderColor={themeColors.dark.textMuted}
-            size="$4"
-            bg="transparent"
-            icon={<GoogleIcon size={30} />}
-            disabled
-            opacity={0.45}
-            pointerEvents="none"
-          >
-            <MyText color={"$textSecondary"}>Sign up with Google</MyText>
-          </Button>
-          <Stack
-            position="absolute"
-            t={-moderateScale(6)}
-            r={scale(10)}
-            bg="$background"
-            rounded={999}
-            items="center"
-            justify="center"
-          >
-            <Ban size={moderateScale(12)} color={themeColors.dark.textMuted} />
-          </Stack>
-        </Stack>
+        <DisabledGoogleAuthButton label="Sign up with Google" />
 
         <AuthSwitchLink
           prompt="Already have an account?"
@@ -266,16 +240,5 @@ export default function SignUpForm({
         />
       </Form>
     </>
-  );
-}
-
-function GoogleIcon({ size }: { size: number }) {
-  return (
-    <Image
-      src={"https://img.icons8.com/fluency/48/google-logo.png"}
-      alt="google-logo"
-      height={moderateScale(size)}
-      width={moderateScale(size)}
-    />
   );
 }
