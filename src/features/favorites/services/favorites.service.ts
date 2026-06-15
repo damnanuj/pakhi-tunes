@@ -9,11 +9,11 @@ import type {
   FavoriteStatusResponse,
 } from "../types/favorites.types";
 
-export async function getFavorites(params?: FavoritesParams) {
+export async function getFavorites(params?: FavoritesParams): Promise<FavoritesResponse> {
   const { data } = await apiClient.get<FavoritesResponse>(endpoints.favorites.list, {
     params,
   });
-  return data.data;
+  return data;
 }
 
 export async function addFavorite(payload: FavoriteSongPayload) {

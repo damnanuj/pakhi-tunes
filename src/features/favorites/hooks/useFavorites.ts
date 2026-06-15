@@ -1,62 +1,77 @@
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useInfinitePaginatedQuery } from "src/hooks/useInfinitePaginatedQuery";
 import { useAuth } from "src/features/auth/hooks/useAuth";
-import { getFavorites } from "../services/favorites.service";
+import {
+  FAVORITES_QUERY_KEY,
+  getFavoritesQueryOptions,
+} from "../queries/favoritesQuery";
 import { useLocalFavorites, useLocalFavoriteSongIds } from "./useLocalFavorites";
 
-export const FAVORITES_QUERY_KEY = ["favorites"] as const;
+export { FAVORITES_QUERY_KEY };
 
-export function useServerFavorites() {
+export function useFavoritesList() {
   const { isAuthenticated } = useAuth();
-
-  return useQuery({
-    queryKey: FAVORITES_QUERY_KEY,
-    queryFn: () => getFavorites({ limit: 100, offset: 0 }),
+  const infiniteQuery = useInfinitePaginatedQuery({
+    ...getFavoritesQueryOptions(),
     enabled: isAuthenticated,
-    staleTime: 30_000,
   });
-}
-
-export function useFavorites() {
-  const { isAuthenticated } = useAuth();
-  const serverQuery = useServerFavorites();
   const localFavorites = useLocalFavorites();
 
   if (isAuthenticated) {
-    return serverQuery;
+    return {
+      favorites: infiniteQuery.items,
+      isLoading: infiniteQuery.isLoading,
+      isError: infiniteQuery.isError,
+      fetchNextPage: infiniteQuery.fetchNextPage,
+      hasNextPage: infiniteQuery.hasNextPage,
+      isLoadingMore: infiniteQuery.isLoadingMore,
+      refetch: infiniteQuery.refetch,
+    };
   }
 
   return {
-    ...serverQuery,
+    favorites: localFavorites,
+    isLoading: false,
+    isError: false,
+    fetchNextPage: async () => undefined,
+    hasNextPage: false,
+    isLoadingMore: false,
+    refetch: async () => undefined,
+  };
+}
+
+/** @deprecated Use useFavoritesList */
+export function useFavorites() {
+  const list = useFavoritesList();
+  return {
     data: {
-      results: localFavorites,
-      count: localFavorites.length,
+      results: list.favorites,
+      count: list.favorites.length,
       currentPage: 1,
       totalPages: 1,
       next: null,
       previous: null,
     },
-    isLoading: false,
-    isError: false,
+    isLoading: list.isLoading,
+    isError: list.isError,
   };
 }
 
 export function useFavoriteSongIds() {
   const { isAuthenticated } = useAuth();
-  const serverQuery = useServerFavorites();
+  const { favorites, isLoading, isError } = useFavoritesList();
   const localSongIds = useLocalFavoriteSongIds();
 
   const songIds = useMemo(() => {
     if (isAuthenticated) {
-      return new Set(
-        (serverQuery.data?.results ?? []).map((favorite) => favorite.songId)
-      );
+      return new Set(favorites.map((favorite) => favorite.songId));
     }
     return localSongIds;
-  }, [isAuthenticated, localSongIds, serverQuery.data?.results]);
+  }, [favorites, isAuthenticated, localSongIds]);
 
   return {
-    ...serverQuery,
+    isLoading,
+    isError,
     songIds,
     isFavorited: (songId?: string) => (songId ? songIds.has(songId) : false),
   };

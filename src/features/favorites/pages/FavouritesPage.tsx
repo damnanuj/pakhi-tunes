@@ -1,24 +1,73 @@
-import { FlatList, TouchableOpacity } from "react-native";
+import { useCallback, useMemo } from "react";
+import { FlatList, ListRenderItem, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { YStack } from "tamagui";
 import ScreenHeader from "src/components/ScreenHeader";
 import MyText from "src/components/MyText";
+import ListFooterSpinner from "src/components/ListFooterSpinner";
 import themeColors from "src/utils/theme/colors";
 import { scale, verticalScale, moderateScale } from "src/utils/functions/dimensions";
-import { useScrollBottomInset } from "src/hooks";
+import {
+  useRefreshable,
+  useScrollBottomInset,
+  useScrollEndReached,
+} from "src/hooks";
 import { useAuth } from "src/features/auth/hooks/useAuth";
-import { useFavorites } from "../hooks/useFavorites";
-import FavoriteListItem from "../components/FavoriteListItem";
+import SongListItem from "src/features/ArtistSongs/components/SongListItem";
+import { getSongListKey } from "src/features/ArtistSongs/utils/songListKeys";
+import { QueueProvider } from "src/features/Player/context/QueueContext";
+import type { ArtistSong } from "src/types/artistSongs.types";
+import { useFavoritesList } from "../hooks/useFavorites";
+import { favoriteToQueueStub } from "../utils/favoriteToQueueStub";
+
+const FAVORITES_QUEUE_SOURCE = {
+  type: "favorites" as const,
+  name: "Favourites",
+};
 
 export default function FavouritesPage() {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
-  const { data, isLoading, isError } = useFavorites();
-  const favorites = data?.results ?? [];
+  const {
+    favorites,
+    isLoading,
+    isError,
+    fetchNextPage,
+    hasNextPage,
+    isLoadingMore,
+    refetch,
+  } = useFavoritesList();
+
+  const queueSongs = useMemo(
+    () => favorites.map(favoriteToQueueStub),
+    [favorites]
+  );
+
   const scrollBottomPadding = useScrollBottomInset({
     includeTabBar: true,
     extra: verticalScale(32),
   });
+
+  const { refreshControl } = useRefreshable({
+    onRefresh: async () => {
+      if (!isAuthenticated) return;
+      await refetch();
+    },
+  });
+
+  const { onScroll, onEndReached } = useScrollEndReached(fetchNextPage, {
+    enabled: isAuthenticated && hasNextPage,
+    isLoadingMore,
+  });
+
+  const renderItem: ListRenderItem<ArtistSong> = useCallback(
+    ({ item }) => <SongListItem song={item} />,
+    []
+  );
+
+  const keyExtractor = useCallback((item: ArtistSong) => getSongListKey(item), []);
+
+  const listFooter = isLoadingMore ? <ListFooterSpinner /> : null;
 
   return (
     <YStack flex={1} bg={themeColors.dark.background}>
@@ -64,15 +113,28 @@ export default function FavouritesPage() {
           </MyText>
         </YStack>
       ) : (
-        <FlatList
-          data={favorites}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <FavoriteListItem favorite={item} />}
-          contentContainerStyle={{
-            paddingHorizontal: scale(20),
-            paddingBottom: scrollBottomPadding,
-          }}
-        />
+        <QueueProvider songs={queueSongs} source={FAVORITES_QUEUE_SOURCE}>
+          <FlatList
+            data={queueSongs}
+            keyExtractor={keyExtractor}
+            renderItem={renderItem}
+            ListFooterComponent={listFooter}
+            refreshControl={isAuthenticated ? refreshControl : undefined}
+            onScroll={onScroll}
+            scrollEventThrottle={16}
+            onEndReached={onEndReached}
+            onEndReachedThreshold={0.2}
+            initialNumToRender={12}
+            maxToRenderPerBatch={8}
+            windowSize={5}
+            updateCellsBatchingPeriod={50}
+            removeClippedSubviews
+            contentContainerStyle={{
+              paddingBottom: scrollBottomPadding,
+            }}
+            showsVerticalScrollIndicator={false}
+          />
+        </QueueProvider>
       )}
     </YStack>
   );

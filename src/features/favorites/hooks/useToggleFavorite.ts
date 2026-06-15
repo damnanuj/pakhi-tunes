@@ -11,7 +11,7 @@ import {
   activeTrackToFavoritePayload,
   type FavoriteSongPayload,
 } from "../types/favorites.types";
-import { FAVORITES_QUERY_KEY } from "./useFavorites";
+import { FAVORITES_QUERY_KEY } from "../queries/favoritesQuery";
 
 export function useToggleFavorite() {
   const queryClient = useQueryClient();

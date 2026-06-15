@@ -17,6 +17,7 @@ export type NewReleasesQueueScope = "explore" | "home" | "all";
 export type QueueSource =
   | { type: "album"; id: string; name: string }
   | { type: "newReleases"; scope: NewReleasesQueueScope; language?: string }
-  | { type: "artist"; id: string; name: string };
+  | { type: "artist"; id: string; name: string }
+  | { type: "favorites"; name: string };
 
 export type RepeatMode = "off" | "one" | "all";

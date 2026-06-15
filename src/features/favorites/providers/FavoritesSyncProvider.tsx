@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "src/features/auth/hooks/useAuth";
 import { useAuthStore } from "src/features/auth/store/authStore";
-import { FAVORITES_QUERY_KEY } from "../hooks/useFavorites";
+import { FAVORITES_QUERY_KEY } from "../queries/favoritesQuery";
 import { syncLocalFavoritesToServer } from "../services/syncLocalFavorites.service";
 
 type FavoritesSyncProviderProps = {

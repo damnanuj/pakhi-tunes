@@ -20,6 +20,7 @@ export function sourcesMatch(
   }
   if (a.type === "album" && b.type === "album") return a.id === b.id;
   if (a.type === "artist" && b.type === "artist") return a.id === b.id;
+  if (a.type === "favorites" && b.type === "favorites") return true;
   return false;
 }
 
@@ -38,6 +39,8 @@ export function getQueueSourceLabel(source: QueueSource | null): string {
       return source.name;
     case "newReleases":
       return "New Releases";
+    case "favorites":
+      return source.name || "Favourites";
     default:
       return "Your library";
   }

@@ -16,7 +16,7 @@ import {
 import type { ArtistSong } from "src/types/artistSongs.types";
 import { usePlayerStore } from "../store/playerStore";
 import type { QueueSource, ActiveTrack } from "../types";
-import { mapArtistSongToTrack } from "../utils/mapArtistSongToTrack";
+import { resolveArtistSongToTrack } from "../utils/resolveArtistSongToTrack";
 import {
   findSongIndex,
   getNextRepeatMode,
@@ -198,7 +198,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const loadAndPlayTrack = useCallback(
     async (song: ArtistSong) => {
-      const track = mapArtistSongToTrack(song);
+      const track = await resolveArtistSongToTrack(song);
       if (!track) return;
       await loadAndPlayActiveTrack(track);
     },
