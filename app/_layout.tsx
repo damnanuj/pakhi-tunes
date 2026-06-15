@@ -18,6 +18,7 @@ import {
   MPLUSRounded1c_900Black as MPlusRounded900,
 } from "@expo-google-fonts/m-plus-rounded-1c";
 import { SplashScreen, Stack } from "expo-router";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 import Provider from "./Provider";
 
 import {
@@ -96,18 +97,20 @@ export default function RootLayout() {
 const queryClient = new QueryClient();
 const Providers = ({ children }: { children: React.ReactNode }) => {
   return (
-    <ThemeProviderCustom>
-      <QueryClientProvider client={queryClient}>
-        <PlayerProvider>
-          <Provider>
-            <AuthProvider>
-              {children}
-              <MiniPlayerRootLayer />
-            </AuthProvider>
-          </Provider>
-        </PlayerProvider>
-      </QueryClientProvider>
-    </ThemeProviderCustom>
+    <KeyboardProvider>
+      <ThemeProviderCustom>
+        <QueryClientProvider client={queryClient}>
+          <PlayerProvider>
+            <Provider>
+              <AuthProvider>
+                {children}
+                <MiniPlayerRootLayer />
+              </AuthProvider>
+            </Provider>
+          </PlayerProvider>
+        </QueryClientProvider>
+      </ThemeProviderCustom>
+    </KeyboardProvider>
   );
 };
 

@@ -1,6 +1,7 @@
-import { ScrollView } from "react-native";
+import { View } from "react-native";
 import { YStack } from "tamagui";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { scale, verticalScale } from "src/utils/functions/dimensions";
 import ScreenHeader from "src/components/ScreenHeader";
 import AuthBranding from "../components/AuthBranding";
@@ -28,21 +29,23 @@ const AuthPage = () => {
   };
 
   return (
-    <>
+    <YStack flex={1} bg="$background">
       <ScreenHeader showBack showSettings={false} onBackPress={handleAuthBack} />
-      <ScrollView
+      <KeyboardAwareScrollView
+        style={{ flex: 1 }}
+        bottomOffset={verticalScale(40)}
+        extraKeyboardSpace={verticalScale(32)}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           flexGrow: 1,
+          paddingBottom: verticalScale(48),
         }}
       >
         <YStack
           px={scale(25)}
           py={verticalScale(20)}
-          bg={"$background"}
-          height={"100%"}
-          flex={1}
-          items={"center"}
-          borderColor={"blue"}
+          items="center"
         >
           <AuthBranding />
           {mode === "signup" ? (
@@ -50,9 +53,10 @@ const AuthPage = () => {
           ) : (
             <SignInForm onSwitchMode={() => switchMode("signup")} />
           )}
+          <View style={{ height: verticalScale(32) }} />
         </YStack>
-      </ScrollView>
-    </>
+      </KeyboardAwareScrollView>
+    </YStack>
   );
 };
 

@@ -27,7 +27,11 @@ import {
 import AuthSwitchLink from "./AuthSwitchLink";
 import DisabledGoogleAuthButton from "./DisabledGoogleAuthButton";
 
-export default function SignInForm({ onSwitchMode }: { onSwitchMode: () => void }) {
+export default function SignInForm({
+  onSwitchMode,
+}: {
+  onSwitchMode: () => void;
+}) {
   const theme = useTheme();
   const router = useRouter();
   const { redirect } = useLocalSearchParams<{ redirect?: string }>();

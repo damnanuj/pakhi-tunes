@@ -76,7 +76,7 @@ export default function EntryPage() {
     <YStack flex={1} bg={themeColors.dark.background}>
       <YStack flex={1}>
         <Image
-          source={require("../../../../assets/images/entry-hero.jpg")}
+          source={require("../../../../assets/images/entry-hero.png")}
           style={{
             width: "100%",
             height: "100%",

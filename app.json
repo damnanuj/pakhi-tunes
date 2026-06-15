@@ -9,7 +9,7 @@
     "scheme": "pakhitunes",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/entry-hero.jpg",
+      "image": "./assets/images/entry-hero.png",
       "resizeMode": "contain",
       "backgroundColor": "#000000"
     },
@@ -21,6 +21,7 @@
       "bundleIdentifier": "com.damnanuj.pakhitunes"
     },
     "android": {
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#000000"
@@ -49,7 +50,8 @@
         }
       ],
       "expo-web-browser",
-      "expo-audio"
+      "expo-audio",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true
