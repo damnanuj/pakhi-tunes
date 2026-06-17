@@ -43,18 +43,18 @@ export default function AppHeader() {
               </MyText>
             </YStack>
           </CircularButton>
-          <CircularButton>
+          {/* <CircularButton>
             <Bell
               size={moderateScale(20)}
               color={themeColors.dark.onSurface}
             />
-          </CircularButton>
-          <CircularButton>
+          </CircularButton> */}
+          {/* <CircularButton>
             <Settings
               size={moderateScale(20)}
               color={themeColors.dark.onSurface}
             />
-          </CircularButton>
+          </CircularButton> */}
         </XStack>
       }
     />

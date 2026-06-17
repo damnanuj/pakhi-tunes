@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { ScrollView } from "react-native";
 import { YStack } from "tamagui";
 import { useRouter } from "expo-router";
@@ -8,6 +8,7 @@ import {
   verticalScale,
 } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
+import ConfirmDialog from "src/components/ConfirmDialog";
 import ScreenHeader from "src/components/ScreenHeader";
 import { useScrollBottomInset } from "src/hooks";
 import { useAuth } from "src/features/auth/hooks/useAuth";
@@ -20,6 +21,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user, isAuthenticated, logout } = useAuth();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const scrollBottomPadding = useScrollBottomInset({
     includeTabBar: true,
@@ -38,6 +40,11 @@ export default function ProfilePage() {
   };
 
   const handleLogoutPress = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const handleLogoutConfirm = () => {
+    setShowLogoutConfirm(false);
     logout();
     void queryClient.removeQueries({ queryKey: FAVORITES_QUERY_KEY });
   };
@@ -65,6 +72,16 @@ export default function ProfilePage() {
           onLogoutPress={handleLogoutPress}
         />
       </ScrollView>
+
+      <ConfirmDialog
+        open={showLogoutConfirm}
+        title="Log out?"
+        message="Are you sure you want to log out of your account?"
+        confirmLabel="Log out"
+        cancelLabel="Cancel"
+        onConfirm={handleLogoutConfirm}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </YStack>
   );
 }
