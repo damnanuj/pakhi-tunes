@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { View } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 import { YStack } from "tamagui";
 import { verticalScale } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
@@ -10,8 +11,29 @@ import LibraryGrid from "../components/LibraryGrid";
 
 const SECTION_GAP = verticalScale(20);
 
+const LIBRARY_TAB_IDS: LibraryTabId[] = [
+  "recent",
+  "downloads",
+  "playlists",
+  "artists",
+  "albums",
+];
+
+function isLibraryTabId(value: string | undefined): value is LibraryTabId {
+  return Boolean(value && LIBRARY_TAB_IDS.includes(value as LibraryTabId));
+}
+
 export default function LibraryPage() {
-  const [activeTab, setActiveTab] = useState<LibraryTabId>("recent");
+  const { tab } = useLocalSearchParams<{ tab?: string }>();
+  const [activeTab, setActiveTab] = useState<LibraryTabId>(
+    isLibraryTabId(tab) ? tab : "recent"
+  );
+
+  useEffect(() => {
+    if (isLibraryTabId(tab)) {
+      setActiveTab(tab);
+    }
+  }, [tab]);
 
   return (
     <YStack flex={1} bg={themeColors.dark.background}>

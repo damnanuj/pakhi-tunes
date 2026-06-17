@@ -1,4 +1,4 @@
-import { Heart, Download, LogOut } from "@tamagui/lucide-icons";
+import { Heart, LogOut } from "@tamagui/lucide-icons";
 import { YStack } from "tamagui";
 import { verticalScale } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
@@ -17,7 +17,6 @@ export default function ProfileMenu({
 }: ProfileMenuProps) {
   const items = [
     { icon: Heart, label: "Favourites", onPress: onFavouritesPress },
-    { icon: Download, label: "Downloads", onPress: () => {} },
     ...(isAuthenticated
       ? [{ icon: LogOut, label: "Log out", onPress: onLogoutPress }]
       : []),

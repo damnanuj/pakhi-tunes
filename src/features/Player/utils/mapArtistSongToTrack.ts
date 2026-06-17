@@ -1,3 +1,4 @@
+import { getLocalUriIfDownloaded } from "src/features/Downloads/hooks/useDownloadedTrackUri";
 import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
 import { getSongCoverUrl } from "src/utils/functions/songImage";
 import type { ArtistSong } from "src/types/artistSongs.types";
@@ -5,7 +6,9 @@ import type { ActiveTrack } from "../types";
 import { getPreferredStreamUrl } from "./streamUrl";
 
 export function mapArtistSongToTrack(song: ArtistSong): ActiveTrack | null {
-  const uri = getPreferredStreamUrl(song.downloadUrl);
+  const uri =
+    getLocalUriIfDownloaded(song.id) ??
+    getPreferredStreamUrl(song.downloadUrl);
   if (!uri) return null;
 
   return {

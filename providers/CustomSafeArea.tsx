@@ -1,9 +1,14 @@
 import React from "react";
 import { StatusBar, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { View, YStack } from "tamagui";
+import { YStack } from "tamagui";
+import NetworkBanner from "src/components/NetworkBanner";
 
-export default function CustomSafeArea({ children }) {
+export default function CustomSafeArea({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const insets = useSafeAreaInsets();
 
   const statusBarHeight =
@@ -13,9 +18,10 @@ export default function CustomSafeArea({ children }) {
     <YStack
       flex={1}
       mt={statusBarHeight}
-      mb={insets.bottom} // dynamic bottom padding
+      mb={insets.bottom}
     >
-      {children}
+      <NetworkBanner />
+      <YStack flex={1}>{children}</YStack>
     </YStack>
   );
 }

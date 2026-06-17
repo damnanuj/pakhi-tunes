@@ -6,6 +6,7 @@ import {
   View,
 } from "react-native";
 import { useScrollBottomInset } from "src/hooks";
+import DownloadsList from "src/features/Downloads/components/DownloadsList";
 import LibraryCard from "./LibraryCard";
 import LibraryArtistsGrid from "./LibraryArtistsGrid";
 import { LIBRARY_GRID_COLUMN_WRAPPER_STYLE } from "../libraryGridLayout";
@@ -107,7 +108,10 @@ const ALBUMS_ITEMS: LibraryItem[] = [
   },
 ];
 
-const TAB_DATA: Record<Exclude<LibraryTabId, "artists">, LibraryItem[]> = {
+const TAB_DATA: Record<
+  Exclude<LibraryTabId, "artists" | "downloads">,
+  LibraryItem[]
+> = {
   recent: RECENT_ITEMS,
   playlists: PLAYLISTS_ITEMS,
   albums: ALBUMS_ITEMS,
@@ -155,6 +159,10 @@ export default function LibraryGrid({
 
   if (activeTab === "artists") {
     return <LibraryArtistsGrid />;
+  }
+
+  if (activeTab === "downloads") {
+    return <DownloadsList />;
   }
 
   return (

@@ -1,9 +1,15 @@
 import PillTabs, { type PillTabItem } from "src/components/PillTabs";
 
-export type LibraryTabId = "recent" | "playlists" | "artists" | "albums";
+export type LibraryTabId =
+  | "recent"
+  | "downloads"
+  | "playlists"
+  | "artists"
+  | "albums";
 
 const LIBRARY_TABS: PillTabItem[] = [
   { id: "recent", label: "Recent" },
+  { id: "downloads", label: "Downloads" },
   { id: "playlists", label: "Playlists" },
   { id: "artists", label: "Artists" },
   { id: "albums", label: "Albums" },

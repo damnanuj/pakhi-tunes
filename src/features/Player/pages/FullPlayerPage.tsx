@@ -19,7 +19,6 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
-  Download,
   ListMusic,
   Pause,
   Play,
@@ -46,6 +45,7 @@ import { getQueueSourceLabel, hasNext, hasQueue } from "../utils/queueHelpers";
 import ArtworkProgressRing from "../components/ArtworkProgressRing";
 import UpNextSheet from "../components/UpNextSheet";
 import FavoriteButton from "src/features/favorites/components/FavoriteButton";
+import DownloadButton from "src/features/Downloads/components/DownloadButton";
 import {
   ghostControlStyle,
   playerRippleLight,
@@ -382,10 +382,6 @@ export default function FullPlayerPage() {
     setIsUpNextOpen(true);
   }, []);
 
-  const noop = useCallback(() => {
-    /* download placeholder */
-  }, []);
-
   if (!activeTrack) {
     return null;
   }
@@ -645,20 +641,7 @@ export default function FullPlayerPage() {
               items="center"
               justify="flex-end"
             >
-              <Pressable
-                onPress={noop}
-                accessibilityRole="button"
-                accessibilityLabel="Download"
-                android_ripple={playerRippleLight}
-                style={({ pressed }: PressableStateCallbackType) =>
-                  ghostControlStyle(pressed)
-                }
-              >
-                <Download
-                  size={moderateScale(20)}
-                  color={themeColors.dark.onSurface}
-                />
-              </Pressable>
+              <DownloadButton track={activeTrack} />
               <FavoriteButton track={activeTrack} />
             </XStack>
           </XStack>

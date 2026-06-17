@@ -16,6 +16,8 @@ import { QueueProvider } from "src/features/Player/context/QueueContext";
 import SearchPageSkeleton from "../skeletons/SearchPageSkeleton";
 import RecentSearchesSection from "./RecentSearchesSection";
 import { useRefreshable, useScrollBottomInset } from "src/hooks";
+import { useNetwork } from "src/contexts/NetworkContext";
+import OfflineFallback from "src/features/Downloads/components/OfflineFallback";
 import { getNewReleases } from "src/services";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import { getNewReleaseSongs } from "src/types/newReleases.types";
@@ -34,6 +36,7 @@ function ExploreNewReleasesList({
   onSelectRecentSearch,
 }: ExploreNewReleasesListProps) {
   const router = useRouter();
+  const { isOffline } = useNetwork();
 
   const handleSeeAll = useCallback(() => {
     router.push("/home/new-releases" as never);
@@ -124,6 +127,10 @@ function ExploreNewReleasesList({
 
   if (isLoading) {
     return <SearchPageSkeleton />;
+  }
+
+  if (isOffline && allSongs.length === 0) {
+    return <OfflineFallback />;
   }
 
   if (isError) {
