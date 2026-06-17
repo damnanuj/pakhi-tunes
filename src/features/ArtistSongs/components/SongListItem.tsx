@@ -2,10 +2,10 @@ import { memo, useCallback, useMemo } from "react";
 import { ActivityIndicator, Image, Pressable, View } from "react-native";
 import { XStack, YStack } from "tamagui";
 import {
-  CirclePlay,
+  // CirclePlay,
   MoreVertical,
-  PauseCircle,
-  Play,
+  // PauseCircle,
+  // Play,
 } from "@tamagui/lucide-icons";
 import { useShallow } from "zustand/react/shallow";
 import {
@@ -26,7 +26,7 @@ import { PlayingArtworkIndicator } from "./PlayingArtworkIndicator";
 
 const IMAGE_SIZE = moderateScale(56);
 const ARTWORK_RADIUS = moderateScale(8);
-const ROW_ACTION_ICON = moderateScale(30);
+// const ROW_ACTION_ICON = moderateScale(30);
 
 interface SongListItemProps {
   song: ArtistSong;
@@ -181,7 +181,7 @@ function SongListItem({ song }: SongListItemProps) {
           color={themeColors.dark.onSurface}
         />
       </Pressable> */}
-      <Pressable hitSlop={8} onPress={handlePlayAction}>
+      {/* <Pressable hitSlop={8} onPress={handlePlayAction}>
         {showLoadingOnRow ? (
           <View
             style={{
@@ -212,7 +212,7 @@ function SongListItem({ song }: SongListItemProps) {
         ) : (
           <CirclePlay size={ROW_ACTION_ICON} color={themeColors.dark.accent} />
         )}
-      </Pressable>
+      </Pressable> */}
     </XStack>
   );
 }
