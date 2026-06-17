@@ -44,7 +44,6 @@ export default function ProfilePage() {
   };
 
   const handleLogoutConfirm = () => {
-    setShowLogoutConfirm(false);
     logout();
     void queryClient.removeQueries({ queryKey: FAVORITES_QUERY_KEY });
   };
@@ -75,12 +74,12 @@ export default function ProfilePage() {
 
       <ConfirmDialog
         open={showLogoutConfirm}
+        onOpenChange={setShowLogoutConfirm}
         title="Log out?"
         message="Are you sure you want to log out of your account?"
         confirmLabel="Log out"
         cancelLabel="Cancel"
         onConfirm={handleLogoutConfirm}
-        onCancel={() => setShowLogoutConfirm(false)}
       />
     </YStack>
   );
