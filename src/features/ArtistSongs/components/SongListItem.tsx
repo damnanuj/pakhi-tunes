@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo } from "react";
-import { ActivityIndicator, Image, Pressable, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, View, type PressableStateCallbackType } from "react-native";
 import { XStack, YStack } from "tamagui";
 import {
   // CirclePlay,
@@ -21,6 +21,10 @@ import { usePlayback } from "src/features/Player/context/PlayerContext";
 import { usePlayerStore } from "src/features/Player/store/playerStore";
 import { useQueueContext } from "src/features/Player/context/QueueContext";
 import { findSongIndex } from "src/features/Player/utils/queueHelpers";
+import {
+  ghostControlStyle,
+  playerRippleLight,
+} from "src/features/Player/utils/ghostControlStyle";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import { PlayingArtworkIndicator } from "./PlayingArtworkIndicator";
 
@@ -175,12 +179,19 @@ function SongListItem({ song }: SongListItemProps) {
           </MyText>
         </YStack>
       </Pressable>
-      {/* <Pressable hitSlop={8}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Song options"
+        android_ripple={playerRippleLight}
+        style={({ pressed }: PressableStateCallbackType) => ({
+          ...ghostControlStyle(pressed),
+        })}
+      >
         <MoreVertical
           size={moderateScale(20)}
           color={themeColors.dark.onSurface}
         />
-      </Pressable> */}
+      </Pressable>
       {/* <Pressable hitSlop={8} onPress={handlePlayAction}>
         {showLoadingOnRow ? (
           <View
