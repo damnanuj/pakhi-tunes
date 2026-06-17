@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Image, Pressable, View, type PressableStateCallbackType } from "react-native";
 import { XStack, YStack } from "tamagui";
 import {
@@ -27,6 +27,7 @@ import {
 } from "src/features/Player/utils/ghostControlStyle";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import { PlayingArtworkIndicator } from "./PlayingArtworkIndicator";
+import SongOptionsMenu, { type MenuAnchor } from "./SongOptionsMenu";
 
 const IMAGE_SIZE = moderateScale(56);
 const ARTWORK_RADIUS = moderateScale(8);
@@ -37,6 +38,9 @@ interface SongListItemProps {
 }
 
 function SongListItem({ song }: SongListItemProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState<MenuAnchor | null>(null);
+  const menuTriggerRef = useRef<View>(null);
   const { playSong, playSongFromQueue, togglePlayPause } = usePlayback();
   const queueContext = useQueueContext();
 
@@ -99,6 +103,13 @@ function SongListItem({ song }: SongListItemProps) {
     queueContext,
     song,
   ]);
+
+  const openOptionsMenu = useCallback(() => {
+    menuTriggerRef.current?.measureInWindow((x, y, width, height) => {
+      setMenuAnchor({ x, y, width, height });
+      setMenuOpen(true);
+    });
+  }, []);
 
   return (
     <XStack
@@ -180,6 +191,8 @@ function SongListItem({ song }: SongListItemProps) {
         </YStack>
       </Pressable>
       <Pressable
+        ref={menuTriggerRef}
+        onPress={openOptionsMenu}
         accessibilityRole="button"
         accessibilityLabel="Song options"
         android_ripple={playerRippleLight}
@@ -192,6 +205,11 @@ function SongListItem({ song }: SongListItemProps) {
           color={themeColors.dark.onSurface}
         />
       </Pressable>
+      <SongOptionsMenu
+        open={menuOpen}
+        onOpenChange={setMenuOpen}
+        anchor={menuAnchor}
+      />
       {/* <Pressable hitSlop={8} onPress={handlePlayAction}>
         {showLoadingOnRow ? (
           <View
