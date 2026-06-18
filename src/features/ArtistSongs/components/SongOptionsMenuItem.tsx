@@ -1,5 +1,9 @@
 import type { ReactNode } from "react";
-import { Pressable, type PressableStateCallbackType } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  type PressableStateCallbackType,
+} from "react-native";
 import { XStack } from "tamagui";
 import {
   moderateScale,
@@ -15,32 +19,44 @@ type SongOptionsMenuItemProps = {
   icon: ReactNode;
   label: string;
   onPress: () => void;
+  disabled?: boolean;
+  loading?: boolean;
 };
 
 export default function SongOptionsMenuItem({
   icon,
   label,
   onPress,
+  disabled = false,
+  loading = false,
 }: SongOptionsMenuItemProps) {
+  const isDisabled = disabled || loading;
+
   return (
     <Pressable
       onPress={onPress}
+      disabled={isDisabled}
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityState={{ disabled: isDisabled }}
       style={({ pressed }: PressableStateCallbackType) => ({
-        height: ROW_HEIGHT,
+        minHeight: ROW_HEIGHT,
         borderRadius: moderateScale(10),
-        backgroundColor: pressed ? "rgba(255,255,255,0.06)" : "transparent",
+        backgroundColor:
+          pressed && !isDisabled ? "rgba(255,255,255,0.06)" : "transparent",
+        opacity: isDisabled ? 0.5 : 1,
       })}
     >
-      <XStack flex={1} items="center" gap={scale(12)} px={scale(12)}>
-        {icon}
+      <XStack items="center" gap={scale(12)} px={scale(12)} py={verticalScale(10)}>
+        {loading ? (
+          <ActivityIndicator size="small" color={themeColors.dark.onSurface} />
+        ) : (
+          icon
+        )}
         <MyText
           fontSize={moderateScale(14)}
           weight="500"
           color={themeColors.dark.onSurface}
-          numberOfLines={1}
-          style={{ flex: 1 }}
         >
           {label}
         </MyText>

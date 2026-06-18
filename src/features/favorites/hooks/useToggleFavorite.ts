@@ -1,16 +1,12 @@
 import { useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { ActiveTrack } from "src/features/Player/types";
 import { useAuth } from "src/features/auth/hooks/useAuth";
 import {
   addFavorite,
   removeFavorite,
 } from "../services/favorites.service";
 import { useLocalFavoriteActions } from "./useLocalFavorites";
-import {
-  activeTrackToFavoritePayload,
-  type FavoriteSongPayload,
-} from "../types/favorites.types";
+import type { FavoriteSongPayload } from "../types/favorites.types";
 import {
   addFavoriteToListCache,
   patchFavoriteStatusCache,
@@ -44,23 +40,23 @@ export function useToggleFavorite() {
   });
 
   const toggleFavorite = useCallback(
-    async (track: ActiveTrack, isFavorited: boolean) => {
+    async (payload: FavoriteSongPayload, isFavorited: boolean) => {
       if (!isAuthenticated) {
         if (isFavorited) {
-          removeLocalFavorite(track.id);
+          removeLocalFavorite(payload.songId);
           return;
         }
 
-        addLocalFavorite(activeTrackToFavoritePayload(track));
+        addLocalFavorite(payload);
         return;
       }
 
       if (isFavorited) {
-        await removeMutation.mutateAsync(track.id);
+        await removeMutation.mutateAsync(payload.songId);
         return;
       }
 
-      await addMutation.mutateAsync(activeTrackToFavoritePayload(track));
+      await addMutation.mutateAsync(payload);
     },
     [
       addLocalFavorite,

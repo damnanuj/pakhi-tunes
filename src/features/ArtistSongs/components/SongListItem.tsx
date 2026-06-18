@@ -26,6 +26,9 @@ import {
   playerRippleLight,
 } from "src/features/Player/utils/ghostControlStyle";
 import type { ArtistSong } from "src/types/artistSongs.types";
+import ConfirmDialog from "src/components/ConfirmDialog";
+import DownloadQualityDialog from "src/features/Downloads/components/DownloadQualityDialog";
+import { useSongOptionsActions } from "../hooks/useSongOptionsActions";
 import { PlayingArtworkIndicator } from "./PlayingArtworkIndicator";
 import SongOptionsMenu, { type MenuAnchor } from "./SongOptionsMenu";
 
@@ -110,6 +113,8 @@ function SongListItem({ song }: SongListItemProps) {
       setMenuOpen(true);
     });
   }, []);
+
+  const songOptions = useSongOptionsActions(song, menuOpen);
 
   return (
     <XStack
@@ -209,6 +214,22 @@ function SongListItem({ song }: SongListItemProps) {
         open={menuOpen}
         onOpenChange={setMenuOpen}
         anchor={menuAnchor}
+        actions={songOptions}
+      />
+      <DownloadQualityDialog
+        open={songOptions.qualityDialog.open}
+        onOpenChange={songOptions.qualityDialog.onOpenChange}
+        onConfirm={songOptions.qualityDialog.onConfirm}
+        isSubmitting={songOptions.qualityDialog.isSubmitting}
+      />
+      <ConfirmDialog
+        open={songOptions.removeDialog.open}
+        onOpenChange={songOptions.removeDialog.onOpenChange}
+        title="Remove download?"
+        message="This song will be deleted from your device. You can download it again later."
+        confirmLabel="Remove"
+        cancelLabel="Keep"
+        onConfirm={songOptions.removeDialog.onConfirm}
       />
       {/* <Pressable hitSlop={8} onPress={handlePlayAction}>
         {showLoadingOnRow ? (

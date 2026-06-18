@@ -7,6 +7,7 @@ import {
   ghostControlStyle,
   playerRippleLight,
 } from "src/features/Player/utils/ghostControlStyle";
+import { activeTrackToFavoritePayload } from "../types/favorites.types";
 import { useFavoriteStatus } from "../hooks/useFavoriteStatus";
 import { useToggleFavorite } from "../hooks/useToggleFavorite";
 
@@ -28,7 +29,7 @@ export default function FavoriteButton({
   return (
     <Pressable
       onPress={() => {
-        void toggleFavorite(track, favorited);
+        void toggleFavorite(activeTrackToFavoritePayload(track), favorited);
       }}
       disabled={isPending || isStatusLoading}
       accessibilityRole="button"

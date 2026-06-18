@@ -1,5 +1,8 @@
 import type { Pagination, PaginationParams } from "src/types/pagination.types";
+import type { ArtistSong } from "src/types/artistSongs.types";
 import type { ActiveTrack } from "src/features/Player/types";
+import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
+import { getSongCoverUrl } from "src/utils/functions/songImage";
 
 export interface FavoriteSong {
   id: string;
@@ -70,5 +73,15 @@ export function activeTrackToFavoritePayload(track: ActiveTrack): FavoriteSongPa
     title: track.title,
     artist: track.artist,
     artworkUrl: track.artworkUrl,
+  };
+}
+
+export function artistSongToFavoritePayload(song: ArtistSong): FavoriteSongPayload {
+  return {
+    songId: song.id,
+    encryptedId: song.encrypted_id,
+    title: decodeHtmlEntities(song.name),
+    artist: song.artists.primary.map((a) => a.name).join(", "),
+    artworkUrl: getSongCoverUrl(song.image),
   };
 }
