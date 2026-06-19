@@ -14,6 +14,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Check as CheckIcon } from "@tamagui/lucide-icons";
 import { Label } from "tamagui";
 import MyText from "src/components/MyText";
+import { appToast } from "src/components/toast/appToastHelpers";
 import { scale, verticalScale, moderateScale } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
 import { login } from "../services/auth.service";
@@ -77,6 +78,7 @@ export default function SignInForm({
         password: signInForm.password,
       });
       setSession(session);
+      appToast.welcomeBack(session.user.name);
       router.replace(sanitizeRedirectPath(redirect));
     } catch (error) {
       setApiError(getApiErrorMessage(error, "Unable to sign in. Please try again."));

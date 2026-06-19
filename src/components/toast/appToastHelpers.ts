@@ -69,4 +69,12 @@ export const appToast = {
       icon: "heartOff",
     });
   },
+
+  welcomeBack(name: string) {
+    useAppToastStore.getState().show({
+      variant: "success",
+      message: `Welcome back ${name}`,
+      icon: "check",
+    });
+  },
 };
