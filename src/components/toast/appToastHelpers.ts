@@ -77,4 +77,12 @@ export const appToast = {
       icon: "check",
     });
   },
+
+  loggedOut(name: string) {
+    useAppToastStore.getState().show({
+      variant: "success",
+      message: `See you soon, ${name}`,
+      icon: "check",
+    });
+  },
 };

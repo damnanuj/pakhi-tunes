@@ -12,6 +12,7 @@ import ConfirmDialog from "src/components/ConfirmDialog";
 import ScreenHeader from "src/components/ScreenHeader";
 import { useScrollBottomInset } from "src/hooks";
 import { useAuth } from "src/features/auth/hooks/useAuth";
+import { appToast } from "src/components/toast/appToastHelpers";
 import GuestProfileSection from "../components/GuestProfileSection";
 import AuthenticatedProfileSection from "../components/AuthenticatedProfileSection";
 import ProfileMenu from "../components/ProfileMenu";
@@ -44,8 +45,10 @@ export default function ProfilePage() {
   };
 
   const handleLogoutConfirm = () => {
+    const displayName = user?.name ?? "Guest";
     logout();
     void queryClient.removeQueries({ queryKey: FAVORITES_QUERY_KEY });
+    appToast.loggedOut(displayName);
   };
 
   return (
