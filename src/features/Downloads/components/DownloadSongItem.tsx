@@ -1,5 +1,6 @@
 import { memo, useCallback, useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   Pressable,
   View,
@@ -7,6 +8,7 @@ import {
 } from "react-native";
 import { XStack, YStack } from "tamagui";
 import { Trash2 } from "@tamagui/lucide-icons";
+import { useShallow } from "zustand/react/shallow";
 import MyText from "src/components/MyText";
 import ConfirmDialog from "src/components/ConfirmDialog";
 import themeColors from "src/utils/theme/colors";
@@ -17,6 +19,7 @@ import {
 } from "src/utils/functions/dimensions";
 import { usePlayback } from "src/features/Player/context/PlayerContext";
 import { usePlayerStore } from "src/features/Player/store/playerStore";
+import { PlayingArtworkIndicator } from "src/features/ArtistSongs/components/PlayingArtworkIndicator";
 import {
   ghostControlStyle,
   playerRippleLight,
@@ -48,9 +51,28 @@ interface DownloadSongItemProps {
 function DownloadSongItem({ song }: DownloadSongItemProps) {
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const { playActiveTrack, togglePlayPause } = usePlayback();
-  const activeTrack = usePlayerStore((s) => s.activeTrack);
 
-  const isActive = activeTrack?.id === song.id;
+  const playbackState = usePlayerStore(
+    useShallow((s) => {
+      const isActive = s.activeTrack?.id === song.id;
+      if (!isActive) {
+        return { isActive: false as const };
+      }
+      return {
+        isActive: true as const,
+        isPlaying: s.isPlaying,
+        isPlaybackLoading: s.isPlaybackLoading,
+      };
+    })
+  );
+
+  const isActive = playbackState.isActive;
+  const showLoadingOnRow =
+    playbackState.isActive && playbackState.isPlaybackLoading;
+  const showPlayingOnRow =
+    playbackState.isActive &&
+    playbackState.isPlaying &&
+    !playbackState.isPlaybackLoading;
 
   const handlePress = useCallback(() => {
     if (isActive) {
@@ -95,6 +117,32 @@ function DownloadSongItem({ song }: DownloadSongItemProps) {
             style={{ width: IMAGE_SIZE, height: IMAGE_SIZE }}
             resizeMode="cover"
           />
+          {showLoadingOnRow ? (
+            <View
+              pointerEvents="none"
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                width: IMAGE_SIZE,
+                height: IMAGE_SIZE,
+                borderRadius: ARTWORK_RADIUS,
+                backgroundColor: "rgba(0,0,0,0.48)",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <ActivityIndicator
+                color={themeColors.dark.accent}
+                size="small"
+              />
+            </View>
+          ) : showPlayingOnRow ? (
+            <PlayingArtworkIndicator
+              size={IMAGE_SIZE}
+              borderRadius={ARTWORK_RADIUS}
+            />
+          ) : null}
         </View>
 
         <YStack flex={1} gap={verticalScale(4)} style={{ minWidth: 0 }}>
