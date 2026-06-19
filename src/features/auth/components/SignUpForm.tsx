@@ -18,6 +18,7 @@ import {
 } from "../utils/validation";
 import AuthSwitchLink from "./AuthSwitchLink";
 import DisabledGoogleAuthButton from "./DisabledGoogleAuthButton";
+import AuthPasswordInput from "./AuthPasswordInput";
 
 export default function SignUpForm({
   onSwitchMode,
@@ -161,24 +162,11 @@ export default function SignUpForm({
           <MyText color={"$textPrimary"} fontSize={moderateScale(16)}>
             Password
           </MyText>
-          <Input
-            placeholderTextColor={"$textSecondary"}
-            focusStyle={{ borderColor: theme.accentYellow }}
+          <AuthPasswordInput
             value={form.password}
             onChangeText={(text) => handleChange("password", text)}
-            bg={"transparent"}
             placeholder="Create a Password"
-            secureTextEntry
-            width="100%"
-            height={moderateScale(50)}
-            rounded={moderateScale(8)}
-            borderWidth={moderateScale(1.5, 0.3)}
-            borderColor={errors.password ? "red" : "$borderPrimary"}
-            style={{
-              fontFamily: "MPlusRounded500",
-              fontSize: moderateScale(14),
-              color: theme.textPrimary.val,
-            }}
+            hasError={Boolean(errors.password)}
           />
           {errors.password ? (
             <MyText color={"red"}>{errors.password}</MyText>
