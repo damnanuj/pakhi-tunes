@@ -57,9 +57,11 @@ export async function downloadSong(
 
   await ensureDownloadsDirectory();
   const filePath = getDownloadFilePath(songId);
+  const songTitle = decodeHtmlEntities(hydratedSong.name);
 
   store.startDownload({
     songId,
+    title: songTitle,
     progress: 0,
     status: "downloading",
   });
@@ -140,6 +142,10 @@ export async function removeDownloadedSong(songId: string): Promise<void> {
   const downloaded = useDownloadStore.getState().getDownloadedSong(songId);
   if (!downloaded) return;
 
+  const title = downloaded.title;
+
+  await cancelDownload(songId);
+
   try {
     const info = await getInfoAsync(downloaded.filePath);
     if (info.exists) {
@@ -149,5 +155,5 @@ export async function removeDownloadedSong(songId: string): Promise<void> {
     /* ignore file deletion errors */
   }
 
-  useDownloadStore.getState().removeDownload(songId);
+  useDownloadStore.getState().removeDownload(songId, title);
 }

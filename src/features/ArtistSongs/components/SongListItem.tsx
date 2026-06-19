@@ -28,6 +28,11 @@ import {
 import type { ArtistSong } from "src/types/artistSongs.types";
 import ConfirmDialog from "src/components/ConfirmDialog";
 import DownloadQualityDialog from "src/features/Downloads/components/DownloadQualityDialog";
+import {
+  DownloadArtworkOverlay,
+  DownloadedArtworkBadge,
+} from "src/features/Downloads/components/DownloadArtworkOverlay";
+import { useDownload } from "src/features/Downloads/hooks/useDownload";
 import { useSongOptionsActions } from "../hooks/useSongOptionsActions";
 import { PlayingArtworkIndicator } from "./PlayingArtworkIndicator";
 import SongOptionsMenu, { type MenuAnchor } from "./SongOptionsMenu";
@@ -115,6 +120,12 @@ function SongListItem({ song }: SongListItemProps) {
   }, []);
 
   const songOptions = useSongOptionsActions(song, menuOpen);
+  const { isDownloaded, isDownloading, progress } = useDownload(song.id);
+
+  const showDownloadOverlay =
+    isDownloading && !showLoadingOnRow && !showPauseOnRow;
+  const showDownloadedBadge =
+    isDownloaded && !isDownloading && !showLoadingOnRow && !showPauseOnRow;
 
   return (
     <XStack
@@ -174,7 +185,14 @@ function SongListItem({ song }: SongListItemProps) {
               size={IMAGE_SIZE}
               borderRadius={ARTWORK_RADIUS}
             />
+          ) : showDownloadOverlay ? (
+            <DownloadArtworkOverlay
+              size={IMAGE_SIZE}
+              borderRadius={ARTWORK_RADIUS}
+              progress={progress}
+            />
           ) : null}
+          {showDownloadedBadge ? <DownloadedArtworkBadge /> : null}
         </View>
         <YStack flex={1} style={{ minWidth: 0 }} justify="center">
           <MyText

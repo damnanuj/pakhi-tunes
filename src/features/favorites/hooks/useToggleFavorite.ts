@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { appToast } from "src/components/toast/appToastHelpers";
 import { useAuth } from "src/features/auth/hooks/useAuth";
 import {
   addFavorite,
@@ -44,19 +45,23 @@ export function useToggleFavorite() {
       if (!isAuthenticated) {
         if (isFavorited) {
           removeLocalFavorite(payload.songId);
+          appToast.removedFromFavorites(payload.title);
           return;
         }
 
         addLocalFavorite(payload);
+        appToast.addedToFavorites(payload.title);
         return;
       }
 
       if (isFavorited) {
         await removeMutation.mutateAsync(payload.songId);
+        appToast.removedFromFavorites(payload.title);
         return;
       }
 
       await addMutation.mutateAsync(payload);
+      appToast.addedToFavorites(payload.title);
     },
     [
       addLocalFavorite,

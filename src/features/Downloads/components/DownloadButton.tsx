@@ -6,7 +6,6 @@ import {
   type PressableStateCallbackType,
   type ViewStyle,
 } from "react-native";
-import Svg, { Circle } from "react-native-svg";
 import { Check, Download, RefreshCw } from "@tamagui/lucide-icons";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import type { ActiveTrack } from "src/features/Player/types";
@@ -21,10 +20,9 @@ import {
 import { useDownload } from "../hooks/useDownload";
 import type { DownloadQuality } from "../types/download.types";
 import DownloadQualityDialog from "./DownloadQualityDialog";
+import DownloadProgressRing from "./DownloadProgressRing";
 
 const ICON_SIZE = moderateScale(20);
-const RING_SIZE = moderateScale(36);
-const RING_STROKE = moderateScale(2.5);
 const DOWNLOADED_GREEN = "#4ade80";
 
 function downloadedControlStyle(pressed: boolean): ViewStyle {
@@ -66,51 +64,6 @@ function DownloadedStateIcon() {
         }}
       >
         <Check size={moderateScale(8)} color="#0a0a0a" strokeWidth={3} />
-      </View>
-    </View>
-  );
-}
-
-function DownloadProgressRing({ progress }: { progress: number }) {
-  const radius = (RING_SIZE - RING_STROKE) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const clamped = Math.min(1, Math.max(0, progress));
-  const strokeDashoffset = circumference * (1 - clamped);
-
-  return (
-    <View
-      style={{
-        width: RING_SIZE,
-        height: RING_SIZE,
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Svg width={RING_SIZE} height={RING_SIZE}>
-        <Circle
-          cx={RING_SIZE / 2}
-          cy={RING_SIZE / 2}
-          r={radius}
-          stroke={themeColors.dark.borderSecondary}
-          strokeWidth={RING_STROKE}
-          fill="none"
-        />
-        <Circle
-          cx={RING_SIZE / 2}
-          cy={RING_SIZE / 2}
-          r={radius}
-          stroke={themeColors.dark.accent}
-          strokeWidth={RING_STROKE}
-          fill="none"
-          strokeDasharray={`${circumference} ${circumference}`}
-          strokeDashoffset={strokeDashoffset}
-          strokeLinecap="round"
-          rotation="-90"
-          origin={`${RING_SIZE / 2}, ${RING_SIZE / 2}`}
-        />
-      </Svg>
-      <View style={{ position: "absolute" }}>
-        <Download size={ICON_SIZE} color={themeColors.dark.accent} />
       </View>
     </View>
   );

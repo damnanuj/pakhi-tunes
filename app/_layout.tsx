@@ -28,6 +28,7 @@ import {
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "src/utils/query/queryClient";
 import { MiniPlayerRootLayer, PlayerProvider } from "src/features/Player";
+import AppToast from "src/components/toast/AppToast";
 import AuthProvider from "src/features/auth/providers/AuthProvider";
 import FavoritesSyncProvider from "src/features/favorites/providers/FavoritesSyncProvider";
 import { NetworkProvider } from "src/contexts/NetworkContext";
@@ -109,6 +110,7 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
                   <FavoritesSyncProvider>
                     {children}
                     <MiniPlayerRootLayer />
+                    <AppToast />
                   </FavoritesSyncProvider>
                 </AuthProvider>
               </Provider>

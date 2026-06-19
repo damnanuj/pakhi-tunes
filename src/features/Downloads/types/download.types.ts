@@ -17,6 +17,7 @@ export type DownloadedSong = {
 
 export type DownloadProgress = {
   songId: string;
+  title: string;
   progress: number;
   status: DownloadStatus;
 };
