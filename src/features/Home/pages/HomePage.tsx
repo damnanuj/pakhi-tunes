@@ -10,7 +10,7 @@ import { useNetwork } from "src/contexts/NetworkContext";
 import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
 import { getNewReleases } from "src/services";
 import { NEW_RELEASES_QUEUE_FETCH_LIMIT } from "src/utils/constants/newReleases";
-import SearchBar from "../components/SearchBar";
+import HomeGreeting from "../components/HomeGreeting";
 import FeaturedCards from "../components/FeaturedCards";
 import NewReleasesSection from "../components/NewReleasesSection";
 import TopArtistsSection from "../components/TopArtistsSection";
@@ -69,7 +69,7 @@ export default function HomePage() {
           refreshControl={refreshControl}
         >
           <View style={{ marginBottom: SECTION_GAP }}>
-            <SearchBar mode="navigate" />
+            <HomeGreeting />
           </View>
           <View style={{ marginBottom: SECTION_GAP }}>
             <FeaturedCards />
