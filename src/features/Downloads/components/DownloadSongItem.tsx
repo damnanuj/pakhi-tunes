@@ -1,8 +1,14 @@
-import { memo, useCallback } from "react";
-import { Alert, Image, Pressable, View } from "react-native";
+import { memo, useCallback, useState } from "react";
+import {
+  Image,
+  Pressable,
+  View,
+  type PressableStateCallbackType,
+} from "react-native";
 import { XStack, YStack } from "tamagui";
-import { MoreVertical, Trash2 } from "@tamagui/lucide-icons";
+import { Trash2 } from "@tamagui/lucide-icons";
 import MyText from "src/components/MyText";
+import ConfirmDialog from "src/components/ConfirmDialog";
 import themeColors from "src/utils/theme/colors";
 import {
   moderateScale,
@@ -11,6 +17,10 @@ import {
 } from "src/utils/functions/dimensions";
 import { usePlayback } from "src/features/Player/context/PlayerContext";
 import { usePlayerStore } from "src/features/Player/store/playerStore";
+import {
+  ghostControlStyle,
+  playerRippleLight,
+} from "src/features/Player/utils/ghostControlStyle";
 import type { DownloadedSong } from "../types/download.types";
 import { formatFileSize } from "../utils/storageUtils";
 import { removeDownloadedSong } from "../services/downloadService";
@@ -36,6 +46,7 @@ interface DownloadSongItemProps {
 }
 
 function DownloadSongItem({ song }: DownloadSongItemProps) {
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const { playActiveTrack, togglePlayPause } = usePlayback();
   const activeTrack = usePlayerStore((s) => s.activeTrack);
 
@@ -50,21 +61,15 @@ function DownloadSongItem({ song }: DownloadSongItemProps) {
   }, [isActive, playActiveTrack, song, togglePlayPause]);
 
   const handleRemove = useCallback(() => {
-    Alert.alert(
-      "Remove download?",
-      `Delete "${song.title}" from your device?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: () => void removeDownloadedSong(song.id),
-        },
-      ]
-    );
-  }, [song.id, song.title]);
+    setRemoveDialogOpen(true);
+  }, []);
+
+  const handleRemoveConfirm = useCallback(() => {
+    void removeDownloadedSong(song.id);
+  }, [song.id]);
 
   return (
+    <>
     <Pressable
       onPress={handlePress}
       onLongPress={handleRemove}
@@ -97,9 +102,7 @@ function DownloadSongItem({ song }: DownloadSongItemProps) {
             fontSize={moderateScale(15)}
             weight="700"
             color={
-              isActive
-                ? themeColors.dark.accent
-                : themeColors.dark.onSurface
+              isActive ? themeColors.dark.accent : themeColors.dark.onSurface
             }
             numberOfLines={1}
             ellipsizeMode="tail"
@@ -142,19 +145,27 @@ function DownloadSongItem({ song }: DownloadSongItemProps) {
 
         <Pressable
           onPress={handleRemove}
-          hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel="Remove download"
+          android_ripple={playerRippleLight}
+          style={({ pressed }: PressableStateCallbackType) => ({
+            ...ghostControlStyle(pressed),
+          })}
         >
-          <Trash2 size={moderateScale(18)} color={themeColors.dark.textMuted} />
+          <Trash2 size={moderateScale(20)} color="#f87171" />
         </Pressable>
-
-        <MoreVertical
-          size={moderateScale(18)}
-          color={themeColors.dark.textMuted}
-        />
       </XStack>
     </Pressable>
+    <ConfirmDialog
+      open={removeDialogOpen}
+      onOpenChange={setRemoveDialogOpen}
+      title="Remove download?"
+      message="This song will be deleted from your device. You can download it again later."
+      confirmLabel="Remove"
+      cancelLabel="Keep"
+      onConfirm={handleRemoveConfirm}
+    />
+    </>
   );
 }
 

@@ -8,6 +8,14 @@ import {
 } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
 
+const DIALOG_ANIMATION = [
+  "quickest",
+  {
+    opacity: { overshootClamping: true },
+    scale: { overshootClamping: true },
+  },
+] as const;
+
 interface ConfirmDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -32,8 +40,8 @@ export default function ConfirmDialog({
       <AlertDialog.Portal>
         <AlertDialog.Overlay
           key="overlay"
-          animation="quick"
-          opacity={0.6}
+          animation="100ms"
+          opacity={0.55}
           enterStyle={{ opacity: 0 }}
           exitStyle={{ opacity: 0 }}
         />
@@ -41,16 +49,9 @@ export default function ConfirmDialog({
           key="content"
           bordered
           elevate
-          animation={[
-            "quick",
-            {
-              opacity: {
-                overshootClamping: true,
-              },
-            },
-          ]}
-          enterStyle={{ x: 0, y: -20, opacity: 0, scale: 0.9 }}
-          exitStyle={{ x: 0, y: 10, opacity: 0, scale: 0.95 }}
+          animation={DIALOG_ANIMATION}
+          enterStyle={{ opacity: 0, scale: 0.97 }}
+          exitStyle={{ opacity: 0, scale: 0.98 }}
           bg={themeColors.dark.surface}
           p={scale(20)}
           gap={verticalScale(16)}
