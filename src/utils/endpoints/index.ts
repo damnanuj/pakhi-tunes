@@ -1,4 +1,6 @@
 export const endpoints = {
+  genres: "/genres",
+  genreSongs: (slug: string) => `/genres/${encodeURIComponent(slug)}/songs`,
   topArtists: "/top-artists",
   artistSongs: (artistId: string) => `/top-artists/${artistId}/songs`,
   newReleases: "/new-releases",

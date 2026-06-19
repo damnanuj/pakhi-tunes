@@ -1,3 +1,4 @@
+export { getGenres, getGenreSongs } from "./genres.service";
 export { getTopArtists } from "./topArtists.service";
 export { getArtistSongs } from "./artistSongs.service";
 export { getNewReleases } from "./newReleases.service";

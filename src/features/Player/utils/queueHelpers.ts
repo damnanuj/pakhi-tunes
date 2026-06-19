@@ -20,6 +20,7 @@ export function sourcesMatch(
   }
   if (a.type === "album" && b.type === "album") return a.id === b.id;
   if (a.type === "artist" && b.type === "artist") return a.id === b.id;
+  if (a.type === "genre" && b.type === "genre") return a.slug === b.slug;
   if (a.type === "favorites" && b.type === "favorites") return true;
   return false;
 }
@@ -27,7 +28,11 @@ export function sourcesMatch(
 export function sourceSupportsQueuePagination(
   source: QueueSource | null
 ): boolean {
-  return source?.type === "artist" || source?.type === "album";
+  return (
+    source?.type === "artist" ||
+    source?.type === "album" ||
+    source?.type === "genre"
+  );
 }
 
 export function getQueueSourceLabel(source: QueueSource | null): string {
@@ -36,6 +41,8 @@ export function getQueueSourceLabel(source: QueueSource | null): string {
     case "album":
       return source.name;
     case "artist":
+      return source.name;
+    case "genre":
       return source.name;
     case "newReleases":
       return "New Releases";

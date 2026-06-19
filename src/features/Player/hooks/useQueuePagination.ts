@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useInfinitePaginatedQuery } from "src/hooks/useInfinitePaginatedQuery";
 import { getArtistSongsQueryOptions } from "src/features/ArtistSongs/queries/artistSongsQuery";
 import { getAlbumSongsQueryOptions } from "src/features/AlbumSongs/queries/albumSongsQuery";
+import { getGenreSongsQueryOptions } from "src/features/Genres/queries/genreSongsQuery";
 import { usePlayerStore } from "../store/playerStore";
 import type { QueueSource } from "../types";
 import {
@@ -36,6 +37,11 @@ export function useQueuePagination({
   const albumId =
     supportsPagination && queueSource?.type === "album" ? queueSource.id : "";
 
+  const genreSlug =
+    supportsPagination && queueSource?.type === "genre"
+      ? queueSource.slug
+      : "";
+
   const artistQuery = useInfinitePaginatedQuery({
     ...getArtistSongsQueryOptions(artistId),
     enabled: supportsPagination && queueSource?.type === "artist",
@@ -46,32 +52,54 @@ export function useQueuePagination({
     enabled: supportsPagination && queueSource?.type === "album",
   });
 
+  const genreQuery = useInfinitePaginatedQuery({
+    ...getGenreSongsQueryOptions(genreSlug),
+    enabled: supportsPagination && queueSource?.type === "genre",
+  });
+
   const isArtist = queueSource?.type === "artist";
   const isAlbum = queueSource?.type === "album";
+  const isGenre = queueSource?.type === "genre";
 
   const itemsLength = isArtist
     ? artistQuery.items.length
     : isAlbum
       ? albumQuery.items.length
-      : 0;
+      : isGenre
+        ? genreQuery.items.length
+        : 0;
 
   const fetchNextPage = isArtist
     ? artistQuery.fetchNextPage
     : isAlbum
       ? albumQuery.fetchNextPage
-      : undefined;
+      : isGenre
+        ? genreQuery.fetchNextPage
+        : undefined;
 
   const hasNextPage = isArtist
     ? artistQuery.hasNextPage
     : isAlbum
       ? albumQuery.hasNextPage
-      : false;
+      : isGenre
+        ? genreQuery.hasNextPage
+        : false;
 
   const isLoadingMore = isArtist
     ? artistQuery.isLoadingMore
     : isAlbum
       ? albumQuery.isLoadingMore
-      : false;
+      : isGenre
+        ? genreQuery.isLoadingMore
+        : false;
+
+  const activeItems = isArtist
+    ? artistQuery.items
+    : isAlbum
+      ? albumQuery.items
+      : isGenre
+        ? genreQuery.items
+        : [];
 
   useEffect(() => {
     if (!supportsPagination || !queueSource) return;
@@ -84,24 +112,15 @@ export function useQueuePagination({
 
     if (itemsLength <= lastSyncedLengthRef.current) return;
 
-    const items = isArtist
-      ? artistQuery.items
-      : isAlbum
-        ? albumQuery.items
-        : [];
-
-    if (items.length > state.queue.length) {
-      appendQueueSongs(items.slice(state.queue.length));
-      lastSyncedLengthRef.current = items.length;
+    if (activeItems.length > state.queue.length) {
+      appendQueueSongs(activeItems.slice(state.queue.length));
+      lastSyncedLengthRef.current = activeItems.length;
     }
   }, [
     supportsPagination,
     queueSource,
     itemsLength,
-    isArtist,
-    isAlbum,
-    artistQuery.items,
-    albumQuery.items,
+    activeItems,
     appendQueueSongs,
   ]);
 
