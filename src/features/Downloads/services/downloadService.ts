@@ -9,6 +9,7 @@ import { getSongCoverUrl } from "src/utils/functions/songImage";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import { useDownloadStore } from "../store/downloadStore";
 import type { DownloadQuality } from "../types/download.types";
+import { ensureDownloadableSong } from "../utils/ensureDownloadableSong";
 import {
   ensureDownloadsDirectory,
   getDownloadFilePath,
@@ -41,14 +42,15 @@ export async function downloadSong(
   song: ArtistSong,
   quality: DownloadQuality
 ): Promise<void> {
-  const songId = song.id;
+  const hydratedSong = await ensureDownloadableSong(song);
+  const songId = hydratedSong.id;
   const store = useDownloadStore.getState();
 
   if (store.isDownloaded(songId)) {
     return;
   }
 
-  const remoteUrl = getDownloadUrlForQuality(song.downloadUrl, quality);
+  const remoteUrl = getDownloadUrlForQuality(hydratedSong.downloadUrl, quality);
   if (!remoteUrl) {
     throw new Error(`No download URL available for ${quality}.`);
   }
@@ -91,7 +93,7 @@ export async function downloadSong(
     useDownloadStore
       .getState()
       .completeDownload(
-        buildDownloadedSong(song, quality, result.uri, fileSize)
+        buildDownloadedSong(hydratedSong, quality, result.uri, fileSize)
       );
   } catch (error) {
     activeResumables.delete(songId);

@@ -3,10 +3,14 @@ import type { ArtistSong } from "src/types/artistSongs.types";
 import type { ActiveTrack } from "../types";
 import { mapArtistSongToTrack } from "./mapArtistSongToTrack";
 
-async function fetchTrackById(id: string): Promise<ActiveTrack | null> {
+export type ResolvedArtistSongTrack = {
+  track: ActiveTrack;
+  song: ArtistSong;
+};
+
+async function fetchSongById(id: string): Promise<ArtistSong | null> {
   try {
-    const song = await getSongById(id);
-    return mapArtistSongToTrack(song);
+    return await getSongById(id);
   } catch {
     return null;
   }
@@ -14,9 +18,9 @@ async function fetchTrackById(id: string): Promise<ActiveTrack | null> {
 
 export async function resolveArtistSongToTrack(
   song: ArtistSong
-): Promise<ActiveTrack | null> {
+): Promise<ResolvedArtistSongTrack | null> {
   const direct = mapArtistSongToTrack(song);
-  if (direct) return direct;
+  if (direct) return { track: direct, song };
 
   const ids = [song.id, song.encrypted_id]
     .map((id) => id?.trim())
@@ -24,8 +28,11 @@ export async function resolveArtistSongToTrack(
 
   const uniqueIds = [...new Set(ids)];
   for (const id of uniqueIds) {
-    const track = await fetchTrackById(id);
-    if (track) return track;
+    const full = await fetchSongById(id);
+    if (!full) continue;
+
+    const track = mapArtistSongToTrack(full);
+    if (track) return { track, song: full };
   }
 
   return null;

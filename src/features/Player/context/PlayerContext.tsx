@@ -199,11 +199,30 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const loadAndPlayTrack = useCallback(
     async (song: ArtistSong) => {
       usePlayerStore.getState().setActiveArtistSong(song);
-      const track = await resolveArtistSongToTrack(song);
-      if (!track) {
+      const resolved = await resolveArtistSongToTrack(song);
+      if (!resolved) {
         usePlayerStore.getState().setActiveArtistSong(null);
         return;
       }
+
+      const { track, song: resolvedSong } = resolved;
+      usePlayerStore.getState().setActiveArtistSong(resolvedSong);
+
+      const { queue, queueIndex, originalQueue, shuffleEnabled } =
+        usePlayerStore.getState();
+      if (queue.length > 0) {
+        const updatedQueue = queue.map((entry) =>
+          entry.id === resolvedSong.id ? resolvedSong : entry
+        );
+        usePlayerStore.getState().updateQueueOrder(updatedQueue, queueIndex);
+      }
+      if (!shuffleEnabled && originalQueue.length > 0) {
+        const updatedOriginal = originalQueue.map((entry) =>
+          entry.id === resolvedSong.id ? resolvedSong : entry
+        );
+        usePlayerStore.getState().setOriginalQueue(updatedOriginal);
+      }
+
       await loadAndPlayActiveTrack(track);
     },
     [loadAndPlayActiveTrack]

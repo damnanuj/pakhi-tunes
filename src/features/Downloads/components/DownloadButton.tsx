@@ -19,6 +19,10 @@ import {
   ghostControlStyle,
   playerRippleLight,
 } from "src/features/Player/utils/ghostControlStyle";
+import {
+  ensureDownloadableSong,
+  hasDownloadUrls,
+} from "../utils/ensureDownloadableSong";
 import { useDownload } from "../hooks/useDownload";
 import type { DownloadQuality } from "../types/download.types";
 import DownloadQualityDialog from "./DownloadQualityDialog";
@@ -125,6 +129,7 @@ export default function DownloadButton({ track }: DownloadButtonProps) {
   const [qualityDialogOpen, setQualityDialogOpen] = useState(false);
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [isSubmittingQuality, setIsSubmittingQuality] = useState(false);
+  const [isLoadingSong, setIsLoadingSong] = useState(false);
   const [pendingSong, setPendingSong] = useState<ArtistSong | null>(null);
 
   const queue = usePlayerStore((s) => s.queue);
@@ -161,21 +166,45 @@ export default function DownloadButton({ track }: DownloadButtonProps) {
     }
   }, [track.id]);
 
-  const resolveSong = useCallback(async (): Promise<ArtistSong | null> => {
-    if (pendingSong) return pendingSong;
-    if (cachedSong) {
-      setPendingSong(cachedSong);
-      return cachedSong;
-    }
-    const song = await fetchSongFromApi();
-    if (song) setPendingSong(song);
-    return song;
-  }, [pendingSong, cachedSong, fetchSongFromApi]);
+  const hydrateSongForDownload = useCallback(
+    async (seed: ArtistSong | null): Promise<ArtistSong | null> => {
+      if (seed && hasDownloadUrls(seed)) return seed;
+
+      setIsLoadingSong(true);
+      try {
+        const song = seed ?? (await fetchSongFromApi());
+        if (!song) return null;
+
+        if (hasDownloadUrls(song)) return song;
+
+        const full = await getSongById(song.id);
+        if (!hasDownloadUrls(full)) {
+          Alert.alert(
+            "Could not download",
+            "This song is not available for download right now."
+          );
+          return null;
+        }
+
+        return full;
+      } catch {
+        Alert.alert(
+          "Could not download",
+          "Unable to load song details. Check your connection and try again."
+        );
+        return null;
+      } finally {
+        setIsLoadingSong(false);
+      }
+    },
+    [fetchSongFromApi]
+  );
 
   const handleQualityDialogOpenChange = useCallback((open: boolean) => {
     setQualityDialogOpen(open);
     if (!open) {
       setPendingSong(null);
+      setIsLoadingSong(false);
     }
   }, []);
 
@@ -188,23 +217,22 @@ export default function DownloadButton({ track }: DownloadButtonProps) {
     }
 
     setQualityDialogOpen(true);
+    setPendingSong(null);
 
-    if (cachedSong) {
-      setPendingSong(cachedSong);
-      return;
-    }
-
-    void fetchSongFromApi().then((song) => {
+    void hydrateSongForDownload(cachedSong).then((song) => {
       if (song) setPendingSong(song);
     });
-  }, [isDownloaded, isDownloading, cachedSong, fetchSongFromApi]);
+  }, [isDownloaded, isDownloading, cachedSong, hydrateSongForDownload]);
 
   const handleConfirmQuality = useCallback(
     async (quality: DownloadQuality) => {
       setIsSubmittingQuality(true);
       try {
-        const song = await resolveSong();
-        if (!song) return;
+        const seed = pendingSong ?? cachedSong;
+        const resolved = await hydrateSongForDownload(seed);
+        if (!resolved) return;
+
+        const song = await ensureDownloadableSong(resolved);
         setQualityDialogOpen(false);
         setPendingSong(null);
         await startDownload(song, quality);
@@ -212,13 +240,16 @@ export default function DownloadButton({ track }: DownloadButtonProps) {
         setIsSubmittingQuality(false);
       }
     },
-    [resolveSong, startDownload]
+    [pendingSong, cachedSong, hydrateSongForDownload, startDownload]
   );
 
   const handleRemoveConfirm = useCallback(async () => {
     setRemoveDialogOpen(false);
     await removeDownload();
   }, [removeDownload]);
+
+  const canConfirmDownload =
+    Boolean(pendingSong && hasDownloadUrls(pendingSong)) && !isLoadingSong;
 
   const accessibilityLabel = isDownloaded
     ? "Downloaded — tap to remove"
@@ -259,8 +290,8 @@ export default function DownloadButton({ track }: DownloadButtonProps) {
         open={qualityDialogOpen}
         onOpenChange={handleQualityDialogOpenChange}
         onConfirm={(quality) => void handleConfirmQuality(quality)}
-        isSubmitting={isSubmittingQuality}
-        confirmDisabled={!pendingSong && !cachedSong}
+        isSubmitting={isSubmittingQuality || isLoadingSong}
+        confirmDisabled={!canConfirmDownload}
       />
 
       <ConfirmDialog

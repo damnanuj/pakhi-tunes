@@ -6,11 +6,8 @@ import { useFavoriteStatus } from "src/features/favorites/hooks/useFavoriteStatu
 import { useLocalFavoriteSongIds } from "src/features/favorites/hooks/useLocalFavorites";
 import { useToggleFavorite } from "src/features/favorites/hooks/useToggleFavorite";
 import { artistSongToFavoritePayload } from "src/features/favorites/types/favorites.types";
+import { hasDownloadUrls } from "src/features/Downloads/utils/ensureDownloadableSong";
 import type { ArtistSong } from "src/types/artistSongs.types";
-
-function hasAnyDownloadUrl(song: ArtistSong): boolean {
-  return Boolean(song.downloadUrl?.length);
-}
 
 export type SongOptionsDownloadStatus =
   | "idle"
@@ -83,7 +80,7 @@ export function useSongOptionsActions(
     removeDownload,
   } = useDownload(song.id);
 
-  const canDownload = hasAnyDownloadUrl(song);
+  const canDownload = hasDownloadUrls(song);
 
   const downloadStatus = useMemo((): SongOptionsDownloadStatus => {
     if (!canDownload) return "unavailable";
