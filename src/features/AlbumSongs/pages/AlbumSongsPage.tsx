@@ -1,15 +1,12 @@
 import { useCallback, useMemo } from "react";
-import { FlatList, ListRenderItem, ScrollView } from "react-native";
+import { FlatList, ListRenderItem } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { YStack } from "tamagui";
-import {
-  scale,
-  verticalScale,
-  moderateScale,
-} from "src/utils/functions/dimensions";
-import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
+import ConnectionErrorState from "src/components/ConnectionErrorState";
 import ScreenHeader from "src/components/ScreenHeader";
+import { useNetwork } from "src/contexts/NetworkContext";
+import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
 import ListFooterSpinner from "src/components/ListFooterSpinner";
 import {
   useRefreshable,
@@ -28,6 +25,7 @@ import { getSongListKey } from "src/features/ArtistSongs/utils/songListKeys";
 
 export default function AlbumSongsPage() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { isOffline } = useNetwork();
   const scrollBottomPadding = useScrollBottomInset({
     includeTabBar: true,
     extra: 0,
@@ -38,6 +36,8 @@ export default function AlbumSongsPage() {
     firstPage,
     isLoading,
     isError,
+    error,
+    isFetching,
     fetchNextPage,
     hasNextPage,
     isLoadingMore,
@@ -91,30 +91,23 @@ export default function AlbumSongsPage() {
     );
   }
 
-  if (isError || !album) {
+  if ((isError || !album) && songs.length === 0) {
     return (
       <YStack flex={1} bg={themeColors.dark.background}>
         <ScreenHeader showBack title={headerTitle} />
-        <ScrollView
-          contentContainerStyle={{ flex: 1, justifyContent: "center" }}
-          refreshControl={refreshControl}
-          showsVerticalScrollIndicator={false}
-        >
-          <YStack px={scale(20)} py={verticalScale(24)} style={{ alignSelf: "center" }}>
-            <MyText
-              fontSize={moderateScale(14)}
-              color={themeColors.dark.textMuted}
-              textAlign="center"
-            >
-              Failed to load album
-            </MyText>
-          </YStack>
-        </ScrollView>
+        <ConnectionErrorState
+          variant={
+            isNetworkRelatedError(error, isOffline) ? "offline" : "error"
+          }
+          subtitle="We couldn't load this album. Please try again."
+          onRetry={() => void refetch()}
+          isRetrying={isFetching}
+        />
       </YStack>
     );
   }
 
-  const listHeader = <AlbumProfileHeader album={album} />;
+  const listHeader = <AlbumProfileHeader album={album!} />;
 
   const listFooter = isLoadingMore ? <ListFooterSpinner /> : null;
 

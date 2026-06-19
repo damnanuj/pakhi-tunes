@@ -10,7 +10,10 @@ import {
 } from "src/utils/functions/dimensions";
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
+import ConnectionErrorState from "src/components/ConnectionErrorState";
 import ScreenHeader from "src/components/ScreenHeader";
+import { useNetwork } from "src/contexts/NetworkContext";
+import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
 import PillTabs, { type PillTabItem } from "src/components/PillTabs";
 import { useRefreshable, useScrollBottomInset } from "src/hooks";
 import { getNewReleases } from "src/services";
@@ -42,13 +45,14 @@ const columnWrapperStyle = {
 
 export default function NewReleasesAllPage() {
   const router = useRouter();
+  const { isOffline } = useNetwork();
   const { playSongFromQueue } = usePlayback();
   const scrollBottomPadding = useScrollBottomInset({ includeTabBar: true });
   const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
   const [supportedLanguages, setSupportedLanguages] = useState<string[]>([]);
   const [tabSwitching, setTabSwitching] = useState(false);
 
-  const { data, isPending, isError, isFetching, refetch } = useQuery({
+  const { data, isPending, isError, error, isFetching, refetch } = useQuery({
     queryKey: ["newReleases", NEW_RELEASES_QUEUE_FETCH_LIMIT, language, "all"],
     queryFn: () =>
       getNewReleases({
@@ -200,21 +204,13 @@ export default function NewReleasesAllPage() {
     return (
       <YStack flex={1} bg={themeColors.dark.background}>
         <ScreenHeader showBack title="New Releases" />
-        <ScrollView
-          contentContainerStyle={{ flex: 1, justifyContent: "center" }}
-          refreshControl={refreshControl}
-          showsVerticalScrollIndicator={false}
-        >
-          <YStack px={scale(20)} py={verticalScale(24)} style={{ alignSelf: "center" }}>
-            <MyText
-              fontSize={moderateScale(14)}
-              color={themeColors.dark.textMuted}
-              textAlign="center"
-            >
-              Failed to load new releases
-            </MyText>
-          </YStack>
-        </ScrollView>
+        <ConnectionErrorState
+          variant={
+            isNetworkRelatedError(error, isOffline) ? "offline" : "error"
+          }
+          onRetry={() => void refetch()}
+          isRetrying={isFetching}
+        />
       </YStack>
     );
   }

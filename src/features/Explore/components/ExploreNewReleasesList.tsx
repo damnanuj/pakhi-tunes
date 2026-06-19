@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo } from "react";
-import { FlatList, ListRenderItem, Pressable, ScrollView } from "react-native";
+import { FlatList, ListRenderItem, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { XStack, YStack } from "tamagui";
@@ -15,9 +15,10 @@ import { getSongListKey } from "src/features/ArtistSongs/utils/songListKeys";
 import { QueueProvider } from "src/features/Player/context/QueueContext";
 import SearchPageSkeleton from "../skeletons/SearchPageSkeleton";
 import RecentSearchesSection from "./RecentSearchesSection";
+import ConnectionErrorState from "src/components/ConnectionErrorState";
 import { useRefreshable, useScrollBottomInset } from "src/hooks";
 import { useNetwork } from "src/contexts/NetworkContext";
-import OfflineFallback from "src/features/Downloads/components/OfflineFallback";
+import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
 import { getNewReleases } from "src/services";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import { getNewReleaseSongs } from "src/types/newReleases.types";
@@ -47,7 +48,7 @@ function ExploreNewReleasesList({
     extra: verticalScale(20),
   });
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, error, isFetching, refetch } = useQuery({
     queryKey: [
       "newReleases",
       NEW_RELEASES_QUEUE_FETCH_LIMIT,
@@ -129,31 +130,19 @@ function ExploreNewReleasesList({
     return <SearchPageSkeleton />;
   }
 
-  if (isOffline && allSongs.length === 0) {
-    return <OfflineFallback />;
-  }
+  const showConnectionError =
+    (isOffline && allSongs.length === 0) ||
+    (isError && allSongs.length === 0);
 
-  if (isError) {
+  if (showConnectionError) {
     return (
-      <ScrollView
-        contentContainerStyle={{ flex: 1, justifyContent: "center" }}
-        refreshControl={refreshControl}
-        showsVerticalScrollIndicator={false}
-      >
-        <YStack
-          px={scale(20)}
-          py={verticalScale(24)}
-          style={{ alignSelf: "center" }}
-        >
-          <MyText
-            fontSize={moderateScale(14)}
-            color={themeColors.dark.textMuted}
-            textAlign="center"
-          >
-            Failed to load new releases
-          </MyText>
-        </YStack>
-      </ScrollView>
+      <ConnectionErrorState
+        variant={
+          isNetworkRelatedError(error, isOffline) ? "offline" : "error"
+        }
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+      />
     );
   }
 

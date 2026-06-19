@@ -3,7 +3,10 @@ import { FlatList, ListRenderItem, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { YStack } from "tamagui";
 import ScreenHeader from "src/components/ScreenHeader";
+import ConnectionErrorState from "src/components/ConnectionErrorState";
 import MyText from "src/components/MyText";
+import { useNetwork } from "src/contexts/NetworkContext";
+import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
 import ListFooterSpinner from "src/components/ListFooterSpinner";
 import themeColors from "src/utils/theme/colors";
 import { scale, verticalScale, moderateScale } from "src/utils/functions/dimensions";
@@ -29,10 +32,13 @@ const FAVORITES_QUEUE_SOURCE = {
 export default function FavouritesPage() {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
+  const { isOffline } = useNetwork();
   const {
     favorites,
     isLoading,
     isError,
+    error,
+    isFetching,
     fetchNextPage,
     hasNextPage,
     isLoadingMore,
@@ -101,10 +107,15 @@ export default function FavouritesPage() {
 
       {isLoading ? (
         <FavouritesPageSkeleton />
-      ) : isError ? (
-        <YStack px={scale(20)} py={verticalScale(24)}>
-          <MyText color="red">Unable to load favourites.</MyText>
-        </YStack>
+      ) : (isError || (isOffline && favorites.length === 0)) &&
+        favorites.length === 0 ? (
+        <ConnectionErrorState
+          variant={
+            isNetworkRelatedError(error, isOffline) ? "offline" : "error"
+          }
+          onRetry={() => void refetch()}
+          isRetrying={isFetching}
+        />
       ) : favorites.length === 0 ? (
         <YStack px={scale(20)} py={verticalScale(24)}>
           <MyText color={themeColors.dark.textMuted}>

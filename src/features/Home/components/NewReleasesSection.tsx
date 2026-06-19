@@ -9,8 +9,11 @@ import {
   verticalScale,
   moderateScale,
 } from "src/utils/functions/dimensions";
+import ConnectionErrorState from "src/components/ConnectionErrorState";
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
+import { useNetwork } from "src/contexts/NetworkContext";
+import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
 import { getNewReleases } from "src/services";
 import { getSongCoverUrl } from "src/utils/functions/songImage";
 import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
@@ -215,7 +218,8 @@ function NewReleaseColumn({
 
 export default function NewReleasesSection() {
   const router = useRouter();
-  const { data, isLoading, isError } = useQuery({
+  const { isOffline } = useNetwork();
+  const { data, isLoading, isError, error, isFetching, refetch } = useQuery({
     queryKey: ["newReleases", NEW_RELEASES_QUEUE_FETCH_LIMIT, "home"],
     queryFn: () =>
       getNewReleases({
@@ -240,11 +244,14 @@ export default function NewReleasesSection() {
 
   if (isError) {
     return (
-      <YStack px={scale(20)} py={verticalScale(24)}>
-        <MyText fontSize={moderateScale(14)} color={themeColors.dark.textMuted}>
-          Failed to load new releases
-        </MyText>
-      </YStack>
+      <ConnectionErrorState
+        compact
+        variant={
+          isNetworkRelatedError(error, isOffline) ? "offline" : "error"
+        }
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+      />
     );
   }
 

@@ -8,7 +8,10 @@ import {
   moderateScale,
 } from "src/utils/functions/dimensions";
 import MyText from "src/components/MyText";
+import ConnectionErrorState from "src/components/ConnectionErrorState";
 import themeColors from "src/utils/theme/colors";
+import { useNetwork } from "src/contexts/NetworkContext";
+import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
 import { getTopArtists } from "src/services";
 import TopArtistsSectionSkeleton from "src/features/Home/skeletons/TopArtistsSectionSkeleton";
 
@@ -17,7 +20,8 @@ const TOP_ARTISTS_LIMIT = 10;
 
 export default function TopArtistsSection() {
   const router = useRouter();
-  const { data, isLoading, isError } = useQuery({
+  const { isOffline } = useNetwork();
+  const { data, isLoading, isError, error, isFetching, refetch } = useQuery({
     queryKey: ["topArtists", TOP_ARTISTS_LIMIT],
     queryFn: () => getTopArtists({ limit: TOP_ARTISTS_LIMIT }),
   });
@@ -30,11 +34,14 @@ export default function TopArtistsSection() {
 
   if (isError) {
     return (
-      <YStack px={scale(20)} py={verticalScale(24)}>
-        <MyText fontSize={moderateScale(14)} color={themeColors.dark.textMuted}>
-          Failed to load top artists
-        </MyText>
-      </YStack>
+      <ConnectionErrorState
+        compact
+        variant={
+          isNetworkRelatedError(error, isOffline) ? "offline" : "error"
+        }
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+      />
     );
   }
 

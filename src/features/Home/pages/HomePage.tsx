@@ -5,8 +5,9 @@ import { verticalScale } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
 import AppHeader from "src/components/AppHeader";
 import { useRefreshable, useScrollBottomInset } from "src/hooks";
+import ConnectionErrorState from "src/components/ConnectionErrorState";
 import { useNetwork } from "src/contexts/NetworkContext";
-import OfflineFallback from "src/features/Downloads/components/OfflineFallback";
+import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
 import { getNewReleases } from "src/services";
 import { NEW_RELEASES_QUEUE_FETCH_LIMIT } from "src/utils/constants/newReleases";
 import SearchBar from "../components/SearchBar";
@@ -25,7 +26,14 @@ export default function HomePage() {
     includeTabBar: true,
     extra: verticalScale(20),
   });
-  const { data: newReleasesData, isLoading: isNewReleasesLoading } = useQuery({
+  const {
+    data: newReleasesData,
+    isLoading: isNewReleasesLoading,
+    isError,
+    error,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: ["newReleases", NEW_RELEASES_QUEUE_FETCH_LIMIT, "home"],
     queryFn: () =>
       getNewReleases({
@@ -36,14 +44,22 @@ export default function HomePage() {
   });
 
   const hasCachedHomeData = Boolean(newReleasesData?.data?.results?.length);
-  const showOfflineFallback =
-    isOffline && !hasCachedHomeData && !isNewReleasesLoading;
+  const showConnectionError =
+    !hasCachedHomeData &&
+    !isNewReleasesLoading &&
+    (isOffline || isError);
 
   return (
     <YStack flex={1} bg={themeColors.dark.background}>
       <AppHeader />
-      {showOfflineFallback ? (
-        <OfflineFallback />
+      {showConnectionError ? (
+        <ConnectionErrorState
+          variant={
+            isNetworkRelatedError(error, isOffline) ? "offline" : "error"
+          }
+          onRetry={() => void refetch()}
+          isRetrying={isFetching}
+        />
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}

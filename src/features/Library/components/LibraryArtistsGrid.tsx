@@ -2,19 +2,14 @@ import { useCallback, useMemo } from "react";
 import {
   FlatList,
   type ListRenderItem,
-  ScrollView,
   StyleSheet,
   View,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import {
-  scale,
-  verticalScale,
-  moderateScale,
-} from "src/utils/functions/dimensions";
-import MyText from "src/components/MyText";
-import themeColors from "src/utils/theme/colors";
+import ConnectionErrorState from "src/components/ConnectionErrorState";
+import { useNetwork } from "src/contexts/NetworkContext";
+import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
 import { useRefreshable, useScrollBottomInset } from "src/hooks";
 import { getTopArtists } from "src/services";
 import LibraryCard from "./LibraryCard";
@@ -45,6 +40,7 @@ function mapArtistToLibraryItem(artist: TopArtist): LibraryItem {
  */
 export default function LibraryArtistsGrid() {
   const router = useRouter();
+  const { isOffline } = useNetwork();
   const scrollBottomPadding = useScrollBottomInset({ includeTabBar: true });
   const listContentStyle = useMemo(
     () => ({
@@ -56,7 +52,7 @@ export default function LibraryArtistsGrid() {
     queryKeys: ["topArtists", TOP_ARTISTS_LIMIT],
   });
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, error, isFetching, refetch } = useQuery({
     queryKey: ["topArtists", TOP_ARTISTS_LIMIT],
     queryFn: () => getTopArtists({ limit: TOP_ARTISTS_LIMIT }),
   });
@@ -103,28 +99,13 @@ export default function LibraryArtistsGrid() {
 
   if (isError) {
     return (
-      <ScrollView
-        style={styles.flex}
-        contentContainerStyle={{ flex: 1, justifyContent: "center" }}
-        refreshControl={refreshControl}
-        showsVerticalScrollIndicator={false}
-      >
-        <View
-          style={{
-            paddingHorizontal: scale(20),
-            paddingVertical: verticalScale(24),
-            alignSelf: "center",
-          }}
-        >
-          <MyText
-            fontSize={moderateScale(14)}
-            color={themeColors.dark.textMuted}
-            textAlign="center"
-          >
-            Failed to load artists
-          </MyText>
-        </View>
-      </ScrollView>
+      <ConnectionErrorState
+        variant={
+          isNetworkRelatedError(error, isOffline) ? "offline" : "error"
+        }
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+      />
     );
   }
 

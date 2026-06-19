@@ -1,15 +1,12 @@
 import { useCallback, useMemo } from "react";
-import { FlatList, ListRenderItem, ScrollView } from "react-native";
+import { FlatList, ListRenderItem } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { YStack } from "tamagui";
-import {
-  scale,
-  verticalScale,
-  moderateScale,
-} from "src/utils/functions/dimensions";
-import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
+import ConnectionErrorState from "src/components/ConnectionErrorState";
 import ScreenHeader from "src/components/ScreenHeader";
+import { useNetwork } from "src/contexts/NetworkContext";
+import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
 import ListFooterSpinner from "src/components/ListFooterSpinner";
 import {
   useRefreshable,
@@ -27,6 +24,7 @@ import { getSongListKey } from "../utils/songListKeys";
 
 export default function ArtistSongsPage() {
   const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
+  const { isOffline } = useNetwork();
   const artistName = name ?? "Artist";
   const scrollBottomPadding = useScrollBottomInset({ includeTabBar: true });
 
@@ -35,6 +33,8 @@ export default function ArtistSongsPage() {
     firstPage,
     isLoading,
     isError,
+    error,
+    isFetching,
     fetchNextPage,
     hasNextPage,
     isLoadingMore,
@@ -85,25 +85,17 @@ export default function ArtistSongsPage() {
     );
   }
 
-  if (isError) {
+  if (isError && songs.length === 0) {
     return (
       <YStack flex={1} bg={themeColors.dark.background}>
         <ScreenHeader showBack title={`${artistName} songs`} />
-        <ScrollView
-          contentContainerStyle={{ flex: 1, justifyContent: "center" }}
-          refreshControl={refreshControl}
-          showsVerticalScrollIndicator={false}
-        >
-          <YStack px={scale(20)} py={verticalScale(24)} style={{ alignSelf: "center" }}>
-            <MyText
-              fontSize={moderateScale(14)}
-              color={themeColors.dark.textMuted}
-              textAlign="center"
-            >
-              Failed to load songs
-            </MyText>
-          </YStack>
-        </ScrollView>
+        <ConnectionErrorState
+          variant={
+            isNetworkRelatedError(error, isOffline) ? "offline" : "error"
+          }
+          onRetry={() => void refetch()}
+          isRetrying={isFetching}
+        />
       </YStack>
     );
   }
