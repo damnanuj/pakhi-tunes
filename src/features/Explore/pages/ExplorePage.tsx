@@ -38,7 +38,6 @@ export default function ExplorePage() {
         mode="search"
         value={query}
         onChangeText={setQuery}
-        autoFocus
       />
       <YStack flex={1} mt={verticalScale(12)}>
         {isOffline && isSearchActive ? (
