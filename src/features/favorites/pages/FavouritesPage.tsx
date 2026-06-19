@@ -18,6 +18,7 @@ import { getSongListKey } from "src/features/ArtistSongs/utils/songListKeys";
 import { QueueProvider } from "src/features/Player/context/QueueContext";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import { useFavoritesList } from "../hooks/useFavorites";
+import FavouritesPageSkeleton from "../skeletons/FavouritesPageSkeleton";
 import { favoriteToQueueStub } from "../utils/favoriteToQueueStub";
 
 const FAVORITES_QUEUE_SOURCE = {
@@ -99,9 +100,7 @@ export default function FavouritesPage() {
       ) : null}
 
       {isLoading ? (
-        <YStack px={scale(20)} py={verticalScale(24)}>
-          <MyText color={themeColors.dark.textMuted}>Loading favourites...</MyText>
-        </YStack>
+        <FavouritesPageSkeleton />
       ) : isError ? (
         <YStack px={scale(20)} py={verticalScale(24)}>
           <MyText color="red">Unable to load favourites.</MyText>
