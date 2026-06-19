@@ -1,6 +1,6 @@
 import React from "react";
 import { XStack } from "tamagui";
-import { ArrowLeft, Settings } from "@tamagui/lucide-icons";
+import { ArrowLeft, ChevronDown, Settings } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import {
   scale,
@@ -20,6 +20,8 @@ export interface ScreenHeaderProps {
   title?: string;
   /** Convenience: show back button on left when no leftContent. Default: false */
   showBack?: boolean;
+  /** Back button icon when showBack is true. Use "down" for sheets that dismiss downward. */
+  backIcon?: "arrow" | "down";
   /** Convenience: show settings icon on right when no rightContent. Default: false */
   showSettings?: boolean;
   /** Custom back press handler. Falls back to router.back() if not provided */
@@ -38,6 +40,7 @@ export default function ScreenHeader({
   rightContent,
   title,
   showBack = false,
+  backIcon = "arrow",
   showSettings = false,
   onBackPress,
   onSettingsPress,
@@ -62,10 +65,17 @@ export default function ScreenHeader({
     if (leftContent != null) return leftContent;
     const backButton = showBack ? (
       <CircularButton onPress={handleBack}>
-        <ArrowLeft
-          size={moderateScale(20)}
-          color={themeColors.dark.onSurface}
-        />
+        {backIcon === "down" ? (
+          <ChevronDown
+            size={moderateScale(20)}
+            color={themeColors.dark.onSurface}
+          />
+        ) : (
+          <ArrowLeft
+            size={moderateScale(20)}
+            color={themeColors.dark.onSurface}
+          />
+        )}
       </CircularButton>
     ) : null;
     const titleText = title ? (

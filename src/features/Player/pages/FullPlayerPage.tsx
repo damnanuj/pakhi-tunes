@@ -407,7 +407,12 @@ export default function FullPlayerPage() {
 
   return (
     <YStack flex={1} bg={themeColors.dark.background}>
-      <ScreenHeader title="Playing Now" showBack showSettings={false} />
+      <ScreenHeader
+        title="Playing Now"
+        showBack
+        backIcon="down"
+        showSettings={false}
+      />
 
       <YStack
         flex={1}
