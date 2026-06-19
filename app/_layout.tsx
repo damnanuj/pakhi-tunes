@@ -25,7 +25,8 @@ import {
   ThemeProviderCustom,
   useThemeController,
 } from "src/contexts/ThemeContext/ThemeContext";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "src/utils/query/queryClient";
 import { MiniPlayerRootLayer, PlayerProvider } from "src/features/Player";
 import AuthProvider from "src/features/auth/providers/AuthProvider";
 import FavoritesSyncProvider from "src/features/favorites/providers/FavoritesSyncProvider";
@@ -96,7 +97,6 @@ export default function RootLayout() {
     </Providers>
   );
 }
-const queryClient = new QueryClient();
 const Providers = ({ children }: { children: React.ReactNode }) => {
   return (
     <KeyboardProvider>

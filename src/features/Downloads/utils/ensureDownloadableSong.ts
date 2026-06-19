@@ -1,4 +1,4 @@
-import { getSongById } from "src/services/songDetail.service";
+import { fetchSongDetail } from "../queries/songDetailQuery";
 import type { ArtistSong } from "src/types/artistSongs.types";
 
 export function hasDownloadUrls(song: ArtistSong): boolean {
@@ -10,7 +10,7 @@ export async function ensureDownloadableSong(
 ): Promise<ArtistSong> {
   if (hasDownloadUrls(song)) return song;
 
-  const full = await getSongById(song.id);
+  const full = await fetchSongDetail(song.id);
   if (!hasDownloadUrls(full)) {
     throw new Error("This song is not available for download right now.");
   }

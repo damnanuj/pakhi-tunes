@@ -1,4 +1,4 @@
-import { getSongById } from "src/services/songDetail.service";
+import { fetchSongDetail } from "src/features/Downloads/queries/songDetailQuery";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import type { ActiveTrack } from "../types";
 import { mapArtistSongToTrack } from "./mapArtistSongToTrack";
@@ -10,7 +10,7 @@ export type ResolvedArtistSongTrack = {
 
 async function fetchSongById(id: string): Promise<ArtistSong | null> {
   try {
-    return await getSongById(id);
+    return await fetchSongDetail(id);
   } catch {
     return null;
   }

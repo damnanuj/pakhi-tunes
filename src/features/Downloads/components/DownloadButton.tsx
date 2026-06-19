@@ -8,7 +8,6 @@ import {
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import { Check, Download, RefreshCw } from "@tamagui/lucide-icons";
-import { getSongById } from "src/services/songDetail.service";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import type { ActiveTrack } from "src/features/Player/types";
 import { usePlayerStore } from "src/features/Player/store/playerStore";
@@ -19,10 +18,6 @@ import {
   ghostControlStyle,
   playerRippleLight,
 } from "src/features/Player/utils/ghostControlStyle";
-import {
-  ensureDownloadableSong,
-  hasDownloadUrls,
-} from "../utils/ensureDownloadableSong";
 import { useDownload } from "../hooks/useDownload";
 import type { DownloadQuality } from "../types/download.types";
 import DownloadQualityDialog from "./DownloadQualityDialog";
@@ -121,6 +116,45 @@ function DownloadProgressRing({ progress }: { progress: number }) {
   );
 }
 
+function trackToDownloadSeed(track: ActiveTrack): ArtistSong {
+  return {
+    id: track.id,
+    encrypted_id: track.encryptedId ?? "",
+    name: track.title,
+    type: "song",
+    year: "",
+    releaseDate: "",
+    duration: track.durationSec,
+    label: track.label ?? "",
+    explicitContent: false,
+    playCount: 0,
+    language: "",
+    hasLyrics: false,
+    lyricsId: null,
+    lyrics: null,
+    url: "",
+    copyright: "",
+    album: { id: "", name: track.albumName ?? "", url: "" },
+    artists: {
+      primary: [
+        {
+          id: "",
+          name: track.artist,
+          role: "artist",
+          image: [],
+          type: "artist",
+          url: "",
+        },
+      ],
+      featured: [],
+      all: [],
+    },
+    image: track.artworkUrl
+      ? [{ quality: "150x150", url: track.artworkUrl }]
+      : [],
+  };
+}
+
 interface DownloadButtonProps {
   track: ActiveTrack;
 }
@@ -129,8 +163,6 @@ export default function DownloadButton({ track }: DownloadButtonProps) {
   const [qualityDialogOpen, setQualityDialogOpen] = useState(false);
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [isSubmittingQuality, setIsSubmittingQuality] = useState(false);
-  const [isLoadingSong, setIsLoadingSong] = useState(false);
-  const [pendingSong, setPendingSong] = useState<ArtistSong | null>(null);
 
   const queue = usePlayerStore((s) => s.queue);
   const activeArtistSong = usePlayerStore((s) => s.activeArtistSong);
@@ -143,70 +175,12 @@ export default function DownloadButton({ track }: DownloadButtonProps) {
     removeDownload,
   } = useDownload(track.id);
 
-  const queueSong = useMemo(
-    () => queue.find((s) => s.id === track.id) ?? null,
-    [queue, track.id]
-  );
-
-  const cachedSong = useMemo((): ArtistSong | null => {
+  const downloadSong = useMemo((): ArtistSong => {
+    const queueSong = queue.find((s) => s.id === track.id);
     if (queueSong) return queueSong;
     if (activeArtistSong?.id === track.id) return activeArtistSong;
-    return null;
-  }, [queueSong, activeArtistSong, track.id]);
-
-  const fetchSongFromApi = useCallback(async (): Promise<ArtistSong | null> => {
-    try {
-      return await getSongById(track.id);
-    } catch {
-      Alert.alert(
-        "Could not download",
-        "Unable to load song details. Check your connection and try again."
-      );
-      return null;
-    }
-  }, [track.id]);
-
-  const hydrateSongForDownload = useCallback(
-    async (seed: ArtistSong | null): Promise<ArtistSong | null> => {
-      if (seed && hasDownloadUrls(seed)) return seed;
-
-      setIsLoadingSong(true);
-      try {
-        const song = seed ?? (await fetchSongFromApi());
-        if (!song) return null;
-
-        if (hasDownloadUrls(song)) return song;
-
-        const full = await getSongById(song.id);
-        if (!hasDownloadUrls(full)) {
-          Alert.alert(
-            "Could not download",
-            "This song is not available for download right now."
-          );
-          return null;
-        }
-
-        return full;
-      } catch {
-        Alert.alert(
-          "Could not download",
-          "Unable to load song details. Check your connection and try again."
-        );
-        return null;
-      } finally {
-        setIsLoadingSong(false);
-      }
-    },
-    [fetchSongFromApi]
-  );
-
-  const handleQualityDialogOpenChange = useCallback((open: boolean) => {
-    setQualityDialogOpen(open);
-    if (!open) {
-      setPendingSong(null);
-      setIsLoadingSong(false);
-    }
-  }, []);
+    return trackToDownloadSeed(track);
+  }, [queue, activeArtistSong, track]);
 
   const handleOpenQualityDialog = useCallback(() => {
     if (isDownloading) return;
@@ -217,39 +191,25 @@ export default function DownloadButton({ track }: DownloadButtonProps) {
     }
 
     setQualityDialogOpen(true);
-    setPendingSong(null);
-
-    void hydrateSongForDownload(cachedSong).then((song) => {
-      if (song) setPendingSong(song);
-    });
-  }, [isDownloaded, isDownloading, cachedSong, hydrateSongForDownload]);
+  }, [isDownloaded, isDownloading]);
 
   const handleConfirmQuality = useCallback(
     async (quality: DownloadQuality) => {
       setIsSubmittingQuality(true);
       try {
-        const seed = pendingSong ?? cachedSong;
-        const resolved = await hydrateSongForDownload(seed);
-        if (!resolved) return;
-
-        const song = await ensureDownloadableSong(resolved);
         setQualityDialogOpen(false);
-        setPendingSong(null);
-        await startDownload(song, quality);
+        await startDownload(downloadSong, quality);
       } finally {
         setIsSubmittingQuality(false);
       }
     },
-    [pendingSong, cachedSong, hydrateSongForDownload, startDownload]
+    [downloadSong, startDownload]
   );
 
   const handleRemoveConfirm = useCallback(async () => {
     setRemoveDialogOpen(false);
     await removeDownload();
   }, [removeDownload]);
-
-  const canConfirmDownload =
-    Boolean(pendingSong && hasDownloadUrls(pendingSong)) && !isLoadingSong;
 
   const accessibilityLabel = isDownloaded
     ? "Downloaded — tap to remove"
@@ -288,10 +248,9 @@ export default function DownloadButton({ track }: DownloadButtonProps) {
 
       <DownloadQualityDialog
         open={qualityDialogOpen}
-        onOpenChange={handleQualityDialogOpenChange}
+        onOpenChange={setQualityDialogOpen}
         onConfirm={(quality) => void handleConfirmQuality(quality)}
-        isSubmitting={isSubmittingQuality || isLoadingSong}
-        confirmDisabled={!canConfirmDownload}
+        isSubmitting={isSubmittingQuality}
       />
 
       <ConfirmDialog
