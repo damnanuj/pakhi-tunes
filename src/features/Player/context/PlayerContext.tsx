@@ -198,8 +198,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const loadAndPlayTrack = useCallback(
     async (song: ArtistSong) => {
+      usePlayerStore.getState().setActiveArtistSong(song);
       const track = await resolveArtistSongToTrack(song);
-      if (!track) return;
+      if (!track) {
+        usePlayerStore.getState().setActiveArtistSong(null);
+        return;
+      }
       await loadAndPlayActiveTrack(track);
     },
     [loadAndPlayActiveTrack]

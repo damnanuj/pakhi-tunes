@@ -2,19 +2,18 @@ import React from "react";
 import { AlertDialog, Button, XStack, YStack } from "tamagui";
 import MyText from "src/components/MyText";
 import {
+  DIALOG_CONTENT_ANIMATION,
+  DIALOG_ENTER_STYLE,
+  DIALOG_EXIT_STYLE,
+  DIALOG_OVERLAY_ANIMATION,
+  DIALOG_OVERLAY_OPACITY,
+} from "src/components/dialogMotion";
+import {
   moderateScale,
   scale,
   verticalScale,
 } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
-
-const DIALOG_ANIMATION = [
-  "quickest",
-  {
-    opacity: { overshootClamping: true },
-    scale: { overshootClamping: true },
-  },
-] as const;
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -40,8 +39,8 @@ export default function ConfirmDialog({
       <AlertDialog.Portal>
         <AlertDialog.Overlay
           key="overlay"
-          animation="100ms"
-          opacity={0.55}
+          animation={DIALOG_OVERLAY_ANIMATION}
+          opacity={DIALOG_OVERLAY_OPACITY}
           enterStyle={{ opacity: 0 }}
           exitStyle={{ opacity: 0 }}
         />
@@ -49,9 +48,9 @@ export default function ConfirmDialog({
           key="content"
           bordered
           elevate
-          animation={DIALOG_ANIMATION}
-          enterStyle={{ opacity: 0, scale: 0.97 }}
-          exitStyle={{ opacity: 0, scale: 0.98 }}
+          animation={DIALOG_CONTENT_ANIMATION}
+          enterStyle={DIALOG_ENTER_STYLE}
+          exitStyle={DIALOG_EXIT_STYLE}
           bg={themeColors.dark.surface}
           p={scale(20)}
           gap={verticalScale(16)}

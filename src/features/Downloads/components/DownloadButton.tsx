@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   View,
   type PressableStateCallbackType,
+  type ViewStyle,
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import { Check, Download, RefreshCw } from "@tamagui/lucide-icons";
@@ -15,7 +15,10 @@ import { usePlayerStore } from "src/features/Player/store/playerStore";
 import ConfirmDialog from "src/components/ConfirmDialog";
 import themeColors from "src/utils/theme/colors";
 import { moderateScale } from "src/utils/functions/dimensions";
-import { ghostControlStyle } from "src/features/Player/utils/ghostControlStyle";
+import {
+  ghostControlStyle,
+  playerRippleLight,
+} from "src/features/Player/utils/ghostControlStyle";
 import { useDownload } from "../hooks/useDownload";
 import type { DownloadQuality } from "../types/download.types";
 import DownloadQualityDialog from "./DownloadQualityDialog";
@@ -23,6 +26,51 @@ import DownloadQualityDialog from "./DownloadQualityDialog";
 const ICON_SIZE = moderateScale(20);
 const RING_SIZE = moderateScale(36);
 const RING_STROKE = moderateScale(2.5);
+const DOWNLOADED_GREEN = "#4ade80";
+
+function downloadedControlStyle(pressed: boolean): ViewStyle {
+  return {
+    ...ghostControlStyle(pressed),
+    backgroundColor: pressed
+      ? "rgba(74, 222, 128, 0.2)"
+      : "rgba(74, 222, 128, 0.12)",
+    borderColor: pressed
+      ? "rgba(74, 222, 128, 0.55)"
+      : "rgba(74, 222, 128, 0.35)",
+  };
+}
+
+function DownloadedStateIcon() {
+  const badgeSize = moderateScale(13);
+
+  return (
+    <View
+      style={{
+        width: moderateScale(24),
+        height: moderateScale(24),
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Download size={ICON_SIZE} color={DOWNLOADED_GREEN} strokeWidth={2.25} />
+      <View
+        style={{
+          position: "absolute",
+          right: moderateScale(-1),
+          bottom: moderateScale(-2),
+          width: badgeSize,
+          height: badgeSize,
+          borderRadius: badgeSize / 2,
+          backgroundColor: DOWNLOADED_GREEN,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Check size={moderateScale(8)} color="#0a0a0a" strokeWidth={3} />
+      </View>
+    </View>
+  );
+}
 
 function DownloadProgressRing({ progress }: { progress: number }) {
   const radius = (RING_SIZE - RING_STROKE) / 2;
@@ -76,10 +124,11 @@ interface DownloadButtonProps {
 export default function DownloadButton({ track }: DownloadButtonProps) {
   const [qualityDialogOpen, setQualityDialogOpen] = useState(false);
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
-  const [isFetchingSong, setIsFetchingSong] = useState(false);
+  const [isSubmittingQuality, setIsSubmittingQuality] = useState(false);
   const [pendingSong, setPendingSong] = useState<ArtistSong | null>(null);
 
   const queue = usePlayerStore((s) => s.queue);
+  const activeArtistSong = usePlayerStore((s) => s.activeArtistSong);
   const {
     isDownloaded,
     isDownloading,
@@ -94,54 +143,76 @@ export default function DownloadButton({ track }: DownloadButtonProps) {
     [queue, track.id]
   );
 
-  const resolveSong = useCallback(async (): Promise<ArtistSong | null> => {
+  const cachedSong = useMemo((): ArtistSong | null => {
     if (queueSong) return queueSong;
+    if (activeArtistSong?.id === track.id) return activeArtistSong;
+    return null;
+  }, [queueSong, activeArtistSong, track.id]);
+
+  const fetchSongFromApi = useCallback(async (): Promise<ArtistSong | null> => {
     try {
-      setIsFetchingSong(true);
-      const song = await getSongById(track.id);
-      return song;
+      return await getSongById(track.id);
     } catch {
       Alert.alert(
         "Could not download",
         "Unable to load song details. Check your connection and try again."
       );
       return null;
-    } finally {
-      setIsFetchingSong(false);
     }
-  }, [queueSong, track.id]);
+  }, [track.id]);
 
-  const handleOpenQualityDialog = useCallback(async () => {
-    if (isDownloading || isFetchingSong) return;
+  const resolveSong = useCallback(async (): Promise<ArtistSong | null> => {
+    if (pendingSong) return pendingSong;
+    if (cachedSong) {
+      setPendingSong(cachedSong);
+      return cachedSong;
+    }
+    const song = await fetchSongFromApi();
+    if (song) setPendingSong(song);
+    return song;
+  }, [pendingSong, cachedSong, fetchSongFromApi]);
+
+  const handleQualityDialogOpenChange = useCallback((open: boolean) => {
+    setQualityDialogOpen(open);
+    if (!open) {
+      setPendingSong(null);
+    }
+  }, []);
+
+  const handleOpenQualityDialog = useCallback(() => {
+    if (isDownloading) return;
 
     if (isDownloaded) {
       setRemoveDialogOpen(true);
       return;
     }
 
-    if (isFailed) {
-      const song = await resolveSong();
-      if (!song) return;
-      setPendingSong(song);
-      setQualityDialogOpen(true);
+    setQualityDialogOpen(true);
+
+    if (cachedSong) {
+      setPendingSong(cachedSong);
       return;
     }
 
-    const song = await resolveSong();
-    if (!song) return;
-    setPendingSong(song);
-    setQualityDialogOpen(true);
-  }, [isDownloaded, isDownloading, isFailed, isFetchingSong, resolveSong]);
+    void fetchSongFromApi().then((song) => {
+      if (song) setPendingSong(song);
+    });
+  }, [isDownloaded, isDownloading, cachedSong, fetchSongFromApi]);
 
   const handleConfirmQuality = useCallback(
     async (quality: DownloadQuality) => {
-      const song = pendingSong ?? (await resolveSong());
-      if (!song) return;
-      setQualityDialogOpen(false);
-      await startDownload(song, quality);
-      setPendingSong(null);
+      setIsSubmittingQuality(true);
+      try {
+        const song = await resolveSong();
+        if (!song) return;
+        setQualityDialogOpen(false);
+        setPendingSong(null);
+        await startDownload(song, quality);
+      } finally {
+        setIsSubmittingQuality(false);
+      }
     },
-    [pendingSong, resolveSong, startDownload]
+    [resolveSong, startDownload]
   );
 
   const handleRemoveConfirm = useCallback(async () => {
@@ -160,25 +231,23 @@ export default function DownloadButton({ track }: DownloadButtonProps) {
   return (
     <>
       <Pressable
-        onPress={() => void handleOpenQualityDialog()}
-        disabled={isDownloading || isFetchingSong}
+        onPress={handleOpenQualityDialog}
+        disabled={isDownloading}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
-        style={({ pressed }: PressableStateCallbackType) => ({
-          ...ghostControlStyle(pressed && !isDownloading),
-          opacity: isFetchingSong ? 0.6 : 1,
-        })}
+        android_ripple={isDownloading ? undefined : playerRippleLight}
+        style={({ pressed }: PressableStateCallbackType) => {
+          const controlStyle = isDownloaded
+            ? downloadedControlStyle(pressed)
+            : ghostControlStyle(pressed && !isDownloading);
+
+          return controlStyle;
+        }}
       >
-        {isFetchingSong ? (
-          <ActivityIndicator
-            size="small"
-            color={themeColors.dark.onSurface}
-            style={{ width: RING_SIZE, height: RING_SIZE }}
-          />
-        ) : isDownloading ? (
+        {isDownloading ? (
           <DownloadProgressRing progress={progress} />
         ) : isDownloaded ? (
-          <Check size={ICON_SIZE} color="#4ade80" />
+          <DownloadedStateIcon />
         ) : isFailed ? (
           <RefreshCw size={ICON_SIZE} color="#f87171" />
         ) : (
@@ -188,9 +257,10 @@ export default function DownloadButton({ track }: DownloadButtonProps) {
 
       <DownloadQualityDialog
         open={qualityDialogOpen}
-        onOpenChange={setQualityDialogOpen}
+        onOpenChange={handleQualityDialogOpenChange}
         onConfirm={(quality) => void handleConfirmQuality(quality)}
-        isSubmitting={isFetchingSong}
+        isSubmitting={isSubmittingQuality}
+        confirmDisabled={!pendingSong && !cachedSong}
       />
 
       <ConfirmDialog

@@ -1,8 +1,15 @@
 import { useCallback, useState } from "react";
-import { Pressable, type PressableStateCallbackType } from "react-native";
-import { Dialog, Button, YStack, XStack, RadioGroup } from "tamagui";
+import { Pressable } from "react-native";
+import { Dialog, Button, YStack, XStack } from "tamagui";
 import { Check } from "@tamagui/lucide-icons";
 import MyText from "src/components/MyText";
+import {
+  DIALOG_CONTENT_ANIMATION,
+  DIALOG_ENTER_STYLE,
+  DIALOG_EXIT_STYLE,
+  DIALOG_OVERLAY_ANIMATION,
+  DIALOG_OVERLAY_OPACITY,
+} from "src/components/dialogMotion";
 import {
   moderateScale,
   scale,
@@ -17,6 +24,7 @@ interface DownloadQualityDialogProps {
   onOpenChange: (open: boolean) => void;
   onConfirm: (quality: DownloadQuality) => void;
   isSubmitting?: boolean;
+  confirmDisabled?: boolean;
 }
 
 export default function DownloadQualityDialog({
@@ -24,6 +32,7 @@ export default function DownloadQualityDialog({
   onOpenChange,
   onConfirm,
   isSubmitting = false,
+  confirmDisabled = false,
 }: DownloadQualityDialogProps) {
   const [selectedQuality, setSelectedQuality] =
     useState<DownloadQuality>("160kbps");
@@ -32,13 +41,15 @@ export default function DownloadQualityDialog({
     onConfirm(selectedQuality);
   }, [onConfirm, selectedQuality]);
 
+  const downloadDisabled = isSubmitting || confirmDisabled;
+
   return (
     <Dialog modal open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay
           key="overlay"
-          animation="quick"
-          opacity={0.6}
+          animation={DIALOG_OVERLAY_ANIMATION}
+          opacity={DIALOG_OVERLAY_OPACITY}
           enterStyle={{ opacity: 0 }}
           exitStyle={{ opacity: 0 }}
         />
@@ -46,16 +57,9 @@ export default function DownloadQualityDialog({
           key="content"
           bordered
           elevate
-          animation={[
-            "quick",
-            {
-              opacity: {
-                overshootClamping: true,
-              },
-            },
-          ]}
-          enterStyle={{ x: 0, y: -20, opacity: 0, scale: 0.9 }}
-          exitStyle={{ x: 0, y: 10, opacity: 0, scale: 0.95 }}
+          animation={DIALOG_CONTENT_ANIMATION}
+          enterStyle={DIALOG_ENTER_STYLE}
+          exitStyle={DIALOG_EXIT_STYLE}
           bg={themeColors.dark.surface}
           p={scale(20)}
           gap={verticalScale(16)}
@@ -84,13 +88,7 @@ export default function DownloadQualityDialog({
             </Dialog.Description>
           </YStack>
 
-          <RadioGroup
-            value={selectedQuality}
-            onValueChange={(value) =>
-              setSelectedQuality(value as DownloadQuality)
-            }
-            gap={verticalScale(10)}
-          >
+          <YStack gap={verticalScale(10)}>
             {DOWNLOAD_QUALITY_OPTIONS.map((option) => {
               const isSelected = selectedQuality === option.quality;
               return (
@@ -117,18 +115,30 @@ export default function DownloadQualityDialog({
                         : themeColors.dark.surfaceSecondary
                     }
                   >
-                    <RadioGroup.Item
-                      value={option.quality}
-                      id={option.quality}
-                      size="$3"
+                    <XStack
+                      width={moderateScale(20)}
+                      height={moderateScale(20)}
+                      rounded={moderateScale(10)}
+                      borderWidth={2}
                       borderColor={
                         isSelected
                           ? themeColors.dark.accent
                           : themeColors.dark.borderSecondary
                       }
+                      bg={
+                        isSelected ? themeColors.dark.accent : "transparent"
+                      }
+                      items="center"
+                      justify="center"
                     >
-                      <RadioGroup.Indicator />
-                    </RadioGroup.Item>
+                      {isSelected ? (
+                        <Check
+                          size={moderateScale(12)}
+                          color={themeColors.dark.onAccent}
+                          strokeWidth={3}
+                        />
+                      ) : null}
+                    </XStack>
                     <YStack flex={1} gap={verticalScale(2)}>
                       <MyText
                         fontSize={moderateScale(15)}
@@ -149,7 +159,7 @@ export default function DownloadQualityDialog({
                 </Pressable>
               );
             })}
-          </RadioGroup>
+          </YStack>
 
           <XStack gap={scale(12)}>
             <Dialog.Close asChild displayWhenAdapted={false}>
@@ -166,7 +176,7 @@ export default function DownloadQualityDialog({
               flex={1}
               bg={themeColors.dark.accent}
               size="$4"
-              disabled={isSubmitting}
+              disabled={downloadDisabled}
               onPress={handleConfirm}
               icon={isSubmitting ? undefined : Check}
             >

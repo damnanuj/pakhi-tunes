@@ -11,6 +11,8 @@ type PlaybackSlice = {
 
 type PlayerState = {
   activeTrack: ActiveTrack | null;
+  /** Full song metadata for the active track when playback started from ArtistSong. */
+  activeArtistSong: ArtistSong | null;
   /** True while a new track is loading into the native player (after UI shows active track). */
   isPlaybackLoading: boolean;
   queue: ArtistSong[];
@@ -23,6 +25,7 @@ type PlayerState = {
 
 type PlayerActions = {
   setActiveTrack: (track: ActiveTrack | null) => void;
+  setActiveArtistSong: (song: ArtistSong | null) => void;
   setPlayback: (partial: Partial<PlaybackSlice>) => void;
   setPlaybackLoading: (loading: boolean) => void;
   resetPlayback: () => void;
@@ -58,15 +61,18 @@ const initialQueue = {
 
 export const usePlayerStore = create<PlayerState & PlayerActions>((set, get) => ({
   activeTrack: null,
+  activeArtistSong: null,
   isPlaybackLoading: false,
   ...initialPlayback,
   ...initialQueue,
   setActiveTrack: (track) =>
     set({
       activeTrack: track,
+      ...(track === null ? { activeArtistSong: null } : {}),
       ...initialPlayback,
       durationMillis: track ? Math.max(0, track.durationSec) * 1000 : 0,
     }),
+  setActiveArtistSong: (song) => set({ activeArtistSong: song }),
   setPlayback: (partial) => set(partial),
   setPlaybackLoading: (loading) => set({ isPlaybackLoading: loading }),
   resetPlayback: () => set(initialPlayback),
@@ -82,6 +88,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>((set, get) => 
       originalQueue: [],
       queueIndex: -1,
       queueSource: null,
+      activeArtistSong: null,
     }),
   setQueueIndex: (index) => set({ queueIndex: index }),
   setShuffleEnabled: (enabled) => set({ shuffleEnabled: enabled }),
