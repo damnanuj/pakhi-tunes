@@ -1,5 +1,5 @@
-import NewReleasesAllPage from "src/features/Home/pages/NewReleasesAllPage";
+import { Redirect } from "expo-router";
 
-export default function NewReleasesAllScreen() {
-  return <NewReleasesAllPage />;
+export default function NewReleasesRedirectScreen() {
+  return <Redirect href="/home/new-songs" />;
 }

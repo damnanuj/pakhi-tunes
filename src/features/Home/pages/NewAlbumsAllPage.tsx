@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FlatList, ListRenderItem, ScrollView, View } from "react-native";
+import { FlatList, ListRenderItem, View } from "react-native";
 import { useRouter } from "expo-router";
 import { YStack } from "tamagui";
 import { useQuery } from "@tanstack/react-query";
@@ -16,24 +16,17 @@ import { useNetwork } from "src/contexts/NetworkContext";
 import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
 import PillTabs, { type PillTabItem } from "src/components/PillTabs";
 import { useRefreshable, useScrollBottomInset } from "src/hooks";
-import { getNewReleases } from "src/services";
 import LibraryCard from "src/features/Library/components/LibraryCard";
 import { getSongCoverUrl } from "src/utils/functions/songImage";
 import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
 import { formatLanguageLabel } from "src/utils/functions/formatLanguageLabel";
-import { usePlayback } from "src/features/Player/context/PlayerContext";
-import { findSongIndex } from "src/features/Player/utils/queueHelpers";
-import type { ArtistSong } from "src/types/artistSongs.types";
-import {
-  getNewReleaseSongs,
-  isNewReleaseAlbum,
-  type NewReleaseListItem,
-} from "src/types/newReleases.types";
+import type { NewReleaseAlbumItem } from "src/types/newReleases.types";
 import NewReleasesAllPageSkeleton, {
   SkeletonCard,
 } from "../skeletons/NewReleasesAllPageSkeleton";
-import { NEW_RELEASES_QUEUE_FETCH_LIMIT } from "src/utils/constants/newReleases";
-const DEFAULT_LANGUAGE = "hindi";
+import { NEW_RELEASES_DEFAULT_LANGUAGE } from "src/utils/constants/newReleases";
+import { getNewReleasesAllAlbumsQueryOptions } from "../queries/newReleasesQuery";
+
 const CARD_GAP = scale(12);
 const SKELETON_GRID_KEYS = Array.from({ length: 8 }, (_, i) => ({ key: i }));
 
@@ -43,24 +36,17 @@ const columnWrapperStyle = {
   marginBottom: verticalScale(12),
 } as const;
 
-export default function NewReleasesAllPage() {
+export default function NewAlbumsAllPage() {
   const router = useRouter();
   const { isOffline } = useNetwork();
-  const { playSongFromQueue } = usePlayback();
   const scrollBottomPadding = useScrollBottomInset({ includeTabBar: true });
-  const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
+  const [language, setLanguage] = useState(NEW_RELEASES_DEFAULT_LANGUAGE);
   const [supportedLanguages, setSupportedLanguages] = useState<string[]>([]);
   const [tabSwitching, setTabSwitching] = useState(false);
 
-  const { data, isPending, isError, error, isFetching, refetch } = useQuery({
-    queryKey: ["newReleases", NEW_RELEASES_QUEUE_FETCH_LIMIT, language, "all"],
-    queryFn: () =>
-      getNewReleases({
-        limit: NEW_RELEASES_QUEUE_FETCH_LIMIT,
-        offset: 0,
-        language,
-      }),
-  });
+  const { data, isPending, isError, error, isFetching, refetch } = useQuery(
+    getNewReleasesAllAlbumsQueryOptions(language)
+  );
 
   useEffect(() => {
     const codes = data?.data?.meta?.supportedLanguages;
@@ -100,58 +86,30 @@ export default function NewReleasesAllPage() {
     }
   }, [language]);
 
-  const results = data?.data?.results ?? [];
-  const songQueue = useMemo(() => getNewReleaseSongs(results), [results]);
+  const albums = (data?.data?.results ?? []) as NewReleaseAlbumItem[];
 
   const handlePress = useCallback(
-    (item: NewReleaseListItem) => {
-      if (isNewReleaseAlbum(item)) {
-        router.push({
-          pathname: "/home/album/[id]",
-          params: { id: item.id },
-        });
-        return;
-      }
-      const song = item as ArtistSong;
-      const index = findSongIndex(songQueue, song.id);
-      if (index < 0) return;
-      void playSongFromQueue(songQueue, index, {
-        type: "newReleases",
-        scope: "all",
-        language,
+    (item: NewReleaseAlbumItem) => {
+      router.push({
+        pathname: "/home/album/[id]",
+        params: { id: item.id },
       });
     },
-    [router, playSongFromQueue, songQueue, language]
+    [router]
   );
 
-  const renderItem: ListRenderItem<NewReleaseListItem> = useCallback(
+  const renderItem: ListRenderItem<NewReleaseAlbumItem> = useCallback(
     ({ item }) => {
       const cover = getSongCoverUrl(item.image, "500x500");
       const title = decodeHtmlEntities(item.name);
-      if (isNewReleaseAlbum(item)) {
-        return (
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <LibraryCard
-              id={item.id}
-              imageUrl={cover}
-              title={title}
-              subtitle="Album"
-              onPress={() => handlePress(item)}
-            />
-          </View>
-        );
-      }
-      const song = item as ArtistSong;
-      const artists =
-        song.artists?.primary?.map((a) => a.name).join(", ") ?? "";
+
       return (
         <View style={{ flex: 1, minWidth: 0 }}>
           <LibraryCard
-            id={song.id}
+            id={item.id}
             imageUrl={cover}
             title={title}
-            subtitle={artists || "Song"}
-            trailingAction="play"
+            subtitle="Album"
             onPress={() => handlePress(item)}
           />
         </View>
@@ -160,9 +118,10 @@ export default function NewReleasesAllPage() {
     [handlePress]
   );
 
-  const keyExtractor = useCallback((item: NewReleaseListItem) => {
-    return isNewReleaseAlbum(item) ? `album-${item.id}` : `song-${item.id}`;
-  }, []);
+  const keyExtractor = useCallback(
+    (item: NewReleaseAlbumItem) => `album-${item.id}`,
+    []
+  );
 
   const listHeader = useMemo(
     () => (
@@ -194,16 +153,13 @@ export default function NewReleasesAllPage() {
     [scrollBottomPadding]
   );
 
-  const showFullSkeleton =
-    isPending && supportedLanguages.length === 0;
-  /** After first meta load: switching language shows card skeleton until fetch settles. */
-  const showTabsWithGridSkeleton =
-    tabSwitching && (isFetching || isPending);
+  const showFullSkeleton = isPending && supportedLanguages.length === 0;
+  const showTabsWithGridSkeleton = tabSwitching && (isFetching || isPending);
 
   if (isError) {
     return (
       <YStack flex={1} bg={themeColors.dark.background}>
-        <ScreenHeader showBack title="New Releases" />
+        <ScreenHeader showBack title="New Albums" />
         <ConnectionErrorState
           variant={
             isNetworkRelatedError(error, isOffline) ? "offline" : "error"
@@ -218,7 +174,7 @@ export default function NewReleasesAllPage() {
   if (showFullSkeleton) {
     return (
       <YStack flex={1} bg={themeColors.dark.background}>
-        <ScreenHeader showBack title="New Releases" />
+        <ScreenHeader showBack title="New Albums" />
         <NewReleasesAllPageSkeleton />
       </YStack>
     );
@@ -227,7 +183,7 @@ export default function NewReleasesAllPage() {
   if (showTabsWithGridSkeleton) {
     return (
       <YStack flex={1} bg={themeColors.dark.background}>
-        <ScreenHeader showBack title="New Releases" />
+        <ScreenHeader showBack title="New Albums" />
         <FlatList
           data={SKELETON_GRID_KEYS}
           numColumns={2}
@@ -249,9 +205,9 @@ export default function NewReleasesAllPage() {
 
   return (
     <YStack flex={1} bg={themeColors.dark.background}>
-      <ScreenHeader showBack title="New Releases" />
+      <ScreenHeader showBack title="New Albums" />
       <FlatList
-        data={results}
+        data={albums}
         keyExtractor={keyExtractor}
         numColumns={2}
         columnWrapperStyle={columnWrapperStyle}
@@ -265,9 +221,16 @@ export default function NewReleasesAllPage() {
         windowSize={7}
         removeClippedSubviews
         ListEmptyComponent={
-          <YStack px={scale(20)} py={verticalScale(24)} style={{ alignItems: "center" }}>
-            <MyText fontSize={moderateScale(14)} color={themeColors.dark.textMuted}>
-              No releases yet
+          <YStack
+            px={scale(20)}
+            py={verticalScale(24)}
+            style={{ alignItems: "center" }}
+          >
+            <MyText
+              fontSize={moderateScale(14)}
+              color={themeColors.dark.textMuted}
+            >
+              No albums yet
             </MyText>
           </YStack>
         }

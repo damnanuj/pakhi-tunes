@@ -9,6 +9,14 @@ export default function HomeLayout() {
         options={{ animation: "slide_from_right" }}
       />
       <Stack.Screen
+        name="new-albums"
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
+        name="new-songs"
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
         name="new-releases"
         options={{ animation: "slide_from_right" }}
       />

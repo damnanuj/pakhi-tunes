@@ -40,7 +40,7 @@ function ExploreNewReleasesList({
   const { isOffline } = useNetwork();
 
   const handleSeeAll = useCallback(() => {
-    router.push("/home/new-releases" as never);
+    router.push("/home/new-songs" as never);
   }, [router]);
 
   const scrollBottomPadding = useScrollBottomInset({
@@ -110,7 +110,7 @@ function ExploreNewReleasesList({
             fontWeight="600"
             color={themeColors.dark.onSurface}
           >
-            New Releases
+            New Songs
           </MyText>
           <Pressable onPress={handleSeeAll}>
             <MyText
