@@ -1,9 +1,10 @@
-import { useMemo } from "react";
-import { Image, Pressable, ScrollView } from "react-native";
+import { useCallback, useMemo } from "react";
+import { ActivityIndicator, Image, Pressable, ScrollView, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { XStack, YStack } from "tamagui";
-import { Play } from "@tamagui/lucide-icons";
+import { Pause, Play } from "@tamagui/lucide-icons";
+import { useShallow } from "zustand/react/shallow";
 import {
   scale,
   verticalScale,
@@ -17,8 +18,10 @@ import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
 import { getSongCoverUrl } from "src/utils/functions/songImage";
 import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
 import { usePlayback } from "src/features/Player/context/PlayerContext";
+import { usePlayerStore } from "src/features/Player/store/playerStore";
 import { findSongIndex } from "src/features/Player/utils/queueHelpers";
 import { QueueProvider } from "src/features/Player/context/QueueContext";
+import { PlayingArtworkIndicator } from "src/features/ArtistSongs/components/PlayingArtworkIndicator";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import { getNewReleaseSongs } from "src/types/newReleases.types";
 import { NEW_RELEASES_DISPLAY_LIMIT_HOME_SONGS } from "src/utils/constants/newReleases";
@@ -28,6 +31,7 @@ import NewSongsSectionSkeleton from "../skeletons/NewSongsSectionSkeleton";
 const COLUMN_WIDTH = scale(320);
 const ROWS_PER_COLUMN = 3;
 const IMAGE_SIZE = moderateScale(56);
+const ARTWORK_RADIUS = moderateScale(8);
 const ACTION_SIZE = moderateScale(40);
 
 function NewSongRow({
@@ -37,20 +41,47 @@ function NewSongRow({
   song: ArtistSong;
   songQueue: ArtistSong[];
 }) {
-  const { playSongFromQueue } = usePlayback();
+  const { playSongFromQueue, togglePlayPause } = usePlayback();
   const title = decodeHtmlEntities(song.name);
   const cover = getSongCoverUrl(song.image, "150x150");
   const artistsLine =
     song.artists?.primary?.map((a) => a.name).join(", ") ?? "";
 
-  const handlePlaySong = () => {
+  const playbackState = usePlayerStore(
+    useShallow((s) => {
+      const isActive = s.activeTrack?.id === song.id;
+      if (!isActive) {
+        return { isActive: false as const };
+      }
+      return {
+        isActive: true as const,
+        isPlaying: s.isPlaying,
+        isPlaybackLoading: s.isPlaybackLoading,
+      };
+    })
+  );
+
+  const isThisTrack = playbackState.isActive;
+  const showLoadingOnRow =
+    playbackState.isActive && playbackState.isPlaybackLoading;
+  const showPauseOnRow =
+    playbackState.isActive &&
+    playbackState.isPlaying &&
+    !playbackState.isPlaybackLoading;
+
+  const handlePlaySong = useCallback(() => {
+    if (isThisTrack) {
+      void togglePlayPause();
+      return;
+    }
+
     const index = findSongIndex(songQueue, song.id);
     if (index < 0) return;
     void playSongFromQueue(songQueue, index, {
       type: "newReleases",
       scope: "home",
     });
-  };
+  }, [isThisTrack, togglePlayPause, songQueue, song.id, playSongFromQueue]);
 
   return (
     <Pressable
@@ -69,20 +100,58 @@ function NewSongRow({
       })}
     >
       <XStack items="center" gap={scale(12)} width="100%">
-        <Image
-          source={{ uri: cover }}
+        <View
           style={{
             width: IMAGE_SIZE,
             height: IMAGE_SIZE,
-            borderRadius: moderateScale(8),
+            borderRadius: ARTWORK_RADIUS,
+            overflow: "hidden",
           }}
-          resizeMode="cover"
-        />
+        >
+          <Image
+            source={{ uri: cover }}
+            style={{
+              width: IMAGE_SIZE,
+              height: IMAGE_SIZE,
+            }}
+            resizeMode="cover"
+          />
+          {showLoadingOnRow ? (
+            <View
+              pointerEvents="none"
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                width: IMAGE_SIZE,
+                height: IMAGE_SIZE,
+                borderRadius: ARTWORK_RADIUS,
+                backgroundColor: "rgba(0,0,0,0.48)",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <ActivityIndicator
+                color={themeColors.dark.accent}
+                size="small"
+              />
+            </View>
+          ) : showPauseOnRow ? (
+            <PlayingArtworkIndicator
+              size={IMAGE_SIZE}
+              borderRadius={ARTWORK_RADIUS}
+            />
+          ) : null}
+        </View>
         <YStack flex={1} style={{ minWidth: 0 }} justify="center" gap={verticalScale(4)}>
           <MyText
             fontSize={moderateScale(12)}
             fontWeight="600"
-            color={themeColors.dark.onSurface}
+            color={
+              isThisTrack
+                ? themeColors.dark.accent
+                : themeColors.dark.onSurface
+            }
             numberOfLines={1}
           >
             {title}
@@ -106,7 +175,17 @@ function NewSongRow({
           items="center"
           justify="center"
         >
-          <Play size={moderateScale(18)} color={themeColors.dark.accent} />
+          {showLoadingOnRow ? (
+            <ActivityIndicator color={themeColors.dark.accent} size="small" />
+          ) : showPauseOnRow ? (
+            <Pause size={moderateScale(18)} color={themeColors.dark.accent} />
+          ) : (
+            <Play
+              size={moderateScale(18)}
+              color={themeColors.dark.accent}
+              fill={isThisTrack ? themeColors.dark.accent : undefined}
+            />
+          )}
         </XStack>
       </XStack>
     </Pressable>

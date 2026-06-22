@@ -13,7 +13,7 @@ type GuestProfileSectionProps = {
 
 export default function GuestProfileSection({ onLoginPress }: GuestProfileSectionProps) {
   return (
-    <YStack >
+    <YStack gap={verticalScale(24)} >
       <ProfileSection
         avatarSource={GUEST_AVATAR}
         name="Guest"

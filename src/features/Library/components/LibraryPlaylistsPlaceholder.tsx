@@ -48,7 +48,7 @@ export default function LibraryPlaylistsPlaceholder() {
           color={themeColors.dark.onSurface}
           textAlign="center"
         >
-          Playlists are on the way
+          Playlists coming soon
         </MyText>
         <MyText
           fontSize={moderateScale(14)}
@@ -56,8 +56,8 @@ export default function LibraryPlaylistsPlaceholder() {
           color={themeColors.dark.textMuted}
           textAlign="center"
         >
-          We&apos;re cooking something good — save this spot, we&apos;ll be back
-          with playlists soon.
+          We&apos;re building a better way to collect and organise your music.
+          Check back here soon.
         </MyText>
         <MyText
           fontSize={moderateScale(13)}
@@ -66,7 +66,7 @@ export default function LibraryPlaylistsPlaceholder() {
           textAlign="center"
           style={{ marginTop: verticalScale(4) }}
         >
-          For now, favourite songs and build your vibe from Recent & Downloads.
+          In the meantime, favourite tracks and find them in Recent & Downloads.
         </MyText>
       </YStack>
     </YStack>

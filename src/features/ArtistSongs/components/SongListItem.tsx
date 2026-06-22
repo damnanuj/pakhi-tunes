@@ -200,7 +200,11 @@ function SongListItem({ song, onRemoveFromHistory }: SongListItemProps) {
           <MyText
             fontSize={moderateScale(14)}
             weight="600"
-            color={themeColors.dark.onSurface}
+            color={
+              isThisTrack
+                ? themeColors.dark.accent
+                : themeColors.dark.onSurface
+            }
             numberOfLines={1}
           >
             {songName}
