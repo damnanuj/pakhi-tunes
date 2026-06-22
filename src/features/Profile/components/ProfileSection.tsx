@@ -27,7 +27,7 @@ export default function ProfileSection({
   showEditButton = true,
 }: ProfileSectionProps) {
   return (
-    <XStack items="center" gap={scale(20)} mb={verticalScale(24)}>
+    <XStack items="center" gap={scale(20)} >
       <Avatar source={avatarSource} size={moderateScale(100)} />
       <YStack flex={1} gap={verticalScale(4)}>
         <MyText
@@ -45,7 +45,7 @@ export default function ProfileSection({
           {subtitle}
         </MyText>
         {showEditButton ? (
-          <View style={{ marginTop: verticalScale(12), alignSelf: "flex-start" }}>
+          <View style={{ alignSelf: "flex-start" }}>
             <EditProfileButton onPress={onEditPress} />
           </View>
         ) : null}

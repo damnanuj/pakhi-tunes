@@ -10,6 +10,7 @@ import {
   scale,
   verticalScale,
 } from "src/utils/functions/dimensions";
+import { navigateToLibraryTab } from "src/features/Library/utils/navigateToLibraryTab";
 
 type ConnectionErrorVariant = "offline" | "error";
 
@@ -192,9 +193,7 @@ export default function ConnectionErrorState({
         ) : null}
         {showDownloadsCta ? (
           <Pressable
-            onPress={() =>
-              router.push("/(tabs)/library?tab=downloads" as never)
-            }
+            onPress={() => navigateToLibraryTab(router, "downloads")}
             accessibilityRole="button"
             accessibilityLabel="Go to Downloads"
             style={({ pressed }) => ({

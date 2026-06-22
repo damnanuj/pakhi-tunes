@@ -15,6 +15,7 @@ import { useAuth } from "src/features/auth/hooks/useAuth";
 import { appToast } from "src/components/toast/appToastHelpers";
 import GuestProfileSection from "../components/GuestProfileSection";
 import AuthenticatedProfileSection from "../components/AuthenticatedProfileSection";
+import ProfileLibraryShortcuts from "../components/ProfileLibraryShortcuts";
 import ProfileMenu from "../components/ProfileMenu";
 import { FAVORITES_QUERY_KEY } from "src/features/favorites/hooks/useFavorites";
 import { HISTORY_QUERY_KEY } from "src/features/history/hooks/useHistoryList";
@@ -35,10 +36,6 @@ export default function ProfilePage() {
       pathname: "/auth",
       params: { mode: "signin", redirect: "/(tabs)/profile" },
     });
-  };
-
-  const handleFavouritesPress = () => {
-    router.push("/(tabs)/profile/favourites");
   };
 
   const handleLogoutPress = () => {
@@ -70,9 +67,10 @@ export default function ProfilePage() {
           <GuestProfileSection onLoginPress={handleLoginPress} />
         )}
 
+        <ProfileLibraryShortcuts />
+
         <ProfileMenu
           isAuthenticated={isAuthenticated}
-          onFavouritesPress={handleFavouritesPress}
           onLogoutPress={handleLogoutPress}
         />
       </ScrollView>

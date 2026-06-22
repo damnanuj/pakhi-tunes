@@ -13,7 +13,7 @@ export default function AuthenticatedProfileSection({
   user,
 }: AuthenticatedProfileSectionProps) {
   return (
-    <YStack mb={verticalScale(24)}>
+    <YStack >
       <ProfileSection
         avatarSource={GUEST_AVATAR}
         name={user.name}
