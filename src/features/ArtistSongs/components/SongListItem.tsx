@@ -1,6 +1,6 @@
 import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Image, Pressable, View, type PressableStateCallbackType } from "react-native";
-import { XStack, YStack } from "tamagui";
+import { YStack } from "tamagui";
 import {
   // CirclePlay,
   MoreVertical,
@@ -22,7 +22,6 @@ import { usePlayerStore } from "src/features/Player/store/playerStore";
 import { useQueueContext } from "src/features/Player/context/QueueContext";
 import { findSongIndex } from "src/features/Player/utils/queueHelpers";
 import {
-  ghostControlStyle,
   playerRippleLight,
 } from "src/features/Player/utils/ghostControlStyle";
 import type { ArtistSong } from "src/types/artistSongs.types";
@@ -128,20 +127,20 @@ function SongListItem({ song }: SongListItemProps) {
     isDownloaded && !isDownloading && !showLoadingOnRow && !showPauseOnRow;
 
   return (
-    <XStack
-      items="center"
-      gap={scale(12)}
-      py={verticalScale(12)}
-      px={scale(20)}
-    >
+    <>
       <Pressable
         onPress={handlePlayAction}
+        android_ripple={{ color: "rgba(255, 255, 0, 0.14)", borderless: false }}
         style={({ pressed }) => ({
-          flex: 1,
           flexDirection: "row",
           alignItems: "center",
           gap: scale(12),
-          opacity: pressed ? 0.85 : 1,
+          paddingVertical: verticalScale(12),
+          paddingHorizontal: scale(20),
+          backgroundColor: pressed
+            ? "rgba(255, 255, 255, 0.07)"
+            : "transparent",
+          opacity: pressed ? 0.9 : 1,
         })}
       >
         <View
@@ -212,21 +211,29 @@ function SongListItem({ song }: SongListItemProps) {
             {artistNames}
           </MyText>
         </YStack>
-      </Pressable>
-      <Pressable
-        ref={menuTriggerRef}
-        onPress={openOptionsMenu}
-        accessibilityRole="button"
-        accessibilityLabel="Song options"
-        android_ripple={playerRippleLight}
-        style={({ pressed }: PressableStateCallbackType) => ({
-          ...ghostControlStyle(pressed),
-        })}
-      >
-        <MoreVertical
-          size={moderateScale(20)}
-          color={themeColors.dark.onSurface}
-        />
+        <Pressable
+          ref={menuTriggerRef}
+          onPress={openOptionsMenu}
+          accessibilityRole="button"
+          accessibilityLabel="Song options"
+          android_ripple={playerRippleLight}
+          hitSlop={8}
+          style={({ pressed }: PressableStateCallbackType) => ({
+            width: moderateScale(40),
+            height: moderateScale(40),
+            borderRadius: moderateScale(20),
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: pressed
+              ? "rgba(255, 255, 255, 0.1)"
+              : "transparent",
+          })}
+        >
+          <MoreVertical
+            size={moderateScale(20)}
+            color={themeColors.dark.onSurface}
+          />
+        </Pressable>
       </Pressable>
       <SongOptionsMenu
         open={menuOpen}
@@ -281,7 +288,7 @@ function SongListItem({ song }: SongListItemProps) {
           <CirclePlay size={ROW_ACTION_ICON} color={themeColors.dark.accent} />
         )}
       </Pressable> */}
-    </XStack>
+    </>
   );
 }
 
