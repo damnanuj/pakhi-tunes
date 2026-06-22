@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Image, Pressable } from "react-native";
+import { Image, Pressable, ScrollView } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { XStack, YStack } from "tamagui";
@@ -25,6 +25,8 @@ import { NEW_RELEASES_DISPLAY_LIMIT_HOME_SONGS } from "src/utils/constants/newRe
 import { getNewReleasesHomeSongsQueryOptions } from "../queries/newReleasesQuery";
 import NewSongsSectionSkeleton from "../skeletons/NewSongsSectionSkeleton";
 
+const COLUMN_WIDTH = scale(320);
+const ROWS_PER_COLUMN = 3;
 const IMAGE_SIZE = moderateScale(56);
 const ACTION_SIZE = moderateScale(40);
 
@@ -51,7 +53,21 @@ function NewSongRow({
   };
 
   return (
-    <Pressable onPress={handlePlaySong}>
+    <Pressable
+      onPress={handlePlaySong}
+      android_ripple={{ color: "rgba(255, 255, 0, 0.14)", borderless: false }}
+      style={({ pressed }) => ({
+        width: "100%",
+        borderRadius: moderateScale(12),
+        paddingVertical: verticalScale(6),
+        paddingHorizontal: scale(8),
+        marginHorizontal: scale(-8),
+        backgroundColor: pressed
+          ? "rgba(255, 255, 255, 0.07)"
+          : "transparent",
+        opacity: pressed ? 0.9 : 1,
+      })}
+    >
       <XStack items="center" gap={scale(12)} width="100%">
         <Image
           source={{ uri: cover }}
@@ -97,6 +113,22 @@ function NewSongRow({
   );
 }
 
+function NewSongColumn({
+  songs,
+  songQueue,
+}: {
+  songs: ArtistSong[];
+  songQueue: ArtistSong[];
+}) {
+  return (
+    <YStack width={COLUMN_WIDTH} gap={verticalScale(16)}>
+      {songs.map((song) => (
+        <NewSongRow key={song.id} song={song} songQueue={songQueue} />
+      ))}
+    </YStack>
+  );
+}
+
 export default function NewSongsSection() {
   const router = useRouter();
   const { isOffline } = useNetwork();
@@ -112,6 +144,14 @@ export default function NewSongsSection() {
     () => allSongs.slice(0, NEW_RELEASES_DISPLAY_LIMIT_HOME_SONGS),
     [allSongs]
   );
+
+  const columns = useMemo(() => {
+    const chunks: ArtistSong[][] = [];
+    for (let i = 0; i < displaySongs.length; i += ROWS_PER_COLUMN) {
+      chunks.push(displaySongs.slice(i, i + ROWS_PER_COLUMN));
+    }
+    return chunks;
+  }, [displaySongs]);
 
   const queueSource = useMemo(
     () => ({ type: "newReleases" as const, scope: "home" as const }),
@@ -156,8 +196,8 @@ export default function NewSongsSection() {
 
   return (
     <QueueProvider songs={allSongs} source={queueSource}>
-      <YStack px={scale(20)} gap={verticalScale(16)}>
-        <XStack justify="space-between" items="center">
+      <YStack px={scale(20)}>
+        <XStack justify="space-between" items="center" mb={verticalScale(16)}>
           <MyText
             fontSize={moderateScale(18)}
             fontWeight="600"
@@ -171,9 +211,22 @@ export default function NewSongsSection() {
             </MyText>
           </Pressable>
         </XStack>
-        {displaySongs.map((song) => (
-          <NewSongRow key={song.id} song={song} songQueue={allSongs} />
-        ))}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{
+            gap: scale(16),
+            paddingRight: scale(20),
+          }}
+        >
+          {columns.map((columnSongs, index) => (
+            <NewSongColumn
+              key={index}
+              songs={columnSongs}
+              songQueue={allSongs}
+            />
+          ))}
+        </ScrollView>
       </YStack>
     </QueueProvider>
   );

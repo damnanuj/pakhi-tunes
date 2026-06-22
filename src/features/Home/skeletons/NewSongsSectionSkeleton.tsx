@@ -1,3 +1,4 @@
+import { ScrollView } from "react-native";
 import { XStack, YStack } from "tamagui";
 import {
   scale,
@@ -6,10 +7,12 @@ import {
 } from "src/utils/functions/dimensions";
 import SkeletonPlaceholder from "src/components/SkeletonPlaceholder";
 
+const COLUMN_WIDTH = scale(320);
 const IMAGE_SIZE = moderateScale(56);
 const ACTION_SIZE = moderateScale(40);
 const ROW_GAP = verticalScale(16);
-const ROW_COUNT = 6;
+const ROWS_PER_COLUMN = 3;
+const SKELETON_COLUMNS = 2;
 
 function SkeletonRow() {
   return (
@@ -42,8 +45,8 @@ function SkeletonRow() {
 
 export default function NewSongsSectionSkeleton() {
   return (
-    <YStack px={scale(20)} gap={ROW_GAP}>
-      <XStack justify="space-between" items="center">
+    <YStack px={scale(20)}>
+      <XStack justify="space-between" items="center" mb={verticalScale(16)}>
         <SkeletonPlaceholder
           width={scale(110)}
           height={moderateScale(18)}
@@ -55,9 +58,19 @@ export default function NewSongsSectionSkeleton() {
           borderRadius={moderateScale(4)}
         />
       </XStack>
-      {Array.from({ length: ROW_COUNT }).map((_, index) => (
-        <SkeletonRow key={index} />
-      ))}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: scale(16), paddingRight: scale(20) }}
+      >
+        {Array.from({ length: SKELETON_COLUMNS }).map((_, col) => (
+          <YStack key={col} width={COLUMN_WIDTH} gap={ROW_GAP}>
+            {Array.from({ length: ROWS_PER_COLUMN }).map((__, row) => (
+              <SkeletonRow key={row} />
+            ))}
+          </YStack>
+        ))}
+      </ScrollView>
     </YStack>
   );
 }
