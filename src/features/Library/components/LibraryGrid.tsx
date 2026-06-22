@@ -7,6 +7,7 @@ import {
 } from "react-native";
 import { useScrollBottomInset } from "src/hooks";
 import DownloadsList from "src/features/Downloads/components/DownloadsList";
+import LibraryRecentList from "src/features/history/components/LibraryRecentList";
 import LibraryCard from "./LibraryCard";
 import LibraryArtistsGrid from "./LibraryArtistsGrid";
 import { LIBRARY_GRID_COLUMN_WRAPPER_STYLE } from "../libraryGridLayout";
@@ -14,45 +15,6 @@ import type { LibraryTabId } from "./LibraryTabs";
 import type { LibraryItem } from "../types/libraryItem";
 
 export type { LibraryItem } from "../types/libraryItem";
-
-const RECENT_ITEMS: LibraryItem[] = [
-  {
-    id: "1",
-    title: "Variete Vol 1",
-    imageUrl:
-      "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400&h=400&fit=crop",
-  },
-  {
-    id: "2",
-    title: "Bhojpuri",
-    imageUrl:
-      "https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=400&h=400&fit=crop",
-  },
-  {
-    id: "3",
-    title: "Angola",
-    imageUrl:
-      "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&h=400&fit=crop",
-  },
-  {
-    id: "4",
-    title: "Congo Kinshasa",
-    imageUrl:
-      "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=400&h=400&fit=crop",
-  },
-  {
-    id: "5",
-    title: "DJ Mix",
-    imageUrl:
-      "https://images.unsplash.com/photo-1545128485-c400e7702796?w=400&h=400&fit=crop",
-  },
-  {
-    id: "6",
-    title: "Studio Sessions",
-    imageUrl:
-      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop",
-  },
-];
 
 const PLAYLISTS_ITEMS: LibraryItem[] = [
   {
@@ -109,10 +71,9 @@ const ALBUMS_ITEMS: LibraryItem[] = [
 ];
 
 const TAB_DATA: Record<
-  Exclude<LibraryTabId, "artists" | "downloads">,
+  Exclude<LibraryTabId, "artists" | "downloads" | "recent">,
   LibraryItem[]
 > = {
-  recent: RECENT_ITEMS,
   playlists: PLAYLISTS_ITEMS,
   albums: ALBUMS_ITEMS,
 };
@@ -153,8 +114,7 @@ export default function LibraryGrid({
   const keyExtractor = useCallback((item: LibraryItem) => item.id, []);
 
   const staticTabItems = useMemo(() => {
-    if (activeTab === "artists") return RECENT_ITEMS;
-    return TAB_DATA[activeTab] ?? RECENT_ITEMS;
+    return TAB_DATA[activeTab as keyof typeof TAB_DATA] ?? PLAYLISTS_ITEMS;
   }, [activeTab]);
 
   if (activeTab === "artists") {
@@ -163,6 +123,10 @@ export default function LibraryGrid({
 
   if (activeTab === "downloads") {
     return <DownloadsList />;
+  }
+
+  if (activeTab === "recent") {
+    return <LibraryRecentList />;
   }
 
   return (

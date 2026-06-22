@@ -19,6 +19,7 @@ export type QueueSource =
   | { type: "newReleases"; scope: NewReleasesQueueScope; language?: string }
   | { type: "artist"; id: string; name: string }
   | { type: "genre"; slug: string; name: string }
-  | { type: "favorites"; name: string };
+  | { type: "favorites"; name: string }
+  | { type: "history"; name: string };
 
 export type RepeatMode = "off" | "one" | "all";

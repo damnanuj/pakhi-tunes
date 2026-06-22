@@ -17,6 +17,7 @@ import GuestProfileSection from "../components/GuestProfileSection";
 import AuthenticatedProfileSection from "../components/AuthenticatedProfileSection";
 import ProfileMenu from "../components/ProfileMenu";
 import { FAVORITES_QUERY_KEY } from "src/features/favorites/hooks/useFavorites";
+import { HISTORY_QUERY_KEY } from "src/features/history/hooks/useHistoryList";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -48,6 +49,7 @@ export default function ProfilePage() {
     const displayName = user?.name ?? "Guest";
     logout();
     void queryClient.removeQueries({ queryKey: FAVORITES_QUERY_KEY });
+    void queryClient.removeQueries({ queryKey: HISTORY_QUERY_KEY });
     appToast.loggedOut(displayName);
   };
 

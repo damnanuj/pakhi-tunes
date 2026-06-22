@@ -31,6 +31,7 @@ import { MiniPlayerRootLayer, PlayerProvider } from "src/features/Player";
 import AppToast from "src/components/toast/AppToast";
 import AuthProvider from "src/features/auth/providers/AuthProvider";
 import FavoritesSyncProvider from "src/features/favorites/providers/FavoritesSyncProvider";
+import HistorySyncProvider from "src/features/history/providers/HistorySyncProvider";
 import { NetworkProvider } from "src/contexts/NetworkContext";
 
 export { ErrorBoundary } from "expo-router";
@@ -108,9 +109,11 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
               <Provider>
                 <AuthProvider>
                   <FavoritesSyncProvider>
-                    {children}
-                    <MiniPlayerRootLayer />
-                    <AppToast />
+                    <HistorySyncProvider>
+                      {children}
+                      <MiniPlayerRootLayer />
+                      <AppToast />
+                    </HistorySyncProvider>
                   </FavoritesSyncProvider>
                 </AuthProvider>
               </Provider>

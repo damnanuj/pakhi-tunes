@@ -22,4 +22,9 @@ export const endpoints = {
     status: (songId: string) =>
       `/favorites/${encodeURIComponent(songId)}/status`,
   },
+  history: {
+    list: "/history",
+    bulk: "/history/bulk",
+    item: (songId: string) => `/history/${encodeURIComponent(songId)}`,
+  },
 } as const;

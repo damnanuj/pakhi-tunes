@@ -24,6 +24,8 @@ import {
   hasQueue,
   shuffleQueueKeepingCurrent,
 } from "../utils/queueHelpers";
+import { activeTrackToHistoryPayload } from "src/features/history/types/history.types";
+import { recordPlayToHistory } from "src/features/history/hooks/useRecordHistory";
 
 type PlayerContextValue = {
   playSong: (song: ArtistSong) => Promise<void>;
@@ -158,8 +160,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             { updateInterval: 400 }
           );
 
+          let historyRecorded = false;
+
           const sub = player.addListener("playbackStatusUpdate", (status) => {
             syncStoreFromLoadedStatus(status);
+            if (!historyRecorded && status.isLoaded) {
+              historyRecorded = true;
+              recordPlayToHistory(activeTrackToHistoryPayload(track));
+            }
           });
           statusSubRef.current = sub;
           playerRef.current = player;
@@ -177,6 +185,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                   ? Math.round(initial.duration * 1000)
                   : track.durationSec * 1000,
             });
+            historyRecorded = true;
+            recordPlayToHistory(activeTrackToHistoryPayload(track));
           }
         } catch {
           usePlayerStore.getState().setActiveTrack(null);
