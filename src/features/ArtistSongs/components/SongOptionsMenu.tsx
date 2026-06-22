@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   Modal,
   Platform,
@@ -6,7 +6,6 @@ import {
   StyleSheet,
   useWindowDimensions,
   View,
-  type ViewStyle,
 } from "react-native";
 import Animated, {
   Easing,
@@ -15,7 +14,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { Download, Heart, RefreshCw, Trash2 } from "@tamagui/lucide-icons";
+import { Download, Heart, History, RefreshCw, Trash2 } from "@tamagui/lucide-icons";
 import {
   moderateScale,
   scale,
@@ -26,15 +25,11 @@ import type { SongOptionsMenuActions } from "../hooks/useSongOptionsActions";
 import SongOptionsMenuItem from "./SongOptionsMenuItem";
 
 const MENU_ANIM_MS = 120;
-const MENU_MIN_WIDTH = scale(200);
 const MENU_ITEM_HEIGHT = verticalScale(44);
 const MENU_PADDING_V = verticalScale(4);
-const MENU_ITEM_PADDING_H = scale(12);
-const MENU_ICON_SIZE = moderateScale(20);
-const MENU_ITEM_GAP = scale(12);
+const MENU_PADDING_H = scale(4);
 const ANCHOR_GAP = verticalScale(6);
 const SCREEN_EDGE_PADDING = scale(12);
-const LABEL_CHAR_WIDTH = moderateScale(7.5);
 
 const MENU_EASING = Easing.out(Easing.cubic);
 const TIMING_CONFIG = {
@@ -56,40 +51,15 @@ type SongOptionsMenuProps = {
   actions: SongOptionsMenuActions;
 };
 
-function estimateMenuWidth(labels: string[], windowWidth: number): number {
-  const longestLabel = labels.reduce(
-    (longest, label) => (label.length > longest.length ? label : longest),
-    ""
-  );
-  const contentWidth =
-    MENU_ITEM_PADDING_H * 2 +
-    MENU_ICON_SIZE +
-    MENU_ITEM_GAP +
-    longestLabel.length * LABEL_CHAR_WIDTH;
-  const maxWidth = windowWidth - SCREEN_EDGE_PADDING * 2;
-
-  return Math.min(Math.max(contentWidth, MENU_MIN_WIDTH), maxWidth);
-}
-
-function getMenuPosition(
+function getMenuTop(
   anchor: MenuAnchor,
-  menuWidth: number,
   menuHeight: number,
-  windowWidth: number,
   windowHeight: number
-): { left: number; top: number } {
-  let left = anchor.x + anchor.width - menuWidth;
-  left = Math.max(
-    SCREEN_EDGE_PADDING,
-    Math.min(left, windowWidth - menuWidth - SCREEN_EDGE_PADDING)
-  );
-
+): number {
   const belowTop = anchor.y + anchor.height + ANCHOR_GAP;
   const aboveTop = anchor.y - menuHeight - ANCHOR_GAP;
   const fitsBelow = belowTop + menuHeight <= windowHeight - SCREEN_EDGE_PADDING;
-  const top = fitsBelow ? belowTop : Math.max(SCREEN_EDGE_PADDING, aboveTop);
-
-  return { left, top };
+  return fitsBelow ? belowTop : Math.max(SCREEN_EDGE_PADDING, aboveTop);
 }
 
 export default function SongOptionsMenu({
@@ -99,15 +69,10 @@ export default function SongOptionsMenu({
   actions,
 }: SongOptionsMenuProps) {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-  const menuHeight = MENU_ITEM_HEIGHT * 2 + MENU_PADDING_V * 2;
-  const menuWidth = useMemo(
-    () =>
-      estimateMenuWidth(
-        [actions.favorite.label, actions.download.label],
-        windowWidth
-      ),
-    [actions.download.label, actions.favorite.label, windowWidth]
-  );
+  const menuItemCount = actions.removeFromHistory ? 3 : 2;
+  const menuHeight = MENU_ITEM_HEIGHT * menuItemCount + MENU_PADDING_V * 2;
+  const menuTop = anchor ? getMenuTop(anchor, menuHeight, windowHeight) : 0;
+  const menuMaxWidth = windowWidth - SCREEN_EDGE_PADDING * 2;
 
   const backdropOpacity = useSharedValue(0);
   const panelOpacity = useSharedValue(0);
@@ -116,17 +81,6 @@ export default function SongOptionsMenu({
   const onOpenChangeRef = useRef(onOpenChange);
   const pendingActionRef = useRef<(() => void) | null>(null);
   onOpenChangeRef.current = onOpenChange;
-
-  const menuPosition = useMemo(() => {
-    if (!anchor) return null;
-    return getMenuPosition(
-      anchor,
-      menuWidth,
-      menuHeight,
-      windowWidth,
-      windowHeight
-    );
-  }, [anchor, menuHeight, menuWidth, windowWidth, windowHeight]);
 
   const finishClose = useCallback(() => {
     isClosingRef.current = false;
@@ -173,16 +127,6 @@ export default function SongOptionsMenu({
     transform: [{ scale: panelScale.value }],
   }));
 
-  const panelStaticStyle = useMemo((): ViewStyle | null => {
-    if (!menuPosition) return null;
-    return {
-      position: "absolute",
-      left: menuPosition.left,
-      top: menuPosition.top,
-      width: menuWidth,
-    };
-  }, [menuPosition, menuWidth]);
-
   const handleFavoritePress = useCallback(() => {
     if (actions.favorite.disabled || actions.favorite.loading) return;
     animateClose(actions.favorite.onPress);
@@ -192,6 +136,11 @@ export default function SongOptionsMenu({
     if (actions.download.disabled || actions.download.loading) return;
     animateClose(actions.download.onPress);
   }, [actions.download, animateClose]);
+
+  const handleRemoveFromHistoryPress = useCallback(() => {
+    if (!actions.removeFromHistory) return;
+    animateClose(actions.removeFromHistory.onPress);
+  }, [actions.removeFromHistory, animateClose]);
 
   const iconSize = moderateScale(20);
   const iconColor = themeColors.dark.onSurface;
@@ -214,7 +163,7 @@ export default function SongOptionsMenu({
     }
   })();
 
-  if (!open || !anchor || !panelStaticStyle) return null;
+  if (!open || !anchor) return null;
 
   return (
     <Modal
@@ -232,22 +181,40 @@ export default function SongOptionsMenu({
           <Animated.View style={[styles.backdrop, backdropStyle]} />
         </Pressable>
 
-        <Animated.View style={[styles.panel, panelStaticStyle, panelStyle]}>
-          <SongOptionsMenuItem
-            icon={favoriteIcon}
-            label={actions.favorite.label}
-            onPress={handleFavoritePress}
-            disabled={actions.favorite.disabled}
-            loading={actions.favorite.loading}
-          />
-          <SongOptionsMenuItem
-            icon={downloadIcon}
-            label={actions.download.label}
-            onPress={handleDownloadPress}
-            disabled={actions.download.disabled}
-            loading={actions.download.loading}
-          />
-        </Animated.View>
+        <View
+          pointerEvents="box-none"
+          style={{
+            position: "absolute",
+            left: anchor.x + anchor.width,
+            top: menuTop,
+            maxWidth: menuMaxWidth,
+            transform: [{ translateX: "-100%" }],
+          }}
+        >
+          <Animated.View style={[styles.panel, panelStyle]}>
+            <SongOptionsMenuItem
+              icon={favoriteIcon}
+              label={actions.favorite.label}
+              onPress={handleFavoritePress}
+              disabled={actions.favorite.disabled}
+              loading={actions.favorite.loading}
+            />
+            <SongOptionsMenuItem
+              icon={downloadIcon}
+              label={actions.download.label}
+              onPress={handleDownloadPress}
+              disabled={actions.download.disabled}
+              loading={actions.download.loading}
+            />
+            {actions.removeFromHistory ? (
+              <SongOptionsMenuItem
+                icon={<History size={iconSize} color="#f87171" />}
+                label={actions.removeFromHistory.label}
+                onPress={handleRemoveFromHistoryPress}
+              />
+            ) : null}
+          </Animated.View>
+        </View>
       </View>
     </Modal>
   );
@@ -262,11 +229,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#000",
   },
   panel: {
+    alignSelf: "flex-start",
     backgroundColor: themeColors.dark.surface,
     borderRadius: moderateScale(14),
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.08)",
     paddingVertical: MENU_PADDING_V,
+    paddingHorizontal: MENU_PADDING_H,
     overflow: "hidden",
     ...(Platform.OS === "ios"
       ? {

@@ -42,9 +42,10 @@ const ARTWORK_RADIUS = moderateScale(8);
 
 interface SongListItemProps {
   song: ArtistSong;
+  onRemoveFromHistory?: () => void;
 }
 
-function SongListItem({ song }: SongListItemProps) {
+function SongListItem({ song, onRemoveFromHistory }: SongListItemProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<MenuAnchor | null>(null);
   const menuTriggerRef = useRef<View>(null);
@@ -118,7 +119,9 @@ function SongListItem({ song }: SongListItemProps) {
     });
   }, []);
 
-  const songOptions = useSongOptionsActions(song, menuOpen);
+  const songOptions = useSongOptionsActions(song, menuOpen, {
+    onRemoveFromHistory,
+  });
   const { isDownloaded, isDownloading, progress } = useDownload(song.id);
 
   const showDownloadOverlay =
@@ -301,6 +304,7 @@ function songListItemPropsAreEqual(
   if (a.id !== b.id) return false;
   if (a.name !== b.name) return false;
   if (a.image !== b.image) return false;
+  if (prev.onRemoveFromHistory !== next.onRemoveFromHistory) return false;
   const aArtists = a.artists.primary.map((artist) => artist.name).join(",");
   const bArtists = b.artists.primary.map((artist) => artist.name).join(",");
   return aArtists === bArtists;

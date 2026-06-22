@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import {
   ActivityIndicator,
   Pressable,
+  View,
   type PressableStateCallbackType,
 } from "react-native";
 import { XStack } from "tamagui";
@@ -47,12 +48,19 @@ export default function SongOptionsMenuItem({
         opacity: isDisabled ? 0.5 : 1,
       })}
     >
-      <XStack items="center" gap={scale(12)} px={scale(12)} py={verticalScale(10)}>
-        {loading ? (
-          <ActivityIndicator size="small" color={themeColors.dark.onSurface} />
-        ) : (
-          icon
-        )}
+      <XStack
+        items="center"
+        gap={scale(12)}
+        px={scale(12)}
+        py={verticalScale(10)}
+      >
+        <View style={{ width: moderateScale(20), alignItems: "center" }}>
+          {loading ? (
+            <ActivityIndicator size="small" color={themeColors.dark.onSurface} />
+          ) : (
+            icon
+          )}
+        </View>
         <MyText
           fontSize={moderateScale(14)}
           weight="500"

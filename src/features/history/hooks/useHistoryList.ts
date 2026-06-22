@@ -6,7 +6,10 @@ import {
   getHistoryQueryOptions,
 } from "../queries/historyQuery";
 import { useLocalHistoryStore } from "../store/localHistoryStore";
-import { localEntryToHistoryEntry } from "../utils/historyCacheUpdates";
+import {
+  localEntryToHistoryEntry,
+  mergeHistoryEntries,
+} from "../utils/historyCacheUpdates";
 
 export { HISTORY_QUERY_KEY };
 
@@ -24,9 +27,17 @@ export function useHistoryList() {
       .map(localEntryToHistoryEntry);
   }, [localEntries]);
 
+  const history = useMemo(() => {
+    if (!isAuthenticated) {
+      return localHistory;
+    }
+
+    return mergeHistoryEntries(infiniteQuery.items, localHistory);
+  }, [isAuthenticated, infiniteQuery.items, localHistory]);
+
   if (isAuthenticated) {
     return {
-      history: infiniteQuery.items,
+      history,
       isLoading: infiniteQuery.isLoading,
       isError: infiniteQuery.isError,
       error: infiniteQuery.error,
@@ -39,7 +50,7 @@ export function useHistoryList() {
   }
 
   return {
-    history: localHistory,
+    history,
     isLoading: false,
     isError: false,
     error: null,
