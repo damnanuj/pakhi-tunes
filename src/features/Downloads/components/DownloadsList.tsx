@@ -1,7 +1,6 @@
 import { useCallback, useMemo } from "react";
-import { FlatList, StyleSheet, View } from "react-native";
+import { FlatList, StyleSheet } from "react-native";
 import { YStack } from "tamagui";
-import { Download as DownloadIcon } from "@tamagui/lucide-icons";
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
 import {
@@ -16,6 +15,7 @@ import {
   getTotalDownloadSize,
 } from "../utils/storageUtils";
 import DownloadSongItem from "./DownloadSongItem";
+import DownloadsEmptyState from "./DownloadsEmptyState";
 import type { DownloadedSong } from "../types/download.types";
 
 export default function DownloadsList() {
@@ -51,49 +51,7 @@ export default function DownloadsList() {
   );
 
   if (sortedSongs.length === 0) {
-    return (
-      <YStack
-        flex={1}
-        items="center"
-        justify="center"
-        px={scale(32)}
-        gap={verticalScale(16)}
-        pb={scrollBottomPadding}
-      >
-        <View
-          style={{
-            width: moderateScale(80),
-            height: moderateScale(80),
-            borderRadius: moderateScale(40),
-            backgroundColor: themeColors.dark.surfaceSecondary,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <DownloadIcon
-            size={moderateScale(36)}
-            color={themeColors.dark.textMuted}
-          />
-        </View>
-        <MyText
-          fontSize={moderateScale(18)}
-          weight="700"
-          color={themeColors.dark.onSurface}
-          textAlign="center"
-        >
-          No downloads yet
-        </MyText>
-        <MyText
-          fontSize={moderateScale(14)}
-          weight="400"
-          color={themeColors.dark.textMuted}
-          textAlign="center"
-        >
-          Tap the download button on any song in the player to save it for
-          offline listening.
-        </MyText>
-      </YStack>
-    );
+    return <DownloadsEmptyState bottomPadding={scrollBottomPadding} />;
   }
 
   return (

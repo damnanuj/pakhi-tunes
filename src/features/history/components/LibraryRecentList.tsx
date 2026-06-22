@@ -119,73 +119,39 @@ export default function LibraryRecentList() {
 
   const listFooter = isLoadingMore ? <ListFooterSpinner /> : null;
 
-  const listEmptyComponent = useMemo(
-    () =>
-      !isLoading && !isError ? (
-        <HistoryEmptyState
-          variant="recent"
-          bottomPadding={scrollBottomPadding}
-        />
-      ) : null,
-    [isError, isLoading, scrollBottomPadding]
-  );
-
-  const listHeaderComponent = useMemo(() => {
-    if (history.length === 0) {
-      if (!isAuthenticated) return null;
-
-      return (
-        <YStack px={scale(20)} pt={verticalScale(4)} pb={verticalScale(8)}>
-          <MyText color={themeColors.dark.textMuted} fontSize={moderateScale(13)}>
-            Sign in to back up your listening history across devices.
-          </MyText>
-          <TouchableOpacity
-            onPress={() =>
-              router.push({
-                pathname: "/auth",
-                params: {
-                  mode: "signin",
-                  redirect: "/(tabs)/library",
-                },
-              })
-            }
-            activeOpacity={0.85}
-            style={{ marginTop: verticalScale(8), alignSelf: "flex-start" }}
-          >
-            <MyText color={themeColors.dark.accent} weight="600">
-              Sign in
-            </MyText>
-          </TouchableOpacity>
-        </YStack>
-      );
-    }
+  const signInBanner = useMemo(() => {
+    if (isAuthenticated) return null;
 
     return (
+      <YStack px={scale(20)} pt={verticalScale(4)} pb={verticalScale(8)}>
+        <MyText color={themeColors.dark.textMuted} fontSize={moderateScale(13)}>
+          Sign in to back up your listening history across devices.
+        </MyText>
+        <TouchableOpacity
+          onPress={() =>
+            router.push({
+              pathname: "/auth",
+              params: {
+                mode: "signin",
+                redirect: "/(tabs)/library",
+              },
+            })
+          }
+          activeOpacity={0.85}
+          style={{ marginTop: verticalScale(8), alignSelf: "flex-start" }}
+        >
+          <MyText color={themeColors.dark.accent} weight="600">
+            Sign in
+          </MyText>
+        </TouchableOpacity>
+      </YStack>
+    );
+  }, [isAuthenticated, router]);
+
+  const listHeaderComponent = useMemo(() => {
+    return (
       <YStack>
-        {!isAuthenticated ? (
-          <YStack px={scale(20)} pt={verticalScale(4)} pb={verticalScale(8)}>
-            <MyText color={themeColors.dark.textMuted} fontSize={moderateScale(13)}>
-              Sign in to back up your listening history across devices.
-            </MyText>
-            <TouchableOpacity
-              onPress={() =>
-                router.push({
-                  pathname: "/auth",
-                  params: {
-                    mode: "signin",
-                    redirect: "/(tabs)/library",
-                  },
-                })
-              }
-              activeOpacity={0.85}
-              style={{ marginTop: verticalScale(8), alignSelf: "flex-start" }}
-            >
-              <MyText color={themeColors.dark.accent} weight="600">
-                Sign in
-              </MyText>
-            </TouchableOpacity>
-          </YStack>
-        ) : null}
+        {signInBanner}
 
         <XStack
           px={scale(20)}
@@ -211,7 +177,7 @@ export default function LibraryRecentList() {
         </XStack>
       </YStack>
     );
-  }, [history.length, isAuthenticated, router]);
+  }, [signInBanner]);
 
   if (isLoading) {
     return <HistoryPageSkeleton />;
@@ -227,6 +193,20 @@ export default function LibraryRecentList() {
     );
   }
 
+  if (queueSongs.length === 0) {
+    return (
+      <QueueProvider songs={queueSongs} source={HISTORY_QUEUE_SOURCE}>
+        <YStack flex={1}>
+          {signInBanner}
+          <HistoryEmptyState
+            variant="recent"
+            bottomPadding={scrollBottomPadding}
+          />
+        </YStack>
+      </QueueProvider>
+    );
+  }
+
   return (
     <QueueProvider songs={queueSongs} source={HISTORY_QUEUE_SOURCE}>
       <YStack flex={1}>
@@ -235,7 +215,6 @@ export default function LibraryRecentList() {
           keyExtractor={keyExtractor}
           renderItem={renderItem}
           ListHeaderComponent={listHeaderComponent}
-          ListEmptyComponent={listEmptyComponent}
           ListFooterComponent={listFooter}
           refreshControl={isAuthenticated ? refreshControl : undefined}
           onScroll={onScroll}
@@ -244,7 +223,6 @@ export default function LibraryRecentList() {
           onEndReachedThreshold={0.2}
           contentContainerStyle={{
             paddingBottom: scrollBottomPadding,
-            flexGrow: queueSongs.length === 0 ? 1 : undefined,
           }}
           showsVerticalScrollIndicator={false}
           initialNumToRender={12}

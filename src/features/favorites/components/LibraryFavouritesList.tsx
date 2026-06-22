@@ -76,43 +76,33 @@ export default function LibraryFavouritesList() {
 
   const listFooter = isLoadingMore ? <ListFooterSpinner /> : null;
 
-  const listEmptyComponent = useMemo(
-    () =>
-      !isLoading && !isError ? (
-        <FavouritesEmptyState bottomPadding={scrollBottomPadding} />
-      ) : null,
-    [isError, isLoading, scrollBottomPadding]
-  );
+  const signInBanner = useMemo(() => {
+    if (isAuthenticated) return null;
 
-  const listHeaderComponent = useMemo(() => {
-    if (!isAuthenticated) {
-      return (
-        <YStack px={scale(20)} pt={verticalScale(4)} pb={verticalScale(8)}>
-          <MyText color={themeColors.dark.textMuted} fontSize={moderateScale(13)}>
-            Sign in to back up your favourites across devices.
+    return (
+      <YStack px={scale(20)} pt={verticalScale(4)} pb={verticalScale(8)}>
+        <MyText color={themeColors.dark.textMuted} fontSize={moderateScale(13)}>
+          Sign in to back up your favourites across devices.
+        </MyText>
+        <TouchableOpacity
+          onPress={() =>
+            router.push({
+              pathname: "/auth",
+              params: {
+                mode: "signin",
+                redirect: SIGN_IN_REDIRECT,
+              },
+            })
+          }
+          activeOpacity={0.85}
+          style={{ marginTop: verticalScale(8), alignSelf: "flex-start" }}
+        >
+          <MyText color={themeColors.dark.accent} weight="600">
+            Sign in
           </MyText>
-          <TouchableOpacity
-            onPress={() =>
-              router.push({
-                pathname: "/auth",
-                params: {
-                  mode: "signin",
-                  redirect: SIGN_IN_REDIRECT,
-                },
-              })
-            }
-            activeOpacity={0.85}
-            style={{ marginTop: verticalScale(8), alignSelf: "flex-start" }}
-          >
-            <MyText color={themeColors.dark.accent} weight="600">
-              Sign in
-            </MyText>
-          </TouchableOpacity>
-        </YStack>
-      );
-    }
-
-    return null;
+        </TouchableOpacity>
+      </YStack>
+    );
   }, [isAuthenticated, router]);
 
   if (isLoading) {
@@ -129,6 +119,17 @@ export default function LibraryFavouritesList() {
     );
   }
 
+  if (queueSongs.length === 0) {
+    return (
+      <QueueProvider songs={queueSongs} source={FAVORITES_QUEUE_SOURCE}>
+        <YStack flex={1}>
+          {signInBanner}
+          <FavouritesEmptyState bottomPadding={scrollBottomPadding} />
+        </YStack>
+      </QueueProvider>
+    );
+  }
+
   return (
     <QueueProvider songs={queueSongs} source={FAVORITES_QUEUE_SOURCE}>
       <YStack flex={1}>
@@ -136,8 +137,7 @@ export default function LibraryFavouritesList() {
           data={queueSongs}
           keyExtractor={keyExtractor}
           renderItem={renderItem}
-          ListHeaderComponent={listHeaderComponent}
-          ListEmptyComponent={listEmptyComponent}
+          ListHeaderComponent={signInBanner}
           ListFooterComponent={listFooter}
           refreshControl={isAuthenticated ? refreshControl : undefined}
           onScroll={onScroll}
@@ -146,7 +146,6 @@ export default function LibraryFavouritesList() {
           onEndReachedThreshold={0.2}
           contentContainerStyle={{
             paddingBottom: scrollBottomPadding,
-            flexGrow: queueSongs.length === 0 ? 1 : undefined,
           }}
           showsVerticalScrollIndicator={false}
           initialNumToRender={12}

@@ -1,22 +1,33 @@
 import { TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
 import { YStack } from "tamagui";
-import { ListMusic } from "@tamagui/lucide-icons";
+import { Download as DownloadIcon } from "@tamagui/lucide-icons";
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
-import { useScrollBottomInset } from "src/hooks";
 import {
   moderateScale,
   scale,
   verticalScale,
 } from "src/utils/functions/dimensions";
 
-export default function LibraryPlaylistsPlaceholder() {
+type DownloadsEmptyStateProps = {
+  bottomPadding?: number;
+  onExplorePress?: () => void;
+};
+
+export default function DownloadsEmptyState({
+  bottomPadding = 0,
+  onExplorePress,
+}: DownloadsEmptyStateProps) {
   const router = useRouter();
-  const scrollBottomPadding = useScrollBottomInset({
-    includeTabBar: true,
-    extra: verticalScale(16),
-  });
+
+  const handleExplore = () => {
+    if (onExplorePress) {
+      onExplorePress();
+      return;
+    }
+    router.push("/(tabs)/home");
+  };
 
   return (
     <YStack
@@ -25,7 +36,7 @@ export default function LibraryPlaylistsPlaceholder() {
       justify="center"
       px={scale(32)}
       gap={verticalScale(16)}
-      pb={scrollBottomPadding}
+      pb={bottomPadding}
     >
       <View
         style={{
@@ -37,7 +48,7 @@ export default function LibraryPlaylistsPlaceholder() {
           justifyContent: "center",
         }}
       >
-        <ListMusic
+        <DownloadIcon
           size={moderateScale(36)}
           color={themeColors.dark.textMuted}
         />
@@ -50,7 +61,7 @@ export default function LibraryPlaylistsPlaceholder() {
           color={themeColors.dark.onSurface}
           textAlign="center"
         >
-          Playlists coming soon
+          No downloads yet
         </MyText>
         <MyText
           fontSize={moderateScale(14)}
@@ -58,13 +69,12 @@ export default function LibraryPlaylistsPlaceholder() {
           color={themeColors.dark.textMuted}
           textAlign="center"
         >
-          We&apos;re building a better way to collect and organise your music.
-          Favourite tracks and find them in Recent & Downloads for now.
+          Tap the download button on any song to save it for offline listening.
         </MyText>
       </YStack>
 
       <TouchableOpacity
-        onPress={() => router.push("/(tabs)/home")}
+        onPress={handleExplore}
         activeOpacity={0.85}
         style={{
           marginTop: verticalScale(8),
