@@ -20,10 +20,7 @@ import {
 import { usePlayback } from "src/features/Player/context/PlayerContext";
 import { usePlayerStore } from "src/features/Player/store/playerStore";
 import { PlayingArtworkIndicator } from "src/features/ArtistSongs/components/PlayingArtworkIndicator";
-import {
-  ghostControlStyle,
-  playerRippleLight,
-} from "src/features/Player/utils/ghostControlStyle";
+import { playerRippleLight } from "src/features/Player/utils/ghostControlStyle";
 import type { DownloadedSong } from "../types/download.types";
 import { formatFileSize } from "../utils/storageUtils";
 import { removeDownloadedSong } from "../services/downloadService";
@@ -92,17 +89,24 @@ function DownloadSongItem({ song }: DownloadSongItemProps) {
 
   return (
     <>
-    <Pressable
-      onPress={handlePress}
-      onLongPress={handleRemove}
-      accessibilityRole="button"
-      accessibilityLabel={`${song.title} by ${song.artist}`}
-      style={({ pressed }) => ({
-        opacity: pressed ? 0.85 : 1,
-        paddingVertical: verticalScale(10),
-      })}
-    >
-      <XStack gap={scale(12)} items="center">
+      <Pressable
+        onPress={handlePress}
+        onLongPress={handleRemove}
+        accessibilityRole="button"
+        accessibilityLabel={`${song.title} by ${song.artist}`}
+        android_ripple={{ color: "rgba(255, 255, 0, 0.14)", borderless: false }}
+        style={({ pressed }) => ({
+          flexDirection: "row",
+          alignItems: "center",
+          gap: scale(12),
+          paddingVertical: verticalScale(12),
+          paddingHorizontal: scale(20),
+          backgroundColor: pressed
+            ? "rgba(255, 255, 255, 0.07)"
+            : "transparent",
+          opacity: pressed ? 0.9 : 1,
+        })}
+      >
         <View
           style={{
             width: IMAGE_SIZE,
@@ -196,23 +200,30 @@ function DownloadSongItem({ song }: DownloadSongItemProps) {
           accessibilityRole="button"
           accessibilityLabel="Remove download"
           android_ripple={playerRippleLight}
+          hitSlop={8}
           style={({ pressed }: PressableStateCallbackType) => ({
-            ...ghostControlStyle(pressed),
+            width: moderateScale(40),
+            height: moderateScale(40),
+            borderRadius: moderateScale(20),
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: pressed
+              ? "rgba(255, 255, 255, 0.1)"
+              : "transparent",
           })}
         >
           <Trash2 size={moderateScale(20)} color="#f87171" />
         </Pressable>
-      </XStack>
-    </Pressable>
-    <ConfirmDialog
-      open={removeDialogOpen}
-      onOpenChange={setRemoveDialogOpen}
-      title="Remove download?"
-      message="This song will be deleted from your device. You can download it again later."
-      confirmLabel="Remove"
-      cancelLabel="Keep"
-      onConfirm={handleRemoveConfirm}
-    />
+      </Pressable>
+      <ConfirmDialog
+        open={removeDialogOpen}
+        onOpenChange={setRemoveDialogOpen}
+        title="Remove download?"
+        message="This song will be deleted from your device. You can download it again later."
+        confirmLabel="Remove"
+        cancelLabel="Keep"
+        onConfirm={handleRemoveConfirm}
+      />
     </>
   );
 }

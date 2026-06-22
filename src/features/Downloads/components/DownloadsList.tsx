@@ -44,7 +44,6 @@ export default function DownloadsList() {
 
   const listContentStyle = useMemo(
     () => ({
-      paddingHorizontal: scale(20),
       paddingBottom: scrollBottomPadding,
       flexGrow: 1,
     }),
