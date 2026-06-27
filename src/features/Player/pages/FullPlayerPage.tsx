@@ -46,6 +46,9 @@ import ArtworkProgressRing from "../components/ArtworkProgressRing";
 import UpNextSheet from "../components/UpNextSheet";
 import FavoriteButton from "src/features/favorites/components/FavoriteButton";
 import DownloadButton from "src/features/Downloads/components/DownloadButton";
+import ListenerCountBadge from "src/features/NearbySession/components/ListenerCountBadge";
+import { useNearbySessionActions } from "src/features/NearbySession/providers/NearbySessionProvider";
+import { useNearbySessionStore } from "src/features/NearbySession/store/nearbySessionStore";
 import {
   ghostControlStyle,
   playerRippleLight,
@@ -57,10 +60,12 @@ function SimpleLineProgressBar({
   progress,
   durationMillis,
   onSeek,
+  seekDisabled = false,
 }: {
   progress: number;
   durationMillis: number;
   onSeek: (millis: number) => void | Promise<void>;
+  seekDisabled?: boolean;
 }) {
   const [trackW, setTrackW] = useState(0);
   const trackWRef = useRef(0);
@@ -72,7 +77,7 @@ function SimpleLineProgressBar({
   const trackH = moderateScale(5);
   const rowH = moderateScale(22);
   const hitH = moderateScale(44);
-  const seekable = durationMillis > 0;
+  const seekable = durationMillis > 0 && !seekDisabled;
 
   const p = Math.min(
     1,
@@ -319,6 +324,12 @@ export default function FullPlayerPage() {
   const queueSource = usePlayerStore((s) => s.queueSource);
   const shuffleEnabled = usePlayerStore((s) => s.shuffleEnabled);
   const repeatMode = usePlayerStore((s) => s.repeatMode);
+  const sessionRole = useNearbySessionStore((s) => s.role);
+  const listenerCount = useNearbySessionStore((s) => s.listenerCount);
+  const hostName = useNearbySessionStore((s) => s.hostName);
+  const { leaveSession } = useNearbySessionActions();
+  const isListener = sessionRole === "listener";
+  const isHost = sessionRole === "host";
 
   useEffect(() => {
     if (!activeTrack) {
@@ -408,7 +419,7 @@ export default function FullPlayerPage() {
   return (
     <YStack flex={1} bg={themeColors.dark.background}>
       <ScreenHeader
-        title="Playing Now"
+        title={isListener ? "Listening Together" : "Playing Now"}
         showBack
         backIcon="down"
         showSettings={false}
@@ -449,8 +460,32 @@ export default function FullPlayerPage() {
               ellipsizeMode="tail"
               style={{ letterSpacing: moderateScale(-0.2) }}
             >
-              {contextTitle}
+              {isListener
+                ? `With ${hostName ?? "host"}`
+                : contextTitle}
             </MyText>
+            {isHost ? <ListenerCountBadge count={listenerCount} /> : null}
+            {isListener ? (
+              <Pressable
+                onPress={() => void leaveSession()}
+                style={{
+                  marginTop: verticalScale(8),
+                  paddingHorizontal: scale(16),
+                  paddingVertical: verticalScale(8),
+                  borderRadius: moderateScale(20),
+                  borderWidth: 1,
+                  borderColor: themeColors.dark.borderSecondary,
+                }}
+              >
+                <MyText
+                  fontSize={moderateScale(13)}
+                  weight="700"
+                  color={themeColors.dark.accent}
+                >
+                  Leave session
+                </MyText>
+              </Pressable>
+            ) : null}
           </YStack>
 
           <ArtworkProgressRing
@@ -496,6 +531,7 @@ export default function FullPlayerPage() {
               progress={progress}
               durationMillis={totalMillis}
               onSeek={handleSeekToMillis}
+              seekDisabled={isListener}
             />
             <XStack justify="space-between" px={scale(4)}>
               <MyText
@@ -524,6 +560,18 @@ export default function FullPlayerPage() {
             px={scale(2)}
             mt={verticalScale(8)}
           >
+            {isListener ? (
+              <MyText
+                fontSize={moderateScale(13)}
+                weight="600"
+                color={themeColors.dark.textMuted}
+                textAlign="center"
+                style={{ flex: 1 }}
+              >
+                Playback is controlled by the host
+              </MyText>
+            ) : (
+              <>
             <IconControl onPress={onToggleShuffle} disabled={!canOpenUpNext}>
               <Shuffle
                 size={moderateScale(20)}
@@ -595,8 +643,11 @@ export default function FullPlayerPage() {
                 />
               )}
             </IconControl>
+              </>
+            )}
           </XStack>
 
+          {!isListener ? (
           <XStack
             width="100%"
             gap={scale(16)}
@@ -650,9 +701,10 @@ export default function FullPlayerPage() {
               <FavoriteButton track={activeTrack} />
             </XStack>
           </XStack>
+          ) : null}
         </YStack>
       </YStack>
-      {canOpenUpNext ? (
+      {canOpenUpNext && !isListener ? (
         <UpNextSheet open={isUpNextOpen} onOpenChange={setIsUpNextOpen} />
       ) : null}
     </YStack>

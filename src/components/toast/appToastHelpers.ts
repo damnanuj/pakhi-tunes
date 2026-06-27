@@ -85,4 +85,20 @@ export const appToast = {
       icon: "check",
     });
   },
+
+  error(message: string) {
+    useAppToastStore.getState().show({
+      variant: "removed",
+      message,
+      icon: "trash",
+    });
+  },
+
+  info(message: string) {
+    useAppToastStore.getState().show({
+      variant: "success",
+      message,
+      icon: "check",
+    });
+  },
 };

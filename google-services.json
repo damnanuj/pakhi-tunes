@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "485929118807",
+    "project_id": "damnanuj-pakhi-tunes",
+    "storage_bucket": "damnanuj-pakhi-tunes.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:485929118807:android:0d507539f05dad62a80712",
+        "android_client_info": {
+          "package_name": "com.damnanuj.pakhitunes"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "485929118807-2jff8qq7r1qp9164lp5ag9uuhkpgmuq0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCUCxDd6cQIEPYulM_BFuikniyduuxAAwQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "485929118807-2jff8qq7r1qp9164lp5ag9uuhkpgmuq0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

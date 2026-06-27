@@ -32,6 +32,7 @@ import AppToast from "src/components/toast/AppToast";
 import AuthProvider from "src/features/auth/providers/AuthProvider";
 import FavoritesSyncProvider from "src/features/favorites/providers/FavoritesSyncProvider";
 import HistorySyncProvider from "src/features/history/providers/HistorySyncProvider";
+import { NearbySessionProvider } from "src/features/NearbySession";
 import { NetworkProvider } from "src/contexts/NetworkContext";
 
 export { ErrorBoundary } from "expo-router";
@@ -110,9 +111,11 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
                 <AuthProvider>
                   <FavoritesSyncProvider>
                     <HistorySyncProvider>
-                      {children}
-                      <MiniPlayerRootLayer />
-                      <AppToast />
+                      <NearbySessionProvider>
+                        {children}
+                        <MiniPlayerRootLayer />
+                        <AppToast />
+                      </NearbySessionProvider>
                     </HistorySyncProvider>
                   </FavoritesSyncProvider>
                 </AuthProvider>

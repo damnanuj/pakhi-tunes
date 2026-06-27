@@ -24,6 +24,7 @@
       }
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
@@ -53,6 +54,15 @@
           "node": "20.19.4"
         }
       ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Pakhi Tunes needs your location to find nearby listeners and share your music session with people around you."
+        }
+      ],
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      "@react-native-firebase/messaging",
       "expo-web-browser",
       "expo-asset"
     ],

@@ -10,6 +10,7 @@ import FeaturedCards from "../components/FeaturedCards";
 import NewAlbumsSection from "../components/NewAlbumsSection";
 import NewSongsSection from "../components/NewSongsSection";
 import TopArtistsSection from "../components/TopArtistsSection";
+import NearbyListeningCard from "../components/NearbyListeningCard";
 
 const SECTION_GAP = verticalScale(20);
 
@@ -39,6 +40,9 @@ export default function HomePage() {
       >
         <View style={{ marginBottom: SECTION_GAP }}>
           <HomeGreeting />
+        </View>
+        <View style={{ marginBottom: SECTION_GAP }}>
+          <NearbyListeningCard />
         </View>
         <View style={{ marginBottom: SECTION_GAP }}>
           <FeaturedCards />

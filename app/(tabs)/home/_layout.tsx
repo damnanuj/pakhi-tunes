@@ -28,6 +28,10 @@ export default function HomeLayout() {
         name="genres/[slug]"
         options={{ animation: "slide_from_right" }}
       />
+      <Stack.Screen
+        name="nearby"
+        options={{ animation: "slide_from_right" }}
+      />
     </Stack>
   );
 }

@@ -2,6 +2,8 @@ export interface AuthUser {
   id: string;
   name: string;
   email: string;
+  avatar?: string | null;
+  discoverable?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

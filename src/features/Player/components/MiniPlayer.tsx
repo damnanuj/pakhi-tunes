@@ -22,6 +22,8 @@ import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
 import { usePlayback } from "../context/PlayerContext";
 import { usePlayerStore } from "../store/playerStore";
+import { useNearbySessionStore } from "src/features/NearbySession/store/nearbySessionStore";
+import { useNearbySessionActions } from "src/features/NearbySession/providers/NearbySessionProvider";
 import {
   MINI_PLAYER_GAP_ABOVE_TAB,
   MINI_PLAYER_MARGIN_BOTTOM,
@@ -147,6 +149,10 @@ function MiniPlayer() {
   const isPlaybackLoading = usePlayerStore((s) => s.isPlaybackLoading);
   const positionMillis = usePlayerStore((s) => s.positionMillis);
   const durationMillis = usePlayerStore((s) => s.durationMillis);
+  const sessionRole = useNearbySessionStore((s) => s.role);
+  const hostName = useNearbySessionStore((s) => s.hostName);
+  const { leaveSession } = useNearbySessionActions();
+  const isListener = sessionRole === "listener";
 
   const progress = useMemo(() => {
     if (!durationMillis || durationMillis <= 0) return 0;
@@ -229,7 +235,9 @@ function MiniPlayer() {
                   color="$textSecondary"
                   numberOfLines={1}
                 >
-                  {activeTrack.artist}
+                  {isListener
+                    ? `Listening with ${hostName ?? "host"}`
+                    : activeTrack.artist}
                 </MyText>
                 {durationMillis > 0 ? (
                   <XStack
@@ -259,6 +267,24 @@ function MiniPlayer() {
               </YStack>
             </XStack>
           </Pressable>
+          {isListener ? (
+            <Pressable
+              onPress={() => void leaveSession()}
+              style={{
+                width: MINI_PLAYER_RING,
+                height: MINI_PLAYER_RING,
+                borderRadius: MINI_PLAYER_RING / 2,
+                borderWidth: 1,
+                borderColor: themeColors.dark.borderSecondary,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <MyText fontSize={moderateScale(11)} weight="700" color={themeColors.dark.accent}>
+                Leave
+              </MyText>
+            </Pressable>
+          ) : (
           <PlayProgressRing
             size={MINI_PLAYER_RING}
             strokeWidth={RING_STROKE}
@@ -287,6 +313,7 @@ function MiniPlayer() {
               />
             )}
           </PlayProgressRing>
+          )}
         </XStack>
       </Animated.View>
     </View>

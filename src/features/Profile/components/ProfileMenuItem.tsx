@@ -17,44 +17,56 @@ interface ProfileMenuItemProps {
   icon: React.ReactNode;
   label: string;
   onPress?: () => void;
+  trailing?: React.ReactNode;
 }
 
 export default function ProfileMenuItem({
   icon,
   label,
   onPress,
+  trailing,
 }: ProfileMenuItemProps) {
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      style={styles.container}
-      activeOpacity={0.7}
+  const content = (
+    <XStack
+      flex={1}
+      items="center"
+      gap={scale(14)}
+      px={scale(16)}
+      py={verticalScale(12)}
     >
-      <XStack
+      <View pointerEvents="none">
+        <CircularButton>{icon}</CircularButton>
+      </View>
+      <MyText
+        fontSize={moderateScale(15)}
+        weight="500"
+        color={themeColors.dark.onSurface}
         flex={1}
-        items="center"
-        gap={scale(14)}
-        px={scale(16)}
-        py={verticalScale(12)}
       >
-        <View pointerEvents="none">
-          <CircularButton>{icon}</CircularButton>
-        </View>
-        <MyText
-          fontSize={moderateScale(15)}
-          weight="500"
-          color={themeColors.dark.onSurface}
-          flex={1}
-        >
-          {label}
-        </MyText>
+        {label}
+      </MyText>
+      {trailing ?? (
         <ChevronRight
           size={moderateScale(20)}
           color={themeColors.dark.onSurface}
         />
-      </XStack>
-    </TouchableOpacity>
+      )}
+    </XStack>
   );
+
+  if (onPress) {
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        style={styles.container}
+        activeOpacity={0.7}
+      >
+        {content}
+      </TouchableOpacity>
+    );
+  }
+
+  return <View style={styles.container}>{content}</View>;
 }
 
 const styles = StyleSheet.create({

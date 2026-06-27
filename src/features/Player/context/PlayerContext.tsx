@@ -29,6 +29,16 @@ import {
 import { activeTrackToHistoryPayload } from "src/features/history/types/history.types";
 import { recordPlayToHistory } from "src/features/history/hooks/useRecordHistory";
 import { setPlaybackRemoteHandlers } from "../playbackRemoteBridge";
+import {
+  emitHostPauseIfHosting,
+  emitHostPlayIfHosting,
+  emitHostSeekIfHosting,
+  emitHostTrackChangeIfHosting,
+} from "src/features/NearbySession/utils/sessionHostBridge";
+import {
+  isListenerMode,
+  useNearbySessionStore,
+} from "src/features/NearbySession/store/nearbySessionStore";
 
 type PlayerContextValue = {
   playSong: (song: ArtistSong) => Promise<void>;
@@ -241,6 +251,25 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
               ? Math.round(progress.duration * 1000)
               : track.durationSec * 1000,
         });
+
+        if (
+          !isListenerMode() &&
+          !useNearbySessionStore.getState().isApplyingRemoteSync
+        ) {
+          emitHostTrackChangeIfHosting({
+            trackId: track.id,
+            trackTitle: track.title,
+            trackArtist: track.artist,
+            trackArtwork: track.artworkUrl,
+            trackUri: track.uri,
+            trackDuration:
+              progress.duration > 0
+                ? Math.round(progress.duration * 1000)
+                : track.durationSec * 1000,
+            positionMs: Math.round(progress.position * 1000),
+            playing: true,
+          });
+        }
       } catch {
         usePlayerStore.getState().setActiveTrack(null);
         usePlayerStore.getState().resetPlayback();
@@ -337,6 +366,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   );
 
   const seekToMillis = useCallback(async (millis: number) => {
+    if (isListenerMode()) return;
+
     const activeTrack = usePlayerStore.getState().activeTrack;
     if (!activeTrack) return;
 
@@ -355,6 +386,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     try {
       await TrackPlayer.seekTo(clamped / 1000);
       usePlayerStore.getState().setPlayback({ positionMillis: clamped });
+      emitHostSeekIfHosting(clamped);
     } catch {
       /* ignore */
     } finally {
@@ -363,6 +395,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const skipToNext = useCallback(async () => {
+    if (isListenerMode()) return;
+
     const state = usePlayerStore.getState();
     if (!hasQueue(state)) return;
 
@@ -379,6 +413,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [playQueueAtIndex]);
 
   const skipToPrevious = useCallback(async () => {
+    if (isListenerMode()) return;
+
     const state = usePlayerStore.getState();
     const { positionMillis } = state;
 
@@ -442,15 +478,20 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [handleTrackEnded]);
 
   const togglePlayPause = useCallback(async () => {
+    if (isListenerMode()) return;
+
     const activeTrack = usePlayerStore.getState().activeTrack;
     if (!activeTrack) return;
 
     try {
       const state = await TrackPlayer.getPlaybackState();
+      const positionMs = usePlayerStore.getState().positionMillis;
       if (state.state === State.Playing) {
         await TrackPlayer.pause();
+        emitHostPauseIfHosting(positionMs);
       } else {
         await TrackPlayer.play();
+        emitHostPlayIfHosting(positionMs);
       }
     } catch {
       /* ignore */
@@ -503,21 +544,27 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setPlaybackRemoteHandlers({
       play: () => {
+        if (isListenerMode()) return;
         void TrackPlayer.play();
       },
       pause: () => {
+        if (isListenerMode()) return;
         void TrackPlayer.pause();
       },
       stop: () => {
+        if (isListenerMode()) return;
         void stopPlaybackAndClear();
       },
       next: () => {
+        if (isListenerMode()) return;
         void skipToNext();
       },
       previous: () => {
+        if (isListenerMode()) return;
         void skipToPrevious();
       },
       seek: (millis) => {
+        if (isListenerMode()) return;
         void seekToMillis(millis);
       },
     });

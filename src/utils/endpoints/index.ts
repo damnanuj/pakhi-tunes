@@ -27,4 +27,15 @@ export const endpoints = {
     bulk: "/history/bulk",
     item: (songId: string) => `/history/${encodeURIComponent(songId)}`,
   },
+  sessions: {
+    create: "/sessions",
+    nearby: "/sessions/nearby",
+    me: "/sessions/me",
+    item: (id: string) => `/sessions/${encodeURIComponent(id)}`,
+    position: (id: string) =>
+      `/sessions/${encodeURIComponent(id)}/position`,
+  },
+  users: {
+    discoverable: "/users/me/discoverable",
+  },
 } as const;
