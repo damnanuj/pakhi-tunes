@@ -30,6 +30,7 @@ import { activeTrackToHistoryPayload } from "src/features/history/types/history.
 import { recordPlayToHistory } from "src/features/history/hooks/useRecordHistory";
 import { setPlaybackRemoteHandlers } from "../playbackRemoteBridge";
 import {
+  emitHostHeartbeatIfHosting,
   emitHostPauseIfHosting,
   emitHostPlayIfHosting,
   emitHostSeekIfHosting,
@@ -37,8 +38,14 @@ import {
 } from "src/features/NearbySession/utils/sessionHostBridge";
 import {
   isListenerMode,
+  isHostMode,
   useNearbySessionStore,
 } from "src/features/NearbySession/store/nearbySessionStore";
+import {
+  isPositionSyncSuspended,
+  resetPositionSyncSuspension,
+  suspendPositionSyncFromStatusForMs,
+} from "../utils/playerPositionSync";
 
 type PlayerContextValue = {
   playSong: (song: ArtistSong) => Promise<void>;
@@ -76,17 +83,9 @@ const PLAYER_CAPABILITIES = [
  * The native player can emit progress updates with the pre-seek position briefly after
  * `seekTo` resolves. Skip applying those so the UI does not flicker.
  */
-let positionSyncSuspendedUntilMs = 0;
 let onTrackEndedCallback: (() => void) | null = null;
 let trackEndedHandledForId: string | null = null;
 let playerSetupPromise: Promise<void> | null = null;
-
-function suspendPositionSyncFromStatusForMs(ms: number) {
-  const until = Date.now() + ms;
-  if (until > positionSyncSuspendedUntilMs) {
-    positionSyncSuspendedUntilMs = until;
-  }
-}
 
 function repeatModeToRntp(repeatMode: "off" | "one" | "all"): RepeatMode {
   return repeatMode === "one" ? RepeatMode.Track : RepeatMode.Off;
@@ -139,7 +138,9 @@ function PlayerEventBridge() {
       if (event.type === Event.PlaybackState) {
         const state = event.state;
         const isPlaying = state === State.Playing;
-        usePlayerStore.getState().setPlayback({ isPlaying });
+        if (!isListenerMode()) {
+          usePlayerStore.getState().setPlayback({ isPlaying });
+        }
 
         if (isPlaying || state === State.Ready) {
           trackEndedHandledForId = null;
@@ -158,7 +159,7 @@ function PlayerEventBridge() {
       }
 
       if (event.type === Event.PlaybackProgressUpdated) {
-        const ignorePosition = Date.now() < positionSyncSuspendedUntilMs;
+        const ignorePosition = isPositionSyncSuspended();
         const durationMillis =
           event.duration > 0 ? Math.round(event.duration * 1000) : undefined;
         const positionMillis = Math.round(event.position * 1000);
@@ -200,7 +201,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const historyRecordedForTrackIdRef = useRef<string | null>(null);
 
   const resetNativePlayer = useCallback(async () => {
-    positionSyncSuspendedUntilMs = 0;
+    resetPositionSyncSuspension();
     trackEndedHandledForId = null;
     historyRecordedForTrackIdRef.current = null;
     try {
@@ -268,6 +269,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                 : track.durationSec * 1000,
             positionMs: Math.round(progress.position * 1000),
             playing: true,
+            repeatMode: usePlayerStore.getState().repeatMode,
           });
         }
       } catch {
@@ -386,7 +388,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     try {
       await TrackPlayer.seekTo(clamped / 1000);
       usePlayerStore.getState().setPlayback({ positionMillis: clamped });
-      emitHostSeekIfHosting(clamped);
+      emitHostSeekIfHosting(clamped, usePlayerStore.getState().repeatMode);
     } catch {
       /* ignore */
     } finally {
@@ -448,6 +450,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             positionMillis: 0,
             isPlaying: true,
           });
+          if (isHostMode()) {
+            emitHostSeekIfHosting(0, repeatMode);
+            emitHostPlayIfHosting(0, repeatMode);
+          }
         } catch {
           /* ignore */
         }
@@ -485,13 +491,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
     try {
       const state = await TrackPlayer.getPlaybackState();
-      const positionMs = usePlayerStore.getState().positionMillis;
+      const progress = await TrackPlayer.getProgress();
+      const positionMs = Math.round(progress.position * 1000);
+      const repeatMode = usePlayerStore.getState().repeatMode;
       if (state.state === State.Playing) {
         await TrackPlayer.pause();
-        emitHostPauseIfHosting(positionMs);
+        emitHostPauseIfHosting(positionMs, repeatMode);
       } else {
         await TrackPlayer.play();
-        emitHostPlayIfHosting(positionMs);
+        emitHostPlayIfHosting(positionMs, repeatMode);
       }
     } catch {
       /* ignore */
@@ -531,6 +539,19 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const current = usePlayerStore.getState().repeatMode;
     usePlayerStore.getState().setRepeatMode(getNextRepeatMode(current));
     void applyRepeatModeToPlayer();
+
+    if (isHostMode()) {
+      void (async () => {
+        const progress = await TrackPlayer.getProgress();
+        const state = usePlayerStore.getState();
+        emitHostHeartbeatIfHosting({
+          positionMs: Math.round(progress.position * 1000),
+          playing: state.isPlaying,
+          trackId: state.activeTrack?.id,
+          repeatMode: state.repeatMode,
+        });
+      })();
+    }
   }, [applyRepeatModeToPlayer]);
 
   const stopPlaybackAndClear = useCallback(async () => {

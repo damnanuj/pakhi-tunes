@@ -1,4 +1,4 @@
-import type { ActiveTrack } from "src/features/Player/types";
+import type { ActiveTrack, RepeatMode } from "src/features/Player/types";
 
 export type SessionRole = "host" | "listener" | null;
 
@@ -44,6 +44,7 @@ export type SessionTrackChangePayload = {
   trackDuration: number;
   positionMs: number;
   playing: boolean;
+  repeatMode?: RepeatMode;
 };
 
 export type SessionHeartbeatPayload = {
@@ -52,6 +53,13 @@ export type SessionHeartbeatPayload = {
   trackId?: string;
   latitude?: number;
   longitude?: number;
+  repeatMode?: RepeatMode;
+};
+
+export type SessionPlaybackEventPayload = {
+  positionMs: number;
+  sentAt?: number;
+  repeatMode?: RepeatMode;
 };
 
 export function sessionToActiveTrack(session: NearbySession): ActiveTrack {

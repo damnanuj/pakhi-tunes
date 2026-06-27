@@ -7,7 +7,7 @@ import MyText from "src/components/MyText";
 import ConfirmDialog from "src/components/ConfirmDialog";
 import themeColors from "src/utils/theme/colors";
 import { scale, verticalScale } from "src/utils/functions/dimensions";
-import { useScrollBottomInset } from "src/hooks";
+import { useScrollBottomInset, useRefreshable } from "src/hooks";
 import { useAuth } from "src/features/auth/hooks/useAuth";
 import { useRequireAuth } from "src/features/auth/hooks/useRequireAuth";
 import RadarScanView from "../components/RadarScanView";
@@ -42,6 +42,13 @@ export default function NearbySessionsPage() {
   const { scanOnce } = useNearbyDiscovery(
     permissionReady && isAuthenticated && role !== "listener"
   );
+
+  const { refreshControl } = useRefreshable({
+    onRefresh: async () => {
+      if (!permissionReady) return;
+      await scanOnce();
+    },
+  });
 
   const scrollBottomPadding = useScrollBottomInset({
     includeTabBar: true,
@@ -108,6 +115,7 @@ export default function NearbySessionsPage() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
+        refreshControl={refreshControl}
         contentContainerStyle={{
           paddingHorizontal: scale(20),
           paddingBottom: scrollBottomPadding,

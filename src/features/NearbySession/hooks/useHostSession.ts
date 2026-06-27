@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
+import TrackPlayer from "react-native-track-player";
 import { useAuth } from "src/features/auth/hooks/useAuth";
 import { usePlayerStore } from "src/features/Player/store/playerStore";
 import {
@@ -12,7 +13,7 @@ import { activeTrackToSessionPayload } from "../types/session.types";
 import { setSessionHostBridge } from "../utils/sessionHostBridge";
 import { getCurrentCoordinates } from "../utils/locationPermission";
 
-const HEARTBEAT_INTERVAL_MS = 10_000;
+const HEARTBEAT_INTERVAL_MS = 3_000;
 
 export function useHostSession() {
   const { isAuthenticated, user } = useAuth();
@@ -20,7 +21,6 @@ export function useHostSession() {
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const positionMillis = usePlayerStore((s) => s.positionMillis);
   const role = useNearbySessionStore((s) => s.role);
-  const activeSession = useNearbySessionStore((s) => s.activeSession);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stopHosting = useCallback(async () => {
@@ -106,17 +106,17 @@ export function useHostSession() {
 
   useEffect(() => {
     setSessionHostBridge({
-      onPlay: (positionMs) => {
+      onPlay: (positionMs, repeatMode) => {
         if (useNearbySessionStore.getState().role !== "host") return;
-        sessionSocketService.emitHostPlay(positionMs);
+        sessionSocketService.emitHostPlay(positionMs, repeatMode);
       },
-      onPause: (positionMs) => {
+      onPause: (positionMs, repeatMode) => {
         if (useNearbySessionStore.getState().role !== "host") return;
-        sessionSocketService.emitHostPause(positionMs);
+        sessionSocketService.emitHostPause(positionMs, repeatMode);
       },
-      onSeek: (positionMs) => {
+      onSeek: (positionMs, repeatMode) => {
         if (useNearbySessionStore.getState().role !== "host") return;
-        sessionSocketService.emitHostSeek(positionMs);
+        sessionSocketService.emitHostSeek(positionMs, repeatMode);
       },
       onTrackChange: (payload) => {
         if (useNearbySessionStore.getState().role !== "host") return;
@@ -160,21 +160,26 @@ export function useHostSession() {
         const coords = await getCurrentCoordinates();
         const state = usePlayerStore.getState();
         if (!state.activeTrack) return;
+
+        const progress = await TrackPlayer.getProgress();
         const payload = {
-          positionMs: state.positionMillis,
+          positionMs: Math.round(progress.position * 1000),
           playing: state.isPlaying,
           trackId: state.activeTrack.id,
           latitude: coords?.latitude,
           longitude: coords?.longitude,
+          repeatMode: state.repeatMode,
         };
         sessionSocketService.emitHostHeartbeat(payload);
         const sessionId = useNearbySessionStore.getState().activeSession?.id;
         if (sessionId && coords) {
           try {
             await patchSessionPosition(sessionId, {
-              ...payload,
+              positionMs: payload.positionMs,
+              playing: payload.playing,
               latitude: coords.latitude,
               longitude: coords.longitude,
+              trackId: payload.trackId,
             });
           } catch {
             /* ignore */

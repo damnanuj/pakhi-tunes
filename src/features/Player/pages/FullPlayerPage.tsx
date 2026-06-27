@@ -20,6 +20,7 @@ import {
 import { useRouter } from "expo-router";
 import {
   ListMusic,
+  LogOut,
   Pause,
   Play,
   Repeat,
@@ -31,6 +32,7 @@ import {
 import { XStack, YStack } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ScreenHeader from "src/components/ScreenHeader";
+import CircularButton from "src/components/CircularButton";
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
 import {
@@ -47,6 +49,7 @@ import UpNextSheet from "../components/UpNextSheet";
 import FavoriteButton from "src/features/favorites/components/FavoriteButton";
 import DownloadButton from "src/features/Downloads/components/DownloadButton";
 import ListenerCountBadge from "src/features/NearbySession/components/ListenerCountBadge";
+import { useNearbySessionActions } from "src/features/NearbySession/providers/NearbySessionProvider";
 import { useNearbySessionStore } from "src/features/NearbySession/store/nearbySessionStore";
 import {
   ghostControlStyle,
@@ -326,8 +329,15 @@ export default function FullPlayerPage() {
   const sessionRole = useNearbySessionStore((s) => s.role);
   const listenerCount = useNearbySessionStore((s) => s.listenerCount);
   const hostName = useNearbySessionStore((s) => s.hostName);
+  const hostRepeatMode = useNearbySessionStore((s) => s.hostRepeatMode);
+  const hostAnchor = useNearbySessionStore((s) => s.hostPlaybackAnchor);
+  const { leaveSession } = useNearbySessionActions();
   const isListener = sessionRole === "listener";
   const isHost = sessionRole === "host";
+  const displayRepeatMode = isListener ? hostRepeatMode : repeatMode;
+  const displayIsPlaying = isListener
+    ? (hostAnchor?.playing ?? isPlaying)
+    : isPlaying;
 
   useEffect(() => {
     if (!activeTrack) {
@@ -387,6 +397,31 @@ export default function FullPlayerPage() {
     cycleRepeatMode();
   }, [cycleRepeatMode]);
 
+  const handleLeave = useCallback(async () => {
+    await leaveSession();
+    router.back();
+  }, [leaveSession, router]);
+
+  const headerRightContent = useMemo(() => {
+    if (isHost) {
+      return <ListenerCountBadge count={listenerCount} compact />;
+    }
+    if (isListener) {
+      return (
+        <CircularButton
+          onPress={() => void handleLeave()}
+          accessibilityLabel="Leave session"
+        >
+          <LogOut
+            size={moderateScale(18)}
+            color={themeColors.dark.accent}
+          />
+        </CircularButton>
+      );
+    }
+    return null;
+  }, [handleLeave, isHost, isListener, listenerCount]);
+
   const onOpenUpNext = useCallback(() => {
     setIsUpNextOpen(true);
   }, []);
@@ -421,6 +456,7 @@ export default function FullPlayerPage() {
         showBack
         backIcon="down"
         showSettings={false}
+        rightContent={headerRightContent}
       />
 
       <YStack
@@ -462,7 +498,6 @@ export default function FullPlayerPage() {
                 ? `With ${hostName ?? "host"}`
                 : contextTitle}
             </MyText>
-            {isHost ? <ListenerCountBadge count={listenerCount} /> : null}
           </YStack>
 
           <ArtworkProgressRing
@@ -577,7 +612,7 @@ export default function FullPlayerPage() {
                 onPress={onPlayPause}
                 accessibilityRole="button"
                 accessibilityLabel={
-                  showMainFabSpinner ? "Loading" : isPlaying ? "Pause" : "Play"
+                  showMainFabSpinner ? "Loading" : displayIsPlaying ? "Pause" : "Play"
                 }
                 android_ripple={
                   isListener
@@ -607,7 +642,7 @@ export default function FullPlayerPage() {
                     color={themeColors.dark.onAccent}
                     size="large"
                   />
-                ) : isPlaying ? (
+                ) : displayIsPlaying ? (
                   <Pause
                     size={moderateScale(30)}
                     color={themeColors.dark.onAccent}
@@ -632,17 +667,15 @@ export default function FullPlayerPage() {
                 />
               </IconControl>
               <IconControl onPress={onCycleRepeat} disabled={isListener}>
-                {repeatMode === "one" ? (
+                {displayRepeatMode === "one" ? (
                   <Repeat1
                     size={moderateScale(20)}
-                    color={isListener ? muted : accent}
+                    color={accent}
                   />
                 ) : (
                   <Repeat
                     size={moderateScale(20)}
-                    color={
-                      !isListener && repeatMode === "all" ? accent : muted
-                    }
+                    color={displayRepeatMode === "all" ? accent : muted}
                   />
                 )}
               </IconControl>

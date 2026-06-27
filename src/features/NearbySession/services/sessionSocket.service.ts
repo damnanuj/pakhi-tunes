@@ -1,6 +1,7 @@
 import { io, type Socket } from "socket.io-client";
 import { ENV } from "src/utils/constants/env";
 import { getAuthToken } from "src/features/auth/store/authStore";
+import type { RepeatMode } from "src/features/Player/types";
 import type {
   SessionHeartbeatPayload,
   SessionTrackChangePayload,
@@ -63,16 +64,16 @@ class SessionSocketService {
     });
   }
 
-  emitHostPlay(positionMs: number) {
-    this.socket?.emit("host:play", { positionMs });
+  emitHostPlay(positionMs: number, repeatMode?: RepeatMode) {
+    this.socket?.emit("host:play", { positionMs, repeatMode });
   }
 
-  emitHostPause(positionMs: number) {
-    this.socket?.emit("host:pause", { positionMs });
+  emitHostPause(positionMs: number, repeatMode?: RepeatMode) {
+    this.socket?.emit("host:pause", { positionMs, repeatMode });
   }
 
-  emitHostSeek(positionMs: number) {
-    this.socket?.emit("host:seek", { positionMs });
+  emitHostSeek(positionMs: number, repeatMode?: RepeatMode) {
+    this.socket?.emit("host:seek", { positionMs, repeatMode });
   }
 
   emitHostTrackChange(payload: SessionTrackChangePayload) {

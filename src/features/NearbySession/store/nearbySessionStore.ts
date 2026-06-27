@@ -1,5 +1,12 @@
 import { create } from "zustand";
+import type { RepeatMode } from "src/features/Player/types";
 import type { ActiveSession, NearbySession, SessionRole } from "../types/session.types";
+
+export type HostPlaybackAnchor = {
+  positionMs: number;
+  sentAt: number;
+  playing: boolean;
+};
 
 type NearbySessionState = {
   nearbySessions: NearbySession[];
@@ -9,6 +16,8 @@ type NearbySessionState = {
   role: SessionRole;
   listenerCount: number;
   hostName: string | null;
+  hostRepeatMode: RepeatMode;
+  hostPlaybackAnchor: HostPlaybackAnchor | null;
   isConnected: boolean;
   isApplyingRemoteSync: boolean;
   locationPermission: "unknown" | "granted" | "denied";
@@ -19,6 +28,8 @@ type NearbySessionState = {
   setRole: (role: SessionRole) => void;
   setListenerCount: (count: number) => void;
   setHostName: (name: string | null) => void;
+  setHostRepeatMode: (mode: RepeatMode) => void;
+  setHostPlaybackAnchor: (anchor: HostPlaybackAnchor | null) => void;
   setIsConnected: (connected: boolean) => void;
   setIsApplyingRemoteSync: (applying: boolean) => void;
   setLocationPermission: (status: NearbySessionState["locationPermission"]) => void;
@@ -33,6 +44,8 @@ const initialState = {
   role: null as SessionRole,
   listenerCount: 0,
   hostName: null as string | null,
+  hostRepeatMode: "off" as RepeatMode,
+  hostPlaybackAnchor: null as HostPlaybackAnchor | null,
   isConnected: false,
   isApplyingRemoteSync: false,
   locationPermission: "unknown" as const,
@@ -47,6 +60,8 @@ export const useNearbySessionStore = create<NearbySessionState>((set) => ({
   setRole: (role) => set({ role }),
   setListenerCount: (listenerCount) => set({ listenerCount }),
   setHostName: (hostName) => set({ hostName }),
+  setHostRepeatMode: (hostRepeatMode) => set({ hostRepeatMode }),
+  setHostPlaybackAnchor: (hostPlaybackAnchor) => set({ hostPlaybackAnchor }),
   setIsConnected: (isConnected) => set({ isConnected }),
   setIsApplyingRemoteSync: (isApplyingRemoteSync) =>
     set({ isApplyingRemoteSync }),
@@ -57,6 +72,8 @@ export const useNearbySessionStore = create<NearbySessionState>((set) => ({
       role: null,
       listenerCount: 0,
       hostName: null,
+      hostRepeatMode: "off",
+      hostPlaybackAnchor: null,
       isApplyingRemoteSync: false,
     }),
 }));

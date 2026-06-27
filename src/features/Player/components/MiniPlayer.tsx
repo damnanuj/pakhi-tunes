@@ -154,6 +154,13 @@ function MiniPlayer() {
   const { leaveSession } = useNearbySessionActions();
   const isListener = sessionRole === "listener";
 
+  const handleLeave = async () => {
+    await leaveSession();
+    if (pathname === "/player") {
+      router.back();
+    }
+  };
+
   const progress = useMemo(() => {
     if (!durationMillis || durationMillis <= 0) return 0;
     return positionMillis / durationMillis;
@@ -269,7 +276,7 @@ function MiniPlayer() {
           </Pressable>
           {isListener ? (
             <Pressable
-              onPress={() => void leaveSession()}
+              onPress={() => void handleLeave()}
               style={{
                 width: MINI_PLAYER_RING,
                 height: MINI_PLAYER_RING,

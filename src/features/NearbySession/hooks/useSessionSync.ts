@@ -1,7 +1,9 @@
 import { useCallback, useEffect } from "react";
 import { useRouter } from "expo-router";
+import { Event, useTrackPlayerEvents } from "react-native-track-player";
 import { appToast } from "src/components/toast/appToastHelpers";
 import { usePlayback } from "src/features/Player/context/PlayerContext";
+import { resetPositionSyncSuspension } from "src/features/Player/utils/playerPositionSync";
 import { sessionSocketService } from "../services/sessionSocket.service";
 import { useNearbySessionStore } from "../store/nearbySessionStore";
 import type { NearbySession } from "../types/session.types";
@@ -11,6 +13,7 @@ import {
   applyRemotePlay,
   applyRemoteSeek,
   applyRemoteTrackChange,
+  correctListenerDrift,
 } from "../utils/sessionSyncApplier";
 
 export function useSessionSync() {
@@ -63,10 +66,24 @@ export function useSessionSync() {
   const role = useNearbySessionStore((s) => s.role);
 
   const leaveSession = useCallback(async () => {
+    if (useNearbySessionStore.getState().role !== "listener") return;
+
+    useNearbySessionStore.getState().setRole(null);
+    useNearbySessionStore.getState().setIsApplyingRemoteSync(true);
+
     sessionSocketService.leaveAsListener();
-    useNearbySessionStore.getState().resetSession();
+    resetPositionSyncSuspension();
+
     await stopPlaybackAndClear();
+    useNearbySessionStore.getState().resetSession();
   }, [stopPlaybackAndClear]);
+
+  useTrackPlayerEvents([Event.PlaybackProgressUpdated], (event) => {
+    if (event.type !== Event.PlaybackProgressUpdated) return;
+    if (useNearbySessionStore.getState().role !== "listener") return;
+    const localMs = Math.round(event.position * 1000);
+    void correctListenerDrift(localMs);
+  });
 
   useEffect(() => {
     if (role !== "listener") return;
@@ -74,14 +91,25 @@ export function useSessionSync() {
     const onTrackChange = (payload: Parameters<typeof applyRemoteTrackChange>[0]) => {
       void applyRemoteTrackChange(payload);
     };
-    const onPlay = (payload: { positionMs: number; sentAt?: number }) => {
-      void applyRemotePlay(payload.positionMs, payload.sentAt);
+    const onPlay = (payload: {
+      positionMs: number;
+      sentAt?: number;
+      repeatMode?: Parameters<typeof applyRemotePlay>[2];
+    }) => {
+      void applyRemotePlay(payload.positionMs, payload.sentAt, payload.repeatMode);
     };
-    const onPause = (payload: { positionMs: number }) => {
-      void applyRemotePause(payload.positionMs);
+    const onPause = (payload: {
+      positionMs: number;
+      repeatMode?: Parameters<typeof applyRemotePause>[1];
+    }) => {
+      void applyRemotePause(payload.positionMs, payload.repeatMode);
     };
-    const onSeek = (payload: { positionMs: number; sentAt?: number }) => {
-      void applyRemoteSeek(payload.positionMs, payload.sentAt);
+    const onSeek = (payload: {
+      positionMs: number;
+      sentAt?: number;
+      repeatMode?: Parameters<typeof applyRemoteSeek>[2];
+    }) => {
+      void applyRemoteSeek(payload.positionMs, payload.sentAt, payload.repeatMode);
     };
     const onHeartbeat = (payload: Parameters<typeof applyRemoteHeartbeat>[0]) => {
       void applyRemoteHeartbeat(payload);
