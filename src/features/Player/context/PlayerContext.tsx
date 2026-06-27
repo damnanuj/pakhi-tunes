@@ -7,12 +7,14 @@ import {
   type ReactNode,
 } from "react";
 import { Alert } from "react-native";
-import {
-  createAudioPlayer,
-  setAudioModeAsync,
-  setIsAudioActiveAsync,
-  type AudioStatus,
-} from "expo-audio";
+import TrackPlayer, {
+  AppKilledPlaybackBehavior,
+  Capability,
+  Event,
+  RepeatMode,
+  State,
+  useTrackPlayerEvents,
+} from "react-native-track-player";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import { usePlayerStore } from "../store/playerStore";
 import type { QueueSource, ActiveTrack } from "../types";
@@ -26,6 +28,7 @@ import {
 } from "../utils/queueHelpers";
 import { activeTrackToHistoryPayload } from "src/features/history/types/history.types";
 import { recordPlayToHistory } from "src/features/history/hooks/useRecordHistory";
+import { setPlaybackRemoteHandlers } from "../playbackRemoteBridge";
 
 type PlayerContextValue = {
   playSong: (song: ArtistSong) => Promise<void>;
@@ -50,13 +53,23 @@ const PlayerContext = createContext<PlayerContextValue | null>(null);
 
 const PREVIOUS_SONG_THRESHOLD_MS = 3000;
 
+const PLAYER_CAPABILITIES = [
+  Capability.Play,
+  Capability.Pause,
+  Capability.SkipToNext,
+  Capability.SkipToPrevious,
+  Capability.SeekTo,
+  Capability.Stop,
+];
+
 /**
- * The native player can emit status updates with the pre-seek position briefly after
+ * The native player can emit progress updates with the pre-seek position briefly after
  * `seekTo` resolves. Skip applying those so the UI does not flicker.
  */
 let positionSyncSuspendedUntilMs = 0;
 let onTrackEndedCallback: (() => void) | null = null;
 let trackEndedHandledForId: string | null = null;
+let playerSetupPromise: Promise<void> | null = null;
 
 function suspendPositionSyncFromStatusForMs(ms: number) {
   const until = Date.now() + ms;
@@ -65,145 +78,184 @@ function suspendPositionSyncFromStatusForMs(ms: number) {
   }
 }
 
-function syncStoreFromLoadedStatus(status: AudioStatus) {
-  if (!status.isLoaded) return;
-  const durationMillis =
-    status.duration > 0 ? Math.round(status.duration * 1000) : undefined;
-  const positionMillis = Math.round(status.currentTime * 1000);
-  const ignorePosition = Date.now() < positionSyncSuspendedUntilMs;
-  usePlayerStore.getState().setPlayback({
-    isPlaying: status.playing,
-    ...(!ignorePosition ? { positionMillis } : {}),
-    ...(durationMillis !== undefined ? { durationMillis } : {}),
-  });
-
-  if (status.didJustFinish) {
-    const activeId = usePlayerStore.getState().activeTrack?.id ?? null;
-    if (!activeId) return;
-
-    const repeatMode = usePlayerStore.getState().repeatMode;
-    if (repeatMode === "one") {
-      // Native loop should replay; still invoke handler as a fallback restart.
-      onTrackEndedCallback?.();
-      return;
-    }
-
-    if (trackEndedHandledForId !== activeId) {
-      trackEndedHandledForId = activeId;
-      onTrackEndedCallback?.();
-    }
-  } else if (status.playing || status.currentTime < 0.5) {
-    trackEndedHandledForId = null;
-  }
+function repeatModeToRntp(repeatMode: "off" | "one" | "all"): RepeatMode {
+  return repeatMode === "one" ? RepeatMode.Track : RepeatMode.Off;
 }
 
-type PlayerRef = ReturnType<typeof createAudioPlayer>;
+async function ensurePlayerSetup() {
+  if (!playerSetupPromise) {
+    playerSetupPromise = (async () => {
+      try {
+        await TrackPlayer.setupPlayer({ autoHandleInterruptions: true });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message.toLowerCase() : String(error);
+        if (!message.includes("already") && !message.includes("initialized")) {
+          throw error;
+        }
+      }
 
-function applyLoopForRepeatMode(player: PlayerRef | null) {
-  if (!player?.isLoaded) return;
-  player.loop = usePlayerStore.getState().repeatMode === "one";
+      await TrackPlayer.updateOptions({
+        android: {
+          appKilledPlaybackBehavior:
+            AppKilledPlaybackBehavior.StopPlaybackAndRemoveNotification,
+        },
+        progressUpdateEventInterval: 1,
+        capabilities: PLAYER_CAPABILITIES,
+        compactCapabilities: PLAYER_CAPABILITIES,
+        notificationCapabilities: PLAYER_CAPABILITIES,
+      });
+    })();
+  }
+
+  return playerSetupPromise;
+}
+
+function activeTrackToRntpTrack(track: ActiveTrack) {
+  return {
+    id: track.id,
+    url: track.uri,
+    title: track.title,
+    artist: track.artist,
+    artwork: track.artworkUrl,
+    duration: track.durationSec,
+  };
+}
+
+function PlayerEventBridge() {
+  useTrackPlayerEvents(
+    [Event.PlaybackState, Event.PlaybackProgressUpdated, Event.PlaybackQueueEnded],
+    (event) => {
+      if (event.type === Event.PlaybackState) {
+        const state = event.state;
+        const isPlaying = state === State.Playing;
+        usePlayerStore.getState().setPlayback({ isPlaying });
+
+        if (isPlaying || state === State.Ready) {
+          trackEndedHandledForId = null;
+        }
+
+        if (
+          state === State.Ready ||
+          state === State.Playing ||
+          state === State.Paused ||
+          state === State.Stopped ||
+          state === State.Ended
+        ) {
+          usePlayerStore.getState().setPlaybackLoading(false);
+        }
+        return;
+      }
+
+      if (event.type === Event.PlaybackProgressUpdated) {
+        const ignorePosition = Date.now() < positionSyncSuspendedUntilMs;
+        const durationMillis =
+          event.duration > 0 ? Math.round(event.duration * 1000) : undefined;
+        const positionMillis = Math.round(event.position * 1000);
+
+        usePlayerStore.getState().setPlayback({
+          ...(!ignorePosition ? { positionMillis } : {}),
+          ...(durationMillis !== undefined ? { durationMillis } : {}),
+        });
+
+        if (positionMillis < 500) {
+          trackEndedHandledForId = null;
+        }
+        return;
+      }
+
+      if (event.type === Event.PlaybackQueueEnded) {
+        const activeId = usePlayerStore.getState().activeTrack?.id ?? null;
+        if (!activeId) return;
+
+        const repeatMode = usePlayerStore.getState().repeatMode;
+        if (repeatMode === "one") {
+          onTrackEndedCallback?.();
+          return;
+        }
+
+        if (trackEndedHandledForId !== activeId) {
+          trackEndedHandledForId = activeId;
+          onTrackEndedCallback?.();
+        }
+      }
+    }
+  );
+
+  return null;
 }
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
-  const playerRef = useRef<PlayerRef | null>(null);
-  const statusSubRef = useRef<{ remove: () => void } | null>(null);
   const playRequestGenerationRef = useRef(0);
+  const historyRecordedForTrackIdRef = useRef<string | null>(null);
 
-  const unloadPlayer = useCallback(async () => {
+  const resetNativePlayer = useCallback(async () => {
     positionSyncSuspendedUntilMs = 0;
     trackEndedHandledForId = null;
-    const sub = statusSubRef.current;
-    statusSubRef.current = null;
-    sub?.remove();
-    const p = playerRef.current;
-    playerRef.current = null;
-    if (p) {
-      try {
-        if (p.isLoaded) {
-          p.pause();
-        }
-      } catch {
-        /* ignore */
-      }
-      try {
-        p.remove();
-      } catch {
-        /* ignore */
-      }
+    historyRecordedForTrackIdRef.current = null;
+    try {
+      await TrackPlayer.reset();
+    } catch {
+      /* ignore */
     }
   }, []);
 
-  useEffect(() => {
-    return () => {
-      void unloadPlayer();
-    };
-  }, [unloadPlayer]);
+  const applyRepeatModeToPlayer = useCallback(async () => {
+    try {
+      await TrackPlayer.setRepeatMode(
+        repeatModeToRntp(usePlayerStore.getState().repeatMode)
+      );
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const loadAndPlayActiveTrack = useCallback(
     async (track: ActiveTrack) => {
       const requestGen = ++playRequestGenerationRef.current;
       trackEndedHandledForId = null;
+      historyRecordedForTrackIdRef.current = null;
       usePlayerStore.getState().setPlaybackLoading(true);
+
       try {
-        try {
-          await unloadPlayer();
+        await ensurePlayerSetup();
+        await TrackPlayer.reset();
 
-          await setAudioModeAsync({
-            playsInSilentMode: true,
-            shouldPlayInBackground: false,
-          });
+        usePlayerStore.getState().setActiveTrack(track);
 
-          usePlayerStore.getState().setActiveTrack(track);
+        await TrackPlayer.add(activeTrackToRntpTrack(track));
+        await applyRepeatModeToPlayer();
+        await TrackPlayer.play();
 
-          const player = createAudioPlayer(
-            { uri: track.uri },
-            { updateInterval: 400 }
-          );
-
-          let historyRecorded = false;
-
-          const sub = player.addListener("playbackStatusUpdate", (status) => {
-            syncStoreFromLoadedStatus(status);
-            if (!historyRecorded && status.isLoaded) {
-              historyRecorded = true;
-              recordPlayToHistory(activeTrackToHistoryPayload(track));
-            }
-          });
-          statusSubRef.current = sub;
-          playerRef.current = player;
-          applyLoopForRepeatMode(player);
-
-          player.play();
-
-          const initial = player.currentStatus;
-          if (initial.isLoaded) {
-            usePlayerStore.getState().setPlayback({
-              isPlaying: initial.playing,
-              positionMillis: Math.round(initial.currentTime * 1000),
-              durationMillis:
-                initial.duration > 0
-                  ? Math.round(initial.duration * 1000)
-                  : track.durationSec * 1000,
-            });
-            historyRecorded = true;
-            recordPlayToHistory(activeTrackToHistoryPayload(track));
-          }
-        } catch {
-          usePlayerStore.getState().setActiveTrack(null);
-          usePlayerStore.getState().resetPlayback();
-          usePlayerStore.getState().clearQueue();
-          Alert.alert(
-            "Could not play",
-            "Rebuild the dev client so expo-audio is included, then try again."
-          );
+        if (historyRecordedForTrackIdRef.current !== track.id) {
+          historyRecordedForTrackIdRef.current = track.id;
+          recordPlayToHistory(activeTrackToHistoryPayload(track));
         }
+
+        const progress = await TrackPlayer.getProgress();
+        usePlayerStore.getState().setPlayback({
+          isPlaying: true,
+          positionMillis: Math.round(progress.position * 1000),
+          durationMillis:
+            progress.duration > 0
+              ? Math.round(progress.duration * 1000)
+              : track.durationSec * 1000,
+        });
+      } catch {
+        usePlayerStore.getState().setActiveTrack(null);
+        usePlayerStore.getState().resetPlayback();
+        usePlayerStore.getState().clearQueue();
+        Alert.alert(
+          "Could not play",
+          "Rebuild the dev client so react-native-track-player is included, then try again."
+        );
       } finally {
         if (playRequestGenerationRef.current === requestGen) {
           usePlayerStore.getState().setPlaybackLoading(false);
         }
       }
     },
-    [unloadPlayer]
+    [applyRepeatModeToPlayer]
   );
 
   const loadAndPlayTrack = useCallback(
@@ -285,16 +337,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   );
 
   const seekToMillis = useCallback(async (millis: number) => {
-    const player = playerRef.current;
-    if (!player || !player.isLoaded) return;
+    const activeTrack = usePlayerStore.getState().activeTrack;
+    if (!activeTrack) return;
 
-    const durSec = player.duration > 0 ? player.duration : undefined;
-    const durMsFromPlayer =
-      durSec !== undefined ? Math.round(durSec * 1000) : undefined;
     const durMs =
-      durMsFromPlayer && durMsFromPlayer > 0
-        ? durMsFromPlayer
-        : usePlayerStore.getState().durationMillis;
+      usePlayerStore.getState().durationMillis > 0
+        ? usePlayerStore.getState().durationMillis
+        : activeTrack.durationSec * 1000;
     if (!durMs || durMs <= 0) return;
 
     const clamped = Math.min(
@@ -302,76 +351,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       Math.floor(durMs)
     );
 
-    const wasPlaying = player.playing === true;
-
     suspendPositionSyncFromStatusForMs(900);
     try {
-      await player.seekTo(clamped / 1000);
+      await TrackPlayer.seekTo(clamped / 1000);
       usePlayerStore.getState().setPlayback({ positionMillis: clamped });
-
-      if (wasPlaying) {
-        try {
-          player.play();
-        } catch {
-          /* ignore */
-        }
-
-        const pollMs = 45;
-        const timeoutMs = 15000;
-        const advanceEpsMs = 12;
-        const alignedSlackMs = 5000;
-        const alignPlayingFallbackMs = 220;
-        const advanceCapMs = 100;
-
-        const afterSetPositionMs = Date.now();
-        const waitUntil = Date.now() + timeoutMs;
-        let phase: "align" | "advance" = "align";
-        let prevReportedPos: number | null = null;
-        let advanceStartedAtMs: number | null = null;
-
-        while (Date.now() < waitUntil) {
-          if (!player.isLoaded) return;
-          const pos = Math.round(player.currentTime * 1000);
-          const isPlayingNow = player.playing;
-
-          if (phase === "align") {
-            const aligned = Math.abs(pos - clamped) <= alignedSlackMs;
-            const playingButReportsLag =
-              isPlayingNow &&
-              Date.now() - afterSetPositionMs >= alignPlayingFallbackMs;
-            if (aligned || playingButReportsLag) {
-              phase = "advance";
-              prevReportedPos = null;
-              advanceStartedAtMs = Date.now();
-            }
-            await new Promise((r) => setTimeout(r, pollMs));
-            continue;
-          }
-
-          if (!isPlayingNow) {
-            prevReportedPos = null;
-            await new Promise((r) => setTimeout(r, pollMs));
-            continue;
-          }
-
-          if (
-            prevReportedPos !== null &&
-            pos >= prevReportedPos + advanceEpsMs
-          ) {
-            break;
-          }
-
-          if (
-            advanceStartedAtMs !== null &&
-            Date.now() - advanceStartedAtMs >= advanceCapMs
-          ) {
-            break;
-          }
-
-          prevReportedPos = pos;
-          await new Promise((r) => setTimeout(r, pollMs));
-        }
-      }
     } catch {
       /* ignore */
     } finally {
@@ -405,13 +388,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       state.queueIndex <= 0
     ) {
       await seekToMillis(0);
-      const player = playerRef.current;
-      if (player?.isLoaded && !player.playing) {
-        try {
-          player.play();
-        } catch {
-          /* ignore */
-        }
+      try {
+        await TrackPlayer.play();
+      } catch {
+        /* ignore */
       }
       return;
     }
@@ -425,21 +405,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const { repeatMode } = state;
 
       if (repeatMode === "one") {
-        const player = playerRef.current;
-        if (player?.isLoaded) {
-          applyLoopForRepeatMode(player);
-          // Native loop replays automatically; only manual-restart if playback stopped.
-          if (player.loop && player.playing) return;
-          try {
-            await player.seekTo(0);
-            player.play();
-            usePlayerStore.getState().setPlayback({
-              positionMillis: 0,
-              isPlaying: true,
-            });
-          } catch {
-            /* ignore */
-          }
+        try {
+          await TrackPlayer.seekTo(0);
+          await TrackPlayer.play();
+          usePlayerStore.getState().setPlayback({
+            positionMillis: 0,
+            isPlaying: true,
+          });
+        } catch {
+          /* ignore */
         }
         return;
       }
@@ -468,12 +442,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [handleTrackEnded]);
 
   const togglePlayPause = useCallback(async () => {
-    const player = playerRef.current;
-    if (!player || !player.isLoaded) return;
-    if (player.playing) {
-      player.pause();
-    } else {
-      player.play();
+    const activeTrack = usePlayerStore.getState().activeTrack;
+    if (!activeTrack) return;
+
+    try {
+      const state = await TrackPlayer.getPlaybackState();
+      if (state.state === State.Playing) {
+        await TrackPlayer.pause();
+      } else {
+        await TrackPlayer.play();
+      }
+    } catch {
+      /* ignore */
     }
   }, []);
 
@@ -509,22 +489,50 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const cycleRepeatMode = useCallback(() => {
     const current = usePlayerStore.getState().repeatMode;
     usePlayerStore.getState().setRepeatMode(getNextRepeatMode(current));
-    applyLoopForRepeatMode(playerRef.current);
-  }, []);
+    void applyRepeatModeToPlayer();
+  }, [applyRepeatModeToPlayer]);
 
   const stopPlaybackAndClear = useCallback(async () => {
-    await unloadPlayer();
-    try {
-      await setIsAudioActiveAsync(false);
-      await setIsAudioActiveAsync(true);
-    } catch {
-      /* ignore */
-    }
+    await resetNativePlayer();
     usePlayerStore.getState().setActiveTrack(null);
     usePlayerStore.getState().resetPlayback();
     usePlayerStore.getState().setPlaybackLoading(false);
     usePlayerStore.getState().clearQueue();
-  }, [unloadPlayer]);
+  }, [resetNativePlayer]);
+
+  useEffect(() => {
+    setPlaybackRemoteHandlers({
+      play: () => {
+        void TrackPlayer.play();
+      },
+      pause: () => {
+        void TrackPlayer.pause();
+      },
+      stop: () => {
+        void stopPlaybackAndClear();
+      },
+      next: () => {
+        void skipToNext();
+      },
+      previous: () => {
+        void skipToPrevious();
+      },
+      seek: (millis) => {
+        void seekToMillis(millis);
+      },
+    });
+
+    return () => {
+      setPlaybackRemoteHandlers(null);
+    };
+  }, [seekToMillis, skipToNext, skipToPrevious, stopPlaybackAndClear]);
+
+  useEffect(() => {
+    void ensurePlayerSetup();
+    return () => {
+      void resetNativePlayer();
+    };
+  }, [resetNativePlayer]);
 
   const value: PlayerContextValue = {
     playSong,
@@ -541,7 +549,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>
+    <PlayerContext.Provider value={value}>
+      <PlayerEventBridge />
+      {children}
+    </PlayerContext.Provider>
   );
 }
 
