@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView } from "react-native";
-import { useRouter } from "expo-router";
 import { YStack } from "tamagui";
 import ScreenHeader from "src/components/ScreenHeader";
 import MyText from "src/components/MyText";
@@ -12,7 +11,7 @@ import { useAuth } from "src/features/auth/hooks/useAuth";
 import { useRequireAuth } from "src/features/auth/hooks/useRequireAuth";
 import RadarScanView from "../components/RadarScanView";
 import NearbySessionCard from "../components/NearbySessionCard";
-import { useNearbyDiscovery } from "../hooks/useNearbyDiscovery";
+import { isSessionFresh, useNearbyDiscovery } from "../hooks/useNearbyDiscovery";
 import { useNearbySessionActions } from "../providers/NearbySessionProvider";
 import { useNearbySessionStore } from "../store/nearbySessionStore";
 import type { NearbySession } from "../types/session.types";
@@ -24,12 +23,12 @@ import {
 
 export default function NearbySessionsPage() {
   useRequireAuth();
-  const router = useRouter();
   const { isAuthenticated } = useAuth();
   const nearbySessions = useNearbySessionStore((s) => s.nearbySessions);
   const isScanning = useNearbySessionStore((s) => s.isScanning);
   const role = useNearbySessionStore((s) => s.role);
   const activeSession = useNearbySessionStore((s) => s.activeSession);
+  const liveListenerCount = useNearbySessionStore((s) => s.listenerCount);
   const locationPermission = useNearbySessionStore((s) => s.locationPermission);
 
   const [permissionReady, setPermissionReady] = useState(false);
@@ -71,31 +70,45 @@ export default function NearbySessionsPage() {
     setIsLeaving(true);
     try {
       await leaveSession();
+      void scanOnce();
     } finally {
       setIsLeaving(false);
     }
-  }, [leaveSession]);
+  }, [leaveSession, scanOnce]);
 
   const orderedSessions = useMemo(() => {
-    if (role !== "listener" || !activeSession) return nearbySessions;
-    const active = nearbySessions.find((s) => s.id === activeSession.id);
-    const rest = nearbySessions.filter((s) => s.id !== activeSession.id);
-    return active ? [active, ...rest] : nearbySessions;
-  }, [activeSession, nearbySessions, role]);
+    const freshSessions = nearbySessions.filter(
+      (s) =>
+        s.id === joiningSessionId ||
+        s.id === activeSession?.id ||
+        isSessionFresh(s)
+    );
+    if (role !== "listener" || !activeSession) return freshSessions;
+    const active = freshSessions.find((s) => s.id === activeSession.id);
+    const mergedActive = active
+      ? { ...active, ...activeSession }
+      : activeSession;
+    const rest = freshSessions.filter((s) => s.id !== activeSession.id);
+    return [mergedActive, ...rest];
+  }, [activeSession, joiningSessionId, nearbySessions, role]);
 
   const handleJoin = useCallback(
     async (session: NearbySession) => {
       setJoiningSessionId(session.id);
       try {
         const joined = await joinSession(session);
-        if (joined) {
-          router.push("/player");
+        if (!joined) {
+          const current = useNearbySessionStore.getState().nearbySessions;
+          useNearbySessionStore
+            .getState()
+            .setNearbySessions(current.filter((s) => s.id !== session.id));
+          void scanOnce();
         }
       } finally {
         setJoiningSessionId(null);
       }
     },
-    [joinSession, router]
+    [joinSession, scanOnce]
   );
 
   const handlePermissionConfirm = useCallback(async () => {
@@ -131,7 +144,7 @@ export default function NearbySessionsPage() {
           Discover people playing music around you and join their session in sync.
         </MyText>
 
-        <RadarScanView sessions={nearbySessions} isScanning={isScanning} />
+        <RadarScanView sessions={orderedSessions} isScanning={isScanning} />
 
         {locationPermission === "denied" ? (
           <MyText
@@ -160,6 +173,11 @@ export default function NearbySessionsPage() {
               }
               isActiveSession={
                 role === "listener" && activeSession?.id === session.id
+              }
+              listenerCountOverride={
+                role === "listener" && activeSession?.id === session.id
+                  ? liveListenerCount
+                  : undefined
               }
             />
           ))}

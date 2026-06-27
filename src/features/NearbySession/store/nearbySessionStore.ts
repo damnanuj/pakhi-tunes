@@ -75,6 +75,7 @@ export const useNearbySessionStore = create<NearbySessionState>((set) => ({
       hostRepeatMode: "off",
       hostPlaybackAnchor: null,
       isApplyingRemoteSync: false,
+      isConnected: false,
     }),
 }));
 

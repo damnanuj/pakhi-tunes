@@ -5,6 +5,10 @@ import { useNearbySessionStore } from "../store/nearbySessionStore";
 export const LOCATION_PERMISSION_MESSAGE =
   "Pakhi Tunes uses your location to discover people listening to music nearby. Your location is only used while the app is open and is never stored permanently.";
 
+let cachedCoords: { latitude: number; longitude: number; at: number } | null =
+  null;
+const COORD_CACHE_TTL = 10_000;
+
 export async function getCurrentCoordinates(): Promise<{
   latitude: number;
   longitude: number;
@@ -12,13 +16,37 @@ export async function getCurrentCoordinates(): Promise<{
   const { status } = await Location.getForegroundPermissionsAsync();
   if (status !== Location.PermissionStatus.GRANTED) return null;
 
+  if (cachedCoords && Date.now() - cachedCoords.at < COORD_CACHE_TTL) {
+    return {
+      latitude: cachedCoords.latitude,
+      longitude: cachedCoords.longitude,
+    };
+  }
+
+  const last = await Location.getLastKnownPositionAsync();
+  if (last) {
+    cachedCoords = {
+      latitude: last.coords.latitude,
+      longitude: last.coords.longitude,
+      at: Date.now(),
+    };
+    return {
+      latitude: cachedCoords.latitude,
+      longitude: cachedCoords.longitude,
+    };
+  }
+
   const position = await Location.getCurrentPositionAsync({
     accuracy: Location.Accuracy.Balanced,
   });
-
-  return {
+  cachedCoords = {
     latitude: position.coords.latitude,
     longitude: position.coords.longitude,
+    at: Date.now(),
+  };
+  return {
+    latitude: cachedCoords.latitude,
+    longitude: cachedCoords.longitude,
   };
 }
 

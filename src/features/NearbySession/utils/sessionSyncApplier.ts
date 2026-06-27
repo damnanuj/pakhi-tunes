@@ -12,8 +12,8 @@ import {
   type SessionTrackChangePayload,
 } from "../types/session.types";
 
-export const DRIFT_THRESHOLD_MS = 1200;
-const DRIFT_CORRECTION_COOLDOWN_MS = 2000;
+export const DRIFT_THRESHOLD_MS = 800;
+const DRIFT_CORRECTION_COOLDOWN_MS = 1500;
 
 let lastDriftCorrectionAt = 0;
 
@@ -39,7 +39,8 @@ export function adjustPositionForLatency(
   playing = true
 ) {
   if (!sentAt || !playing) return positionMs;
-  return positionMs + (Date.now() - sentAt);
+  const elapsed = Date.now() - sentAt;
+  return positionMs + Math.min(Math.max(elapsed, 0), 1000);
 }
 
 function updateHostRepeatMode(repeatMode?: RepeatMode | string) {
@@ -83,6 +84,31 @@ function canCorrectDriftNow() {
   return Date.now() - lastDriftCorrectionAt >= DRIFT_CORRECTION_COOLDOWN_MS;
 }
 
+export function extrapolateSessionPosition(session: {
+  positionMs: number;
+  playing: boolean;
+  updatedAt?: string;
+}) {
+  let positionMs = session.positionMs;
+  if (session.playing && session.updatedAt) {
+    const elapsed = Date.now() - new Date(session.updatedAt).getTime();
+    if (elapsed > 0 && elapsed < 30_000) {
+      positionMs += Math.min(elapsed, 3000);
+    }
+  }
+  return positionMs;
+}
+
+async function verifyAndCorrectSeek(targetMs: number) {
+  const progress = await TrackPlayer.getProgress();
+  const actualMs = Math.round(progress.position * 1000);
+  if (Math.abs(actualMs - targetMs) > 500) {
+    await TrackPlayer.seekTo(targetMs / 1000);
+    return targetMs;
+  }
+  return actualMs;
+}
+
 export async function applyRemoteTrackChange(
   payload: SessionTrackChangePayload & { sentAt?: number }
 ) {
@@ -122,18 +148,26 @@ export async function applyRemoteTrackChange(
     await TrackPlayer.seekTo(positionMs / 1000);
     if (payload.playing) {
       await TrackPlayer.play();
+      const correctedMs = await verifyAndCorrectSeek(positionMs);
+      usePlayerStore.getState().setPlayback({
+        isPlaying: payload.playing,
+        positionMillis: correctedMs,
+        durationMillis:
+          payload.trackDuration > 0
+            ? payload.trackDuration
+            : track.durationSec * 1000,
+      });
     } else {
       await TrackPlayer.pause();
+      usePlayerStore.getState().setPlayback({
+        isPlaying: payload.playing,
+        positionMillis: positionMs,
+        durationMillis:
+          payload.trackDuration > 0
+            ? payload.trackDuration
+            : track.durationSec * 1000,
+      });
     }
-
-    usePlayerStore.getState().setPlayback({
-      isPlaying: payload.playing,
-      positionMillis: positionMs,
-      durationMillis:
-        payload.trackDuration > 0
-          ? payload.trackDuration
-          : track.durationSec * 1000,
-    });
   });
 }
 
@@ -148,9 +182,10 @@ export async function applyRemotePlay(
 
     await TrackPlayer.seekTo(positionMs / 1000);
     await TrackPlayer.play();
+    const correctedMs = await verifyAndCorrectSeek(positionMs);
     usePlayerStore.getState().setPlayback({
       isPlaying: true,
-      positionMillis: positionMs,
+      positionMillis: correctedMs,
     });
   });
 }
@@ -195,10 +230,14 @@ export async function applyRemoteHeartbeat(payload: {
   sentAt?: number;
   repeatMode?: RepeatMode;
 }) {
+  if (useNearbySessionStore.getState().isApplyingRemoteSync) return;
+
   const activeTrack = usePlayerStore.getState().activeTrack;
   if (payload.trackId && activeTrack?.id !== payload.trackId) {
     return;
   }
+
+  const prevPlaying = useNearbySessionStore.getState().hostPlaybackAnchor?.playing;
 
   updateHostRepeatMode(payload.repeatMode);
   updateHostPlaybackAnchor(
@@ -207,34 +246,20 @@ export async function applyRemoteHeartbeat(payload: {
     payload.sentAt
   );
 
-  const hostMs = adjustPositionForLatency(
-    payload.positionMs,
-    payload.sentAt,
-    payload.playing
-  );
-
-  const progress = await TrackPlayer.getProgress();
-  const localMs = Math.round(progress.position * 1000);
-  const drift = Math.abs(localMs - hostMs);
-
-  if (
-    payload.playing &&
-    drift > DRIFT_THRESHOLD_MS &&
-    canCorrectDriftNow()
-  ) {
-    suspendPositionSyncFromStatusForMs(500);
-    await TrackPlayer.seekTo(hostMs / 1000);
-    usePlayerStore.getState().setPlayback({ positionMillis: hostMs });
-    markDriftCorrected();
-    suspendPositionSyncFromStatusForMs(350);
+  if (prevPlaying !== undefined && prevPlaying !== payload.playing) {
+    await withRemoteSync(async () => {
+      if (payload.playing) {
+        await TrackPlayer.play();
+      } else {
+        await TrackPlayer.pause();
+      }
+      usePlayerStore.getState().setPlayback({ isPlaying: payload.playing });
+    });
+    return;
   }
 
-  if (payload.playing && !usePlayerStore.getState().isPlaying) {
-    await TrackPlayer.play();
-    usePlayerStore.getState().setPlayback({ isPlaying: true });
-  } else if (!payload.playing && usePlayerStore.getState().isPlaying) {
-    await TrackPlayer.pause();
-    usePlayerStore.getState().setPlayback({ isPlaying: false });
+  if (usePlayerStore.getState().isPlaying !== payload.playing) {
+    usePlayerStore.getState().setPlayback({ isPlaying: payload.playing });
   }
 }
 

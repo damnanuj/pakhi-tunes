@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { View } from "react-native";
+import { Radio } from "@tamagui/lucide-icons";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -9,7 +10,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
-import { YStack } from "tamagui";
+import { XStack, YStack } from "tamagui";
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
 import { moderateScale, scale, verticalScale } from "src/utils/functions/dimensions";
@@ -120,6 +121,68 @@ function HostDot({
   );
 }
 
+function ScanningDot({ active }: { active: boolean }) {
+  const opacity = useSharedValue(active ? 1 : 0.35);
+
+  useEffect(() => {
+    if (!active) {
+      opacity.value = 0.35;
+      return;
+    }
+    opacity.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 600 }),
+        withTiming(0.25, { duration: 600 })
+      ),
+      -1,
+      true
+    );
+  }, [active, opacity]);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        {
+          width: moderateScale(7),
+          height: moderateScale(7),
+          borderRadius: moderateScale(4),
+          backgroundColor: themeColors.dark.accent,
+        },
+        style,
+      ]}
+    />
+  );
+}
+
+function ScanEmptyState() {
+  return (
+    <XStack
+      items="center"
+      justify="center"
+      gap={scale(6)}
+      py={verticalScale(8)}
+      px={scale(14)}
+      rounded={moderateScale(12)}
+      bg={themeColors.dark.surfaceSecondary}
+      borderWidth={1}
+      borderColor={themeColors.dark.borderSecondary}
+    >
+      <Radio size={moderateScale(14)} color={themeColors.dark.textMuted} />
+      <MyText
+        fontSize={moderateScale(13)}
+        weight="600"
+        color={themeColors.dark.textMuted}
+      >
+        No sessions nearby yet
+      </MyText>
+    </XStack>
+  );
+}
+
 type RadarScanViewProps = {
   sessions: NearbySession[];
   isScanning: boolean;
@@ -140,14 +203,10 @@ export default function RadarScanView({ sessions, isScanning }: RadarScanViewPro
     transform: [{ rotate: `${rotate.value}deg` }],
   }));
 
-  const statusText = isScanning
-    ? "Scanning nearby..."
-    : sessions.length === 0
-      ? "No sessions nearby yet"
-      : `${sessions.length} session${sessions.length === 1 ? "" : "s"} found`;
+  const hasSessions = sessions.length > 0;
 
   return (
-    <YStack items="center" gap={verticalScale(16)}>
+    <YStack items="center" gap={verticalScale(14)} width="100%">
       <View
         style={{
           width: RADAR_SIZE,
@@ -217,15 +276,41 @@ export default function RadarScanView({ sessions, isScanning }: RadarScanViewPro
         </View>
       </View>
 
-      <MyText
-        fontSize={moderateScale(15)}
-        weight="600"
-        color={themeColors.dark.textMuted}
-        textAlign="center"
-        px={scale(24)}
-      >
-        {statusText}
-      </MyText>
+      <XStack items="center" justify="center" gap={scale(8)}>
+        <ScanningDot active={isScanning} />
+        <MyText
+          fontSize={moderateScale(13)}
+          weight="600"
+          color={themeColors.dark.textMuted}
+          textAlign="center"
+        >
+          Scanning nearby sessions…
+        </MyText>
+      </XStack>
+
+      {hasSessions ? (
+        <View
+          style={{
+            paddingHorizontal: scale(12),
+            paddingVertical: verticalScale(5),
+            borderRadius: moderateScale(12),
+            backgroundColor: `${themeColors.dark.accent}18`,
+            borderWidth: 1,
+            borderColor: `${themeColors.dark.accent}35`,
+          }}
+        >
+          <MyText
+            fontSize={moderateScale(12)}
+            weight="700"
+            color={themeColors.dark.accent}
+            textAlign="center"
+          >
+            {sessions.length} session{sessions.length === 1 ? "" : "s"} found
+          </MyText>
+        </View>
+      ) : (
+        <ScanEmptyState />
+      )}
     </YStack>
   );
 }

@@ -26,6 +26,7 @@ type NearbySessionCardProps = {
   isJoining?: boolean;
   isLeaving?: boolean;
   isActiveSession?: boolean;
+  listenerCountOverride?: number;
 };
 
 function formatDistance(meters?: number) {
@@ -80,10 +81,12 @@ export default function NearbySessionCard({
   isJoining = false,
   isLeaving = false,
   isActiveSession = false,
+  listenerCountOverride,
 }: NearbySessionCardProps) {
   const isLeaveMode = isActiveSession;
   const isBusy = isJoining || isLeaving;
   const distance = formatDistance(session.distanceMeters);
+  const listenerCount = listenerCountOverride ?? session.listenerCount;
 
   return (
     <YStack
@@ -230,7 +233,7 @@ export default function NearbySessionCard({
                 weight="600"
                 color={themeColors.dark.textMuted}
               >
-                {session.listenerCount}
+                {listenerCount}
               </MyText>
             </XStack>
           </XStack>
