@@ -7,16 +7,15 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
-import {
-  Headphones,
-  LogOut,
-  Play,
-  Users,
-} from "@tamagui/lucide-icons";
+import { Headphones, LogOut, Play, Users } from "@tamagui/lucide-icons";
 import { XStack, YStack } from "tamagui";
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
-import { moderateScale, scale, verticalScale } from "src/utils/functions/dimensions";
+import {
+  moderateScale,
+  scale,
+  verticalScale,
+} from "src/utils/functions/dimensions";
 import type { NearbySession } from "../types/session.types";
 
 type NearbySessionCardProps = {
@@ -100,26 +99,23 @@ export default function NearbySessionCard({
       }
       bg={themeColors.dark.surfaceSecondary}
     >
-      <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: scale(72) }}>
+      <View
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: scale(84),
+        }}
+      >
         <Image
           source={{ uri: session.trackArtwork }}
           style={{ width: "100%", height: "100%", opacity: 0.22 }}
           blurRadius={2}
         />
-        <View
-          style={{
-            position: "absolute",
-            left: 0,
-            top: 0,
-            bottom: 0,
-            width: moderateScale(3),
-            backgroundColor: themeColors.dark.accent,
-            opacity: isActiveSession ? 1 : 0.45,
-          }}
-        />
       </View>
 
-      <XStack items="center" gap={scale(12)} p={scale(12)} pl={scale(14)}>
+      <XStack items="center" gap={scale(12)} p={scale(12)}>
         <View
           style={{
             width: moderateScale(56),
@@ -138,7 +134,7 @@ export default function NearbySessionCard({
           />
         </View>
 
-        <YStack flex={1} gap={verticalScale(4)} style={{ minWidth: 0 }}>
+        <YStack flex={1} gap={verticalScale(4)} pl={scale(12)} style={{ minWidth: 0 }}>
           <XStack items="center" justify="space-between" gap={scale(8)}>
             <XStack
               items="center"
@@ -214,7 +210,10 @@ export default function NearbySessionCard({
             </MyText>
             {distance ? (
               <>
-                <MyText fontSize={moderateScale(12)} color={themeColors.dark.textMuted}>
+                <MyText
+                  fontSize={moderateScale(12)}
+                  color={themeColors.dark.textMuted}
+                >
                   ·
                 </MyText>
                 <MyText
@@ -227,7 +226,10 @@ export default function NearbySessionCard({
               </>
             ) : null}
             <XStack items="center" gap={scale(3)} ml="auto">
-              <Users size={moderateScale(12)} color={themeColors.dark.textMuted} />
+              <Users
+                size={moderateScale(12)}
+                color={themeColors.dark.textMuted}
+              />
               <MyText
                 fontSize={moderateScale(11)}
                 weight="600"
@@ -260,11 +262,18 @@ export default function NearbySessionCard({
         >
           {isLeaveMode ? (
             isLeaving ? (
-              <MyText fontSize={moderateScale(9)} weight="700" color={themeColors.dark.accent}>
+              <MyText
+                fontSize={moderateScale(9)}
+                weight="700"
+                color={themeColors.dark.accent}
+              >
                 ...
               </MyText>
             ) : (
-              <LogOut size={moderateScale(18)} color={themeColors.dark.accent} />
+              <LogOut
+                size={moderateScale(18)}
+                color={themeColors.dark.accent}
+              />
             )
           ) : isJoining ? (
             <MyText
