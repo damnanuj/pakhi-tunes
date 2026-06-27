@@ -6,6 +6,7 @@ import {
   getMiniPlayerCardHeight,
   MINI_PLAYER_GAP_ABOVE_TAB,
   MINI_PLAYER_MARGIN_BOTTOM,
+  shouldShowMiniPlayer,
 } from "src/features/Player/miniPlayerLayout";
 import { verticalScale } from "src/utils/functions/dimensions";
 
@@ -18,9 +19,9 @@ export function useToastBottomOffset(): number {
 
   return useMemo(() => {
     const onTabs = segments[0] === "(tabs)";
-    const onFullPlayer = pathname === "/player";
+    const showMiniPlayer = hasTrack && shouldShowMiniPlayer(pathname);
 
-    if (hasTrack && !onFullPlayer) {
+    if (showMiniPlayer) {
       const miniBottom = onTabs
         ? TAB_BAR_HEIGHT + MINI_PLAYER_GAP_ABOVE_TAB
         : MINI_PLAYER_MARGIN_BOTTOM;

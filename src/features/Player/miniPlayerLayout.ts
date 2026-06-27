@@ -15,6 +15,12 @@ const MINI_PLAYER_BORDER_HEIGHT = 2;
  */
 const MINI_PLAYER_SCROLL_EXTRA_BUFFER = scale(10);
 
+const MINI_PLAYER_HIDDEN_ROUTES = new Set(["/player", "/auth", "/entry"]);
+
+export function shouldShowMiniPlayer(pathname: string): boolean {
+  return !MINI_PLAYER_HIDDEN_ROUTES.has(pathname);
+}
+
 /**
  * Approximate mini player card height (tallest of ring or text stack; artwork is square to that height).
  * Used so scroll padding matches the overlay.

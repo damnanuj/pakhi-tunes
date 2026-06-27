@@ -26,6 +26,7 @@ import {
   MINI_PLAYER_GAP_ABOVE_TAB,
   MINI_PLAYER_MARGIN_BOTTOM,
   MINI_PLAYER_RING,
+  shouldShowMiniPlayer,
 } from "../miniPlayerLayout";
 import { formatMillisToClock } from "../utils/formatPlaybackTime";
 import PlayProgressRing from "./PlayProgressRing";
@@ -167,9 +168,7 @@ function MiniPlayer() {
     return MINI_PLAYER_MARGIN_BOTTOM;
   }, [segments]);
 
-  if (!activeTrack) return null;
-  /** Full-screen player has its own controls; do not stack the mini bar on top. */
-  if (pathname === "/player") return null;
+  if (!activeTrack || !shouldShowMiniPlayer(pathname)) return null;
 
   return (
     <View
