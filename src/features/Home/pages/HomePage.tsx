@@ -11,10 +11,12 @@ import NewAlbumsSection from "../components/NewAlbumsSection";
 import NewSongsSection from "../components/NewSongsSection";
 import TopArtistsSection from "../components/TopArtistsSection";
 import NearbyListeningCard from "../components/NearbyListeningCard";
+import { useAuth } from "src/features/auth/hooks/useAuth";
 
 const SECTION_GAP = verticalScale(20);
 
 export default function HomePage() {
+  const { isAuthenticated } = useAuth();
   const { refreshControl } = useRefreshable({
     queryKeys: [
       ["genres"],
@@ -41,9 +43,11 @@ export default function HomePage() {
         <View style={{ marginBottom: SECTION_GAP }}>
           <HomeGreeting />
         </View>
-        <View style={{ marginBottom: SECTION_GAP }}>
-          <NearbyListeningCard />
-        </View>
+        {isAuthenticated ? (
+          <View style={{ marginBottom: SECTION_GAP }}>
+            <NearbyListeningCard />
+          </View>
+        ) : null}
         <View style={{ marginBottom: SECTION_GAP }}>
           <FeaturedCards />
         </View>

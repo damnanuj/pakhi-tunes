@@ -47,7 +47,6 @@ import UpNextSheet from "../components/UpNextSheet";
 import FavoriteButton from "src/features/favorites/components/FavoriteButton";
 import DownloadButton from "src/features/Downloads/components/DownloadButton";
 import ListenerCountBadge from "src/features/NearbySession/components/ListenerCountBadge";
-import { useNearbySessionActions } from "src/features/NearbySession/providers/NearbySessionProvider";
 import { useNearbySessionStore } from "src/features/NearbySession/store/nearbySessionStore";
 import {
   ghostControlStyle,
@@ -327,7 +326,6 @@ export default function FullPlayerPage() {
   const sessionRole = useNearbySessionStore((s) => s.role);
   const listenerCount = useNearbySessionStore((s) => s.listenerCount);
   const hostName = useNearbySessionStore((s) => s.hostName);
-  const { leaveSession } = useNearbySessionActions();
   const isListener = sessionRole === "listener";
   const isHost = sessionRole === "host";
 
@@ -465,27 +463,6 @@ export default function FullPlayerPage() {
                 : contextTitle}
             </MyText>
             {isHost ? <ListenerCountBadge count={listenerCount} /> : null}
-            {isListener ? (
-              <Pressable
-                onPress={() => void leaveSession()}
-                style={{
-                  marginTop: verticalScale(8),
-                  paddingHorizontal: scale(16),
-                  paddingVertical: verticalScale(8),
-                  borderRadius: moderateScale(20),
-                  borderWidth: 1,
-                  borderColor: themeColors.dark.borderSecondary,
-                }}
-              >
-                <MyText
-                  fontSize={moderateScale(13)}
-                  weight="700"
-                  color={themeColors.dark.accent}
-                >
-                  Leave session
-                </MyText>
-              </Pressable>
-            ) : null}
           </YStack>
 
           <ArtworkProgressRing
@@ -553,101 +530,125 @@ export default function FullPlayerPage() {
             </XStack>
           </YStack>
 
-          <XStack
-            items="center"
-            justify="space-between"
+          <YStack
+            gap={verticalScale(6)}
             style={{ alignSelf: "stretch" as const }}
-            px={scale(2)}
             mt={verticalScale(8)}
           >
             {isListener ? (
               <MyText
-                fontSize={moderateScale(13)}
+                fontSize={moderateScale(12)}
                 weight="600"
                 color={themeColors.dark.textMuted}
                 textAlign="center"
-                style={{ flex: 1 }}
               >
                 Playback is controlled by the host
               </MyText>
-            ) : (
-              <>
-            <IconControl onPress={onToggleShuffle} disabled={!canOpenUpNext}>
-              <Shuffle
-                size={moderateScale(20)}
-                color={shuffleEnabled && canOpenUpNext ? accent : onSurface}
-              />
-            </IconControl>
-            <IconControl onPress={onSkipPrevious}>
-              <SkipBack size={moderateScale(26)} color={onSurface} />
-            </IconControl>
-            <Pressable
-              disabled={showMainFabSpinner}
-              onPress={onPlayPause}
-              accessibilityRole="button"
-              accessibilityLabel={
-                showMainFabSpinner ? "Loading" : isPlaying ? "Pause" : "Play"
-              }
-              android_ripple={{
-                color: "rgba(0,0,0,0.15)",
-                foreground: true,
-                borderless: false,
-              }}
-              style={({ pressed }: PressableStateCallbackType) => ({
-                width: moderateScale(68),
-                height: moderateScale(68),
-                borderRadius: moderateScale(34),
-                backgroundColor: themeColors.dark.accent,
-                alignItems: "center",
-                justifyContent: "center",
-                transform: [{ scale: pressed ? 0.94 : 1 }],
-                borderWidth: 1,
-                borderColor: "rgba(255,255,255,0.22)",
-                opacity: showMainFabSpinner ? 0.85 : 1,
-                ...playFabShadow,
-              })}
+            ) : null}
+            <XStack
+              items="center"
+              justify="space-between"
+              style={{ alignSelf: "stretch" as const }}
+              px={scale(2)}
             >
-              {showMainFabSpinner ? (
-                <ActivityIndicator
-                  color={themeColors.dark.onAccent}
-                  size="large"
-                />
-              ) : isPlaying ? (
-                <Pause
-                  size={moderateScale(30)}
-                  color={themeColors.dark.onAccent}
-                  fill={themeColors.dark.onAccent}
-                />
-              ) : (
-                <Play
-                  size={moderateScale(30)}
-                  color={themeColors.dark.onAccent}
-                  fill={themeColors.dark.onAccent}
-                  style={{ marginLeft: moderateScale(4) }}
-                />
-              )}
-            </Pressable>
-            <IconControl onPress={onSkipNext} disabled={!canSkipNext}>
-              <SkipForward
-                size={moderateScale(26)}
-                color={canSkipNext ? onSurface : muted}
-              />
-            </IconControl>
-            <IconControl onPress={onCycleRepeat}>
-              {repeatMode === "one" ? (
-                <Repeat1 size={moderateScale(20)} color={accent} />
-              ) : (
-                <Repeat
+              <IconControl
+                onPress={onToggleShuffle}
+                disabled={isListener || !canOpenUpNext}
+              >
+                <Shuffle
                   size={moderateScale(20)}
-                  color={repeatMode === "all" ? accent : onSurface}
+                  color={
+                    !isListener && shuffleEnabled && canOpenUpNext
+                      ? accent
+                      : isListener
+                        ? muted
+                        : onSurface
+                  }
                 />
-              )}
-            </IconControl>
-              </>
-            )}
-          </XStack>
+              </IconControl>
+              <IconControl onPress={onSkipPrevious} disabled={isListener}>
+                <SkipBack
+                  size={moderateScale(26)}
+                  color={isListener ? muted : onSurface}
+                />
+              </IconControl>
+              <Pressable
+                disabled={isListener || showMainFabSpinner}
+                onPress={onPlayPause}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  showMainFabSpinner ? "Loading" : isPlaying ? "Pause" : "Play"
+                }
+                android_ripple={
+                  isListener
+                    ? undefined
+                    : {
+                        color: "rgba(0,0,0,0.15)",
+                        foreground: true,
+                        borderless: false,
+                      }
+                }
+                style={({ pressed }: PressableStateCallbackType) => ({
+                  width: moderateScale(68),
+                  height: moderateScale(68),
+                  borderRadius: moderateScale(34),
+                  backgroundColor: themeColors.dark.accent,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transform: [{ scale: pressed && !isListener ? 0.94 : 1 }],
+                  borderWidth: 1,
+                  borderColor: "rgba(255,255,255,0.22)",
+                  opacity: isListener ? 0.35 : showMainFabSpinner ? 0.85 : 1,
+                  ...playFabShadow,
+                })}
+              >
+                {showMainFabSpinner ? (
+                  <ActivityIndicator
+                    color={themeColors.dark.onAccent}
+                    size="large"
+                  />
+                ) : isPlaying ? (
+                  <Pause
+                    size={moderateScale(30)}
+                    color={themeColors.dark.onAccent}
+                    fill={themeColors.dark.onAccent}
+                  />
+                ) : (
+                  <Play
+                    size={moderateScale(30)}
+                    color={themeColors.dark.onAccent}
+                    fill={themeColors.dark.onAccent}
+                    style={{ marginLeft: moderateScale(4) }}
+                  />
+                )}
+              </Pressable>
+              <IconControl
+                onPress={onSkipNext}
+                disabled={isListener || !canSkipNext}
+              >
+                <SkipForward
+                  size={moderateScale(26)}
+                  color={!isListener && canSkipNext ? onSurface : muted}
+                />
+              </IconControl>
+              <IconControl onPress={onCycleRepeat} disabled={isListener}>
+                {repeatMode === "one" ? (
+                  <Repeat1
+                    size={moderateScale(20)}
+                    color={isListener ? muted : accent}
+                  />
+                ) : (
+                  <Repeat
+                    size={moderateScale(20)}
+                    color={
+                      !isListener && repeatMode === "all" ? accent : muted
+                    }
+                  />
+                )}
+              </IconControl>
+            </XStack>
+          </YStack>
 
-          {!isListener ? (
           <XStack
             width="100%"
             gap={scale(16)}
@@ -656,40 +657,44 @@ export default function FullPlayerPage() {
             pt={verticalScale(16)}
             px={scale(4)}
           >
-            <Pressable
-              disabled={!canOpenUpNext}
-              onPress={canOpenUpNext ? onOpenUpNext : undefined}
-              accessibilityRole="button"
-              accessibilityLabel="Up next queue"
-              accessibilityState={{ disabled: !canOpenUpNext }}
-              android_ripple={canOpenUpNext ? playerRippleLight : undefined}
-              style={({ pressed }: PressableStateCallbackType) => ({
-                flex: 1,
-                minWidth: 0,
-                opacity: !canOpenUpNext ? 0.35 : pressed ? 0.85 : 1,
-              })}
-            >
-              <XStack gap={scale(10)} items="center" style={{ minWidth: 0 }}>
-                <View style={ghostControlStyle(false)}>
-                  <ListMusic
-                    size={moderateScale(20)}
-                    color={
-                      canOpenUpNext ? themeColors.dark.onSurface : muted
-                    }
-                  />
-                </View>
-                <MyText
-                  fontSize={moderateScale(14)}
-                  weight="700"
-                  color={canOpenUpNext ? themeColors.dark.onSurface : muted}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                  style={{ flex: 1, minWidth: 0 }}
-                >
-                  Up next
-                </MyText>
-              </XStack>
-            </Pressable>
+            {!isListener ? (
+              <Pressable
+                disabled={!canOpenUpNext}
+                onPress={canOpenUpNext ? onOpenUpNext : undefined}
+                accessibilityRole="button"
+                accessibilityLabel="Up next queue"
+                accessibilityState={{ disabled: !canOpenUpNext }}
+                android_ripple={canOpenUpNext ? playerRippleLight : undefined}
+                style={({ pressed }: PressableStateCallbackType) => ({
+                  flex: 1,
+                  minWidth: 0,
+                  opacity: !canOpenUpNext ? 0.35 : pressed ? 0.85 : 1,
+                })}
+              >
+                <XStack gap={scale(10)} items="center" style={{ minWidth: 0 }}>
+                  <View style={ghostControlStyle(false)}>
+                    <ListMusic
+                      size={moderateScale(20)}
+                      color={
+                        canOpenUpNext ? themeColors.dark.onSurface : muted
+                      }
+                    />
+                  </View>
+                  <MyText
+                    fontSize={moderateScale(14)}
+                    weight="700"
+                    color={canOpenUpNext ? themeColors.dark.onSurface : muted}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                    style={{ flex: 1, minWidth: 0 }}
+                  >
+                    Up next
+                  </MyText>
+                </XStack>
+              </Pressable>
+            ) : (
+              <View style={{ flex: 1 }} />
+            )}
 
             <XStack
               flex={1}
@@ -701,7 +706,6 @@ export default function FullPlayerPage() {
               <FavoriteButton track={activeTrack} />
             </XStack>
           </XStack>
-          ) : null}
         </YStack>
       </YStack>
       {canOpenUpNext && !isListener ? (

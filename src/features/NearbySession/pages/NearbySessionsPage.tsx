@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { YStack } from "tamagui";
@@ -29,14 +29,16 @@ export default function NearbySessionsPage() {
   const nearbySessions = useNearbySessionStore((s) => s.nearbySessions);
   const isScanning = useNearbySessionStore((s) => s.isScanning);
   const role = useNearbySessionStore((s) => s.role);
+  const activeSession = useNearbySessionStore((s) => s.activeSession);
   const locationPermission = useNearbySessionStore((s) => s.locationPermission);
 
   const [permissionReady, setPermissionReady] = useState(false);
   const [showPermissionInfo, setShowPermissionInfo] = useState(false);
   const [showSettingsPrompt, setShowSettingsPrompt] = useState(false);
   const [joiningSessionId, setJoiningSessionId] = useState<string | null>(null);
+  const [isLeaving, setIsLeaving] = useState(false);
 
-  const { joinSession } = useNearbySessionActions();
+  const { joinSession, leaveSession } = useNearbySessionActions();
   const { scanOnce } = useNearbyDiscovery(
     permissionReady && isAuthenticated && role !== "listener"
   );
@@ -57,6 +59,22 @@ export default function NearbySessionsPage() {
       setPermissionReady(true);
     })();
   }, [isAuthenticated]);
+
+  const handleLeave = useCallback(async () => {
+    setIsLeaving(true);
+    try {
+      await leaveSession();
+    } finally {
+      setIsLeaving(false);
+    }
+  }, [leaveSession]);
+
+  const orderedSessions = useMemo(() => {
+    if (role !== "listener" || !activeSession) return nearbySessions;
+    const active = nearbySessions.find((s) => s.id === activeSession.id);
+    const rest = nearbySessions.filter((s) => s.id !== activeSession.id);
+    return active ? [active, ...rest] : nearbySessions;
+  }, [activeSession, nearbySessions, role]);
 
   const handleJoin = useCallback(
     async (session: NearbySession) => {
@@ -120,12 +138,21 @@ export default function NearbySessionsPage() {
         ) : null}
 
         <YStack gap={verticalScale(12)}>
-          {nearbySessions.map((session) => (
+          {orderedSessions.map((session) => (
             <NearbySessionCard
               key={session.id}
               session={session}
               onJoin={handleJoin}
+              onLeave={handleLeave}
               isJoining={joiningSessionId === session.id}
+              isLeaving={
+                isLeaving &&
+                role === "listener" &&
+                activeSession?.id === session.id
+              }
+              isActiveSession={
+                role === "listener" && activeSession?.id === session.id
+              }
             />
           ))}
         </YStack>

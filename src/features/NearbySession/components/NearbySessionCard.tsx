@@ -9,7 +9,10 @@ import type { NearbySession } from "../types/session.types";
 type NearbySessionCardProps = {
   session: NearbySession;
   onJoin: (session: NearbySession) => void;
+  onLeave?: () => void;
   isJoining?: boolean;
+  isLeaving?: boolean;
+  isActiveSession?: boolean;
 };
 
 function formatDistance(meters?: number) {
@@ -21,8 +24,22 @@ function formatDistance(meters?: number) {
 export default function NearbySessionCard({
   session,
   onJoin,
+  onLeave,
   isJoining = false,
+  isLeaving = false,
+  isActiveSession = false,
 }: NearbySessionCardProps) {
+  const isLeaveMode = isActiveSession;
+  const isBusy = isJoining || isLeaving;
+
+  const buttonLabel = isLeaveMode
+    ? isLeaving
+      ? "Leaving..."
+      : "Leave Session"
+    : isJoining
+      ? "Joining..."
+      : "Join Session";
+
   return (
     <YStack
       bg={themeColors.dark.surfaceSecondary}
@@ -30,7 +47,11 @@ export default function NearbySessionCard({
       p={scale(14)}
       gap={verticalScale(12)}
       borderWidth={1}
-      borderColor={themeColors.dark.borderSecondary}
+      borderColor={
+        isActiveSession
+          ? themeColors.dark.accent
+          : themeColors.dark.borderSecondary
+      }
     >
       <XStack items="center" gap={scale(12)}>
         <YStack
@@ -116,22 +137,32 @@ export default function NearbySessionCard({
       </XStack>
 
       <Pressable
-        onPress={() => onJoin(session)}
-        disabled={isJoining}
+        onPress={() => (isLeaveMode ? onLeave?.() : onJoin(session))}
+        disabled={isBusy}
         style={{
-          backgroundColor: themeColors.dark.accent,
+          backgroundColor: isLeaveMode
+            ? "transparent"
+            : themeColors.dark.accent,
           borderRadius: moderateScale(12),
           paddingVertical: verticalScale(12),
           alignItems: "center",
-          opacity: isJoining ? 0.7 : 1,
+          borderWidth: isLeaveMode ? 1 : 0,
+          borderColor: isLeaveMode
+            ? themeColors.dark.borderSecondary
+            : "transparent",
+          opacity: isBusy ? 0.7 : 1,
         }}
       >
         <MyText
           fontSize={moderateScale(14)}
           weight="700"
-          color={themeColors.dark.onAccent}
+          color={
+            isLeaveMode
+              ? themeColors.dark.accent
+              : themeColors.dark.onAccent
+          }
         >
-          {isJoining ? "Joining..." : "Join Session"}
+          {buttonLabel}
         </MyText>
       </Pressable>
     </YStack>
