@@ -12,6 +12,10 @@
     "preview": {
       "distribution": "internal",
       "node": "20.19.4",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://pakhi-tunes-backend.onrender.com",
+        "EXPO_PUBLIC_SOCKET_URL": "https://pakhi-tunes-backend.onrender.com"
+      },
       "android": {
         "buildType": "apk",
         "resourceClass": "medium"
@@ -19,7 +23,11 @@
     },
     "production": {
       "autoIncrement": true,
-      "node": "20.19.4"
+      "node": "20.19.4",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://pakhi-tunes-backend.onrender.com",
+        "EXPO_PUBLIC_SOCKET_URL": "https://pakhi-tunes-backend.onrender.com"
+      }
     }
   },
   "submit": {
