@@ -44,10 +44,10 @@ export default function HomePage() {
           <FeaturedCards />
         </View>
         <View style={{ marginBottom: SECTION_GAP }}>
-          <NewAlbumsSection />
+          <NewSongsSection />
         </View>
         <View style={{ marginBottom: SECTION_GAP }}>
-          <NewSongsSection />
+          <NewAlbumsSection />
         </View>
         <TopArtistsSection />
       </ScrollView>

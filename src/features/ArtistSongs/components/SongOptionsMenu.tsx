@@ -185,10 +185,10 @@ export default function SongOptionsMenu({
           pointerEvents="box-none"
           style={{
             position: "absolute",
-            left: anchor.x + anchor.width,
+            right: windowWidth - (anchor.x + anchor.width),
             top: menuTop,
             maxWidth: menuMaxWidth,
-            transform: [{ translateX: "-100%" }],
+            alignItems: "flex-end",
           }}
         >
           <Animated.View style={[styles.panel, panelStyle]}>
