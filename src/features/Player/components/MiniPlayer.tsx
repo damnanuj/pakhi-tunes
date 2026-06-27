@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -8,7 +8,7 @@ import {
   Pressable,
 } from "react-native";
 import { usePathname, useRouter, useSegments } from "expo-router";
-import { Pause, Play } from "@tamagui/lucide-icons";
+import { LogOut, Pause, Play } from "@tamagui/lucide-icons";
 import { View, XStack, YStack } from "tamagui";
 import { MINI_PLAYER_Z_INDEX, TAB_BAR_HEIGHT } from "src/constants/tabBar";
 import {
@@ -40,15 +40,32 @@ const OPACITY_DRAG_FADE_X = scale(120);
 const DISMISS_SLIDE_DURATION_MS = 320;
 const SPRING_BACK_FRICTION = 8;
 const SPRING_BACK_TENSION = 90;
+const LEAVE_RED = "#EF4444";
 
 function MiniPlayer() {
   const pathname = usePathname();
   const router = useRouter();
   const segments = useSegments();
   const { togglePlayPause, stopPlaybackAndClear } = usePlayback();
+  const { leaveSession } = useNearbySessionActions();
 
-  const dismissSwipeRef = useRef(stopPlaybackAndClear);
-  dismissSwipeRef.current = stopPlaybackAndClear;
+  const handleLeave = useCallback(async () => {
+    await leaveSession();
+    if (pathname === "/player") {
+      router.back();
+    }
+  }, [leaveSession, pathname, router]);
+
+  const handleDismissSwipe = useCallback(async () => {
+    if (useNearbySessionStore.getState().role === "listener") {
+      await handleLeave();
+      return;
+    }
+    await stopPlaybackAndClear();
+  }, [handleLeave, stopPlaybackAndClear]);
+
+  const dismissSwipeRef = useRef(handleDismissSwipe);
+  dismissSwipeRef.current = handleDismissSwipe;
 
   const translateX = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(0)).current;
@@ -151,15 +168,7 @@ function MiniPlayer() {
   const durationMillis = usePlayerStore((s) => s.durationMillis);
   const sessionRole = useNearbySessionStore((s) => s.role);
   const hostName = useNearbySessionStore((s) => s.hostName);
-  const { leaveSession } = useNearbySessionActions();
   const isListener = sessionRole === "listener";
-
-  const handleLeave = async () => {
-    await leaveSession();
-    if (pathname === "/player") {
-      router.back();
-    }
-  };
 
   const progress = useMemo(() => {
     if (!durationMillis || durationMillis <= 0) return 0;
@@ -277,19 +286,22 @@ function MiniPlayer() {
           {isListener ? (
             <Pressable
               onPress={() => void handleLeave()}
+              accessibilityLabel="Leave session"
               style={{
                 width: MINI_PLAYER_RING,
                 height: MINI_PLAYER_RING,
                 borderRadius: MINI_PLAYER_RING / 2,
                 borderWidth: 1,
-                borderColor: themeColors.dark.borderSecondary,
+                borderColor: LEAVE_RED,
+                backgroundColor: LEAVE_RED,
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
-              <MyText fontSize={moderateScale(11)} weight="700" color={themeColors.dark.accent}>
-                Leave
-              </MyText>
+              <LogOut
+                size={moderateScale(18)}
+                color={themeColors.dark.onAccent}
+              />
             </Pressable>
           ) : (
           <PlayProgressRing

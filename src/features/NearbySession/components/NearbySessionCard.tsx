@@ -7,7 +7,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
-import { Headphones, LogOut, Play, Users } from "@tamagui/lucide-icons";
+import { Headphones, LogOut, Users } from "@tamagui/lucide-icons";
 import { XStack, YStack } from "tamagui";
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
@@ -17,6 +17,8 @@ import {
   verticalScale,
 } from "src/utils/functions/dimensions";
 import type { NearbySession } from "../types/session.types";
+
+const LEAVE_RED = "#EF4444";
 
 type NearbySessionCardProps = {
   session: NearbySession;
@@ -134,7 +136,12 @@ export default function NearbySessionCard({
           />
         </View>
 
-        <YStack flex={1} gap={verticalScale(4)} pl={scale(12)} style={{ minWidth: 0 }}>
+        <YStack
+          flex={1}
+          gap={verticalScale(4)}
+          style={{ minWidth: 0 }}
+          ml={scale(12)}
+        >
           <XStack items="center" justify="space-between" gap={scale(8)}>
             <XStack
               items="center"
@@ -145,7 +152,7 @@ export default function NearbySessionCard({
               bg={themeColors.dark.surface}
               borderWidth={1}
               borderColor={themeColors.dark.borderSecondary}
-              style={{ maxWidth: "58%" }}
+              style={{ flexShrink: 1, maxWidth: "72%" }}
             >
               {session.hostAvatar ? (
                 <Image
@@ -172,7 +179,7 @@ export default function NearbySessionCard({
               </MyText>
             </XStack>
 
-            <XStack items="center" gap={scale(4)}>
+            <XStack items="center" gap={scale(4)} style={{ flexShrink: 0 }}>
               <LiveDot playing={session.playing} />
               <MyText
                 fontSize={moderateScale(10)}
@@ -198,34 +205,28 @@ export default function NearbySessionCard({
             {session.trackTitle}
           </MyText>
 
-          <XStack items="center" gap={scale(6)} style={{ minWidth: 0 }}>
-            <MyText
-              fontSize={moderateScale(12)}
-              weight="500"
-              color={themeColors.dark.textMuted}
-              numberOfLines={1}
-              style={{ flexShrink: 1 }}
-            >
-              {session.trackArtist}
-            </MyText>
+          <MyText
+            fontSize={moderateScale(12)}
+            weight="500"
+            color={themeColors.dark.textMuted}
+            numberOfLines={1}
+          >
+            {session.trackArtist}
+          </MyText>
+
+          <XStack items="center" gap={scale(8)} style={{ minWidth: 0 }}>
             {distance ? (
-              <>
-                <MyText
-                  fontSize={moderateScale(12)}
-                  color={themeColors.dark.textMuted}
-                >
-                  ·
-                </MyText>
-                <MyText
-                  fontSize={moderateScale(12)}
-                  weight="500"
-                  color={themeColors.dark.textMuted}
-                >
-                  {distance}
-                </MyText>
-              </>
+              <MyText
+                fontSize={moderateScale(11)}
+                weight="500"
+                color={themeColors.dark.textMuted}
+                style={{ flexShrink: 0 }}
+              >
+                {distance}
+              </MyText>
             ) : null}
-            <XStack items="center" gap={scale(3)} ml="auto">
+
+            <XStack items="center" gap={scale(3)} style={{ flexShrink: 0 }}>
               <Users
                 size={moderateScale(12)}
                 color={themeColors.dark.textMuted}
@@ -238,60 +239,79 @@ export default function NearbySessionCard({
                 {listenerCount}
               </MyText>
             </XStack>
+
+            <Pressable
+              onPress={() => (isLeaveMode ? onLeave?.() : onJoin(session))}
+              disabled={isBusy}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: scale(5),
+                marginLeft: "auto",
+                paddingHorizontal: scale(10),
+                paddingVertical: verticalScale(6),
+                borderRadius: moderateScale(10),
+                flexShrink: 0,
+                backgroundColor: isLeaveMode
+                  ? LEAVE_RED
+                  : themeColors.dark.accent,
+                borderWidth: 1,
+                borderColor: isLeaveMode
+                  ? LEAVE_RED
+                  : themeColors.dark.accent,
+                opacity: isBusy ? 0.6 : 1,
+              }}
+            >
+              {isLeaveMode ? (
+                isLeaving ? (
+                  <MyText
+                    fontSize={moderateScale(10)}
+                    weight="700"
+                    color={themeColors.dark.onAccent}
+                  >
+                    Leaving...
+                  </MyText>
+                ) : (
+                  <>
+                    <LogOut
+                      size={moderateScale(12)}
+                      color={themeColors.dark.onAccent}
+                    />
+                    <MyText
+                      fontSize={moderateScale(10)}
+                      weight="700"
+                      color={themeColors.dark.onAccent}
+                    >
+                      Leave
+                    </MyText>
+                  </>
+                )
+              ) : isJoining ? (
+                <MyText
+                  fontSize={moderateScale(10)}
+                  weight="700"
+                  color={themeColors.dark.onAccent}
+                >
+                  Joining...
+                </MyText>
+              ) : (
+                <>
+                  <Headphones
+                    size={moderateScale(12)}
+                    color={themeColors.dark.onAccent}
+                  />
+                  <MyText
+                    fontSize={moderateScale(10)}
+                    weight="700"
+                    color={themeColors.dark.onAccent}
+                  >
+                    Listen together
+                  </MyText>
+                </>
+              )}
+            </Pressable>
           </XStack>
         </YStack>
-
-        <Pressable
-          onPress={() => (isLeaveMode ? onLeave?.() : onJoin(session))}
-          disabled={isBusy}
-          style={{
-            width: moderateScale(44),
-            height: moderateScale(44),
-            borderRadius: moderateScale(22),
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: isLeaveMode
-              ? "transparent"
-              : themeColors.dark.accent,
-            borderWidth: isLeaveMode ? 1 : 0,
-            borderColor: isLeaveMode
-              ? themeColors.dark.borderSecondary
-              : "transparent",
-            opacity: isBusy ? 0.6 : 1,
-          }}
-        >
-          {isLeaveMode ? (
-            isLeaving ? (
-              <MyText
-                fontSize={moderateScale(9)}
-                weight="700"
-                color={themeColors.dark.accent}
-              >
-                ...
-              </MyText>
-            ) : (
-              <LogOut
-                size={moderateScale(18)}
-                color={themeColors.dark.accent}
-              />
-            )
-          ) : isJoining ? (
-            <MyText
-              fontSize={moderateScale(9)}
-              weight="700"
-              color={themeColors.dark.onAccent}
-            >
-              ...
-            </MyText>
-          ) : (
-            <Play
-              size={moderateScale(18)}
-              color={themeColors.dark.onAccent}
-              fill={themeColors.dark.onAccent}
-              style={{ marginLeft: moderateScale(2) }}
-            />
-          )}
-        </Pressable>
       </XStack>
     </YStack>
   );

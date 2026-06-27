@@ -4,10 +4,10 @@ import { Event, useTrackPlayerEvents } from "react-native-track-player";
 import { appToast } from "src/components/toast/appToastHelpers";
 import { usePlayback } from "src/features/Player/context/PlayerContext";
 import { usePlayerStore } from "src/features/Player/store/playerStore";
-import { resetPositionSyncSuspension } from "src/features/Player/utils/playerPositionSync";
 import { sessionSocketService } from "../services/sessionSocket.service";
 import { useNearbySessionStore } from "../store/nearbySessionStore";
 import type { NearbySession } from "../types/session.types";
+import { leaveListenerSessionIfActive } from "../utils/leaveListenerSession";
 import {
   applyRemoteHeartbeat,
   applyRemotePause,
@@ -100,15 +100,11 @@ export function useSessionSync() {
   const role = useNearbySessionStore((s) => s.role);
 
   const leaveSession = useCallback(async () => {
-    if (useNearbySessionStore.getState().role !== "listener") return;
-
-    sessionSocketService.leaveAsListener();
-    resetPositionSyncSuspension();
+    if (!leaveListenerSessionIfActive()) return;
 
     usePlayerStore.getState().setActiveTrack(null);
     usePlayerStore.getState().resetPlayback();
     usePlayerStore.getState().setPlaybackLoading(false);
-    useNearbySessionStore.getState().resetSession();
 
     await stopPlaybackAndClear();
   }, [stopPlaybackAndClear]);

@@ -41,6 +41,7 @@ import {
   isHostMode,
   useNearbySessionStore,
 } from "src/features/NearbySession/store/nearbySessionStore";
+import { leaveListenerSessionIfActive } from "src/features/NearbySession/utils/leaveListenerSession";
 import {
   isPositionSyncSuspended,
   resetPositionSyncSuspension,
@@ -223,6 +224,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const loadAndPlayActiveTrack = useCallback(
     async (track: ActiveTrack) => {
+      leaveListenerSessionIfActive();
+
       const requestGen = ++playRequestGenerationRef.current;
       trackEndedHandledForId = null;
       historyRecordedForTrackIdRef.current = null;
@@ -484,7 +487,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [handleTrackEnded]);
 
   const togglePlayPause = useCallback(async () => {
-    if (isListenerMode()) return;
+    if (isListenerMode()) {
+      leaveListenerSessionIfActive();
+    }
 
     const activeTrack = usePlayerStore.getState().activeTrack;
     if (!activeTrack) return;
