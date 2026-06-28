@@ -34,6 +34,7 @@ import FavoritesSyncProvider from "src/features/favorites/providers/FavoritesSyn
 import HistorySyncProvider from "src/features/history/providers/HistorySyncProvider";
 import { NearbySessionProvider } from "src/features/NearbySession";
 import { NetworkProvider } from "src/contexts/NetworkContext";
+import { useEasUpdates } from "src/hooks/useEasUpdates";
 
 export { ErrorBoundary } from "expo-router";
 
@@ -75,6 +76,8 @@ export default function RootLayout() {
     MPlusRounded800,
     MPlusRounded900,
   });
+
+  useEasUpdates();
 
   useEffect(() => {
     // console.log("Fonts loaded?", fontsLoaded);

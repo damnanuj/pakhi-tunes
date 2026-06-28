@@ -5,6 +5,12 @@
     "owner": "damnanuj",
     "version": "1.0.0",
     "orientation": "portrait",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/180ebec4-d962-4318-8b8b-286826c15e36"
+    },
     "icon": "./assets/images/icon.png",
     "scheme": "pakhitunes",
     "userInterfaceStyle": "automatic",
@@ -38,6 +44,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "expo-updates",
       "expo-router",
       "expo-font",
       [
