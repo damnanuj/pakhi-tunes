@@ -1,6 +1,8 @@
 import { useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { showGuestLimitDialog } from "src/components/guestLimit/guestLimitDialogStore";
 import { appToast } from "src/components/toast/appToastHelpers";
+import { canGuestAddFavorite } from "src/features/auth/utils/guestLimits";
 import { useAuth } from "src/features/auth/hooks/useAuth";
 import {
   addFavorite,
@@ -46,6 +48,11 @@ export function useToggleFavorite() {
         if (isFavorited) {
           removeLocalFavorite(payload.songId);
           appToast.removedFromFavorites(payload.title);
+          return;
+        }
+
+        if (!canGuestAddFavorite(payload.songId)) {
+          showGuestLimitDialog("favorites");
           return;
         }
 

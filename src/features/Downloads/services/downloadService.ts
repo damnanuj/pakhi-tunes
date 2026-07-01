@@ -7,6 +7,7 @@ import {
 import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
 import { getSongCoverUrl } from "src/utils/functions/songImage";
 import type { ArtistSong } from "src/types/artistSongs.types";
+import { canGuestStartDownload } from "src/features/auth/utils/guestLimits";
 import { useDownloadStore } from "../store/downloadStore";
 import type { DownloadQuality } from "../types/download.types";
 import { ensureDownloadableSong } from "../utils/ensureDownloadableSong";
@@ -47,6 +48,10 @@ export async function downloadSong(
   const store = useDownloadStore.getState();
 
   if (store.isDownloaded(songId)) {
+    return;
+  }
+
+  if (!canGuestStartDownload(songId)) {
     return;
   }
 

@@ -29,6 +29,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "src/utils/query/queryClient";
 import { MiniPlayerRootLayer, PlayerProvider } from "src/features/Player";
 import AppToast from "src/components/toast/AppToast";
+import GuestLimitDialog from "src/components/guestLimit/GuestLimitDialog";
 import AuthProvider from "src/features/auth/providers/AuthProvider";
 import FavoritesSyncProvider from "src/features/favorites/providers/FavoritesSyncProvider";
 import HistorySyncProvider from "src/features/history/providers/HistorySyncProvider";
@@ -127,6 +128,7 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
                           {children}
                           <MiniPlayerRootLayer />
                           <AppToast />
+                          <GuestLimitDialog />
                         </NearbySessionProvider>
                       </HistorySyncProvider>
                     </FavoritesSyncProvider>

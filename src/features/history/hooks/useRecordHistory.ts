@@ -1,9 +1,11 @@
 import { useCallback } from "react";
+import { GUEST_HISTORY_LIMIT } from "src/features/auth/constants/guestLimits";
 import { useAuthStore } from "src/features/auth/store/authStore";
 import { queryClient } from "src/utils/query/queryClient";
 import { useLocalHistoryStore } from "../store/localHistoryStore";
 import { upsertHistory } from "../services/history.service";
 import type { HistorySongPayload } from "../types/history.types";
+import { LOCAL_HISTORY_MAX } from "../types/history.types";
 import {
   payloadToHistoryEntry,
   upsertHistoryInListCache,
@@ -11,10 +13,11 @@ import {
 import { HISTORY_QUERY_KEY } from "../queries/historyQuery";
 
 export function recordPlayToHistory(payload: HistorySongPayload) {
-  useLocalHistoryStore.getState().recordPlay(payload);
+  const { token } = useAuthStore.getState();
+  const maxEntries = token ? LOCAL_HISTORY_MAX : GUEST_HISTORY_LIMIT;
+  useLocalHistoryStore.getState().recordPlay(payload, maxEntries);
 
   const entry = payloadToHistoryEntry(payload);
-  const { token } = useAuthStore.getState();
 
   if (token) {
     upsertHistoryInListCache(queryClient, entry);

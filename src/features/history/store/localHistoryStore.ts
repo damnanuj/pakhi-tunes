@@ -21,12 +21,15 @@ function parsePlayedAtMs(value?: string | number): number {
   return Date.now();
 }
 
-function trimToMax(entries: Record<string, LocalHistoryEntry>): Record<string, LocalHistoryEntry> {
+function trimToMax(
+  entries: Record<string, LocalHistoryEntry>,
+  maxEntries: number
+): Record<string, LocalHistoryEntry> {
   const sorted = Object.values(entries).sort((a, b) => b.playedAtMs - a.playedAtMs);
-  if (sorted.length <= LOCAL_HISTORY_MAX) return entries;
+  if (sorted.length <= maxEntries) return entries;
 
   const keep = new Set(
-    sorted.slice(0, LOCAL_HISTORY_MAX).map((entry) => entry.songId)
+    sorted.slice(0, maxEntries).map((entry) => entry.songId)
   );
   const trimmed: Record<string, LocalHistoryEntry> = {};
   for (const songId of keep) {
@@ -37,7 +40,7 @@ function trimToMax(entries: Record<string, LocalHistoryEntry>): Record<string, L
 
 type LocalHistoryState = {
   entries: Record<string, LocalHistoryEntry>;
-  recordPlay: (payload: HistorySongPayload) => void;
+  recordPlay: (payload: HistorySongPayload, maxEntries?: number) => void;
   remove: (songId: string) => void;
   clearAll: () => void;
   getRecent: (limit?: number) => LocalHistoryEntry[];
@@ -48,7 +51,7 @@ export const useLocalHistoryStore = create<LocalHistoryState>()(
   persist(
     (set, get) => ({
       entries: {},
-      recordPlay: (payload) => {
+      recordPlay: (payload, maxEntries = LOCAL_HISTORY_MAX) => {
         const songId = payload.songId.trim();
         if (!songId) return;
 
@@ -61,7 +64,7 @@ export const useLocalHistoryStore = create<LocalHistoryState>()(
               playedAtMs: parsePlayedAtMs(payload.playedAt),
             },
           };
-          return { entries: trimToMax(next) };
+          return { entries: trimToMax(next, maxEntries) };
         });
       },
       remove: (songId) => {

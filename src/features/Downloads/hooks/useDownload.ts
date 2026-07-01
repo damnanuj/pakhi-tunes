@@ -1,5 +1,10 @@
 import { useCallback } from "react";
 import { Alert } from "react-native";
+import { showGuestLimitDialog } from "src/components/guestLimit/guestLimitDialogStore";
+import {
+  canGuestStartDownload,
+  isAuthenticatedUser,
+} from "src/features/auth/utils/guestLimits";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import { downloadSong, removeDownloadedSong } from "../services/downloadService";
 import { useDownloadStore } from "../store/downloadStore";
@@ -16,6 +21,11 @@ export function useDownload(songId: string) {
 
   const startDownload = useCallback(
     async (song: ArtistSong, quality: DownloadQuality) => {
+      if (!isAuthenticatedUser() && !canGuestStartDownload(song.id)) {
+        showGuestLimitDialog("downloads");
+        return;
+      }
+
       try {
         await downloadSong(song, quality);
       } catch (error) {

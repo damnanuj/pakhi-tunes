@@ -15,6 +15,7 @@ import {
   useScrollBottomInset,
   useScrollEndReached,
 } from "src/hooks";
+import { GUEST_HISTORY_LIMIT } from "src/features/auth/constants/guestLimits";
 import { useAuth } from "src/features/auth/hooks/useAuth";
 import { useNetwork } from "src/contexts/NetworkContext";
 import SongListItem from "src/features/ArtistSongs/components/SongListItem";
@@ -129,6 +130,13 @@ export default function LibraryRecentList() {
     return (
       <YStack px={scale(20)} pt={verticalScale(4)} pb={verticalScale(8)}>
         <MyText color={themeColors.dark.textMuted} fontSize={moderateScale(13)}>
+          Up to {GUEST_HISTORY_LIMIT} recent songs are saved on this device.
+        </MyText>
+        <MyText
+          color={themeColors.dark.textMuted}
+          fontSize={moderateScale(13)}
+          mt={verticalScale(6)}
+        >
           Sign in to back up your listening history across devices.
         </MyText>
         <TouchableOpacity
