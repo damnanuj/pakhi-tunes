@@ -38,4 +38,5 @@ export const endpoints = {
   users: {
     discoverable: "/users/me/discoverable",
   },
+  appConfig: "/app-config",
 } as const;

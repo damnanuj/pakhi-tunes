@@ -13,9 +13,8 @@ import themeColors from "src/utils/theme/colors";
 import ConnectionErrorState from "src/components/ConnectionErrorState";
 import ScreenHeader from "src/components/ScreenHeader";
 import { useNetwork } from "src/contexts/NetworkContext";
-import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
 import PillTabs, { type PillTabItem } from "src/components/PillTabs";
-import { useRefreshable, useScrollBottomInset } from "src/hooks";
+import { useConnectionErrorProps, useRefreshable, useScrollBottomInset } from "src/hooks";
 import LibraryCard from "src/features/Library/components/LibraryCard";
 import { getSongCoverUrl } from "src/utils/functions/songImage";
 import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
@@ -44,7 +43,7 @@ export default function NewAlbumsAllPage() {
   const [supportedLanguages, setSupportedLanguages] = useState<string[]>([]);
   const [tabSwitching, setTabSwitching] = useState(false);
 
-  const { data, isPending, isError, error, isFetching, refetch } = useQuery(
+  const { data, isPending, isError, isFetching, refetch } = useQuery(
     getNewReleasesAllAlbumsQueryOptions(language)
   );
 
@@ -70,6 +69,11 @@ export default function NewAlbumsAllPage() {
     onRefresh: async () => {
       await refetch();
     },
+  });
+  const connectionErrorProps = useConnectionErrorProps({
+    isOffline,
+    refetch,
+    isFetching,
   });
 
   const languageTabs: PillTabItem[] = useMemo(() => {
@@ -160,13 +164,7 @@ export default function NewAlbumsAllPage() {
     return (
       <YStack flex={1} bg={themeColors.dark.background}>
         <ScreenHeader showBack title="New Albums" />
-        <ConnectionErrorState
-          variant={
-            isNetworkRelatedError(error, isOffline) ? "offline" : "error"
-          }
-          onRetry={() => void refetch()}
-          isRetrying={isFetching}
-        />
+        <ConnectionErrorState {...connectionErrorProps} />
       </YStack>
     );
   }

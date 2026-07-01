@@ -8,13 +8,13 @@ import ListFooterSpinner from "src/components/ListFooterSpinner";
 import themeColors from "src/utils/theme/colors";
 import { scale, verticalScale, moderateScale } from "src/utils/functions/dimensions";
 import {
+  useConnectionErrorProps,
   useRefreshable,
   useScrollBottomInset,
   useScrollEndReached,
 } from "src/hooks";
 import { useAuth } from "src/features/auth/hooks/useAuth";
 import { useNetwork } from "src/contexts/NetworkContext";
-import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
 import SongListItem from "src/features/ArtistSongs/components/SongListItem";
 import { getSongListKey } from "src/features/ArtistSongs/utils/songListKeys";
 import { QueueProvider } from "src/features/Player/context/QueueContext";
@@ -40,7 +40,6 @@ export default function LibraryFavouritesList() {
     favorites,
     isLoading,
     isError,
-    error,
     isFetching,
     fetchNextPage,
     hasNextPage,
@@ -65,6 +64,11 @@ export default function LibraryFavouritesList() {
   const { onScroll, onEndReached } = useScrollEndReached(fetchNextPage, {
     enabled: isAuthenticated && hasNextPage,
     isLoadingMore,
+  });
+  const connectionErrorProps = useConnectionErrorProps({
+    isOffline,
+    refetch,
+    isFetching,
   });
 
   const renderItem: ListRenderItem<ArtistSong> = useCallback(
@@ -109,13 +113,9 @@ export default function LibraryFavouritesList() {
     return <FavouritesPageSkeleton />;
   }
 
-  if ((isError || (isOffline && favorites.length === 0)) && favorites.length === 0) {
+  if ((isError || isOffline) && favorites.length === 0) {
     return (
-      <ConnectionErrorState
-        variant={isNetworkRelatedError(error, isOffline) ? "offline" : "error"}
-        onRetry={() => void refetch()}
-        isRetrying={isFetching}
-      />
+      <ConnectionErrorState {...connectionErrorProps} />
     );
   }
 

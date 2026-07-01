@@ -10,11 +10,8 @@ import {
   verticalScale,
   moderateScale,
 } from "src/utils/functions/dimensions";
-import ConnectionErrorState from "src/components/ConnectionErrorState";
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
-import { useNetwork } from "src/contexts/NetworkContext";
-import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
 import { getSongCoverUrl } from "src/utils/functions/songImage";
 import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
 import { usePlayback } from "src/features/Player/context/PlayerContext";
@@ -210,8 +207,7 @@ function NewSongColumn({
 
 export default function NewSongsSection() {
   const router = useRouter();
-  const { isOffline } = useNetwork();
-  const { data, isLoading, isError, error, isFetching, refetch } = useQuery(
+  const { data, isPending, isLoading, isError } = useQuery(
     getNewReleasesHomeSongsQueryOptions()
   );
 
@@ -237,21 +233,12 @@ export default function NewSongsSection() {
     []
   );
 
-  if (isLoading) {
+  if ((isPending || isLoading) && !data) {
     return <NewSongsSectionSkeleton />;
   }
 
-  if (isError) {
-    return (
-      <ConnectionErrorState
-        compact
-        variant={
-          isNetworkRelatedError(error, isOffline) ? "offline" : "error"
-        }
-        onRetry={() => void refetch()}
-        isRetrying={isFetching}
-      />
-    );
+  if (isError && !data) {
+    return null;
   }
 
   if (displaySongs.length === 0) {

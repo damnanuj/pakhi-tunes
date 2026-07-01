@@ -10,11 +10,10 @@ import themeColors from "src/utils/theme/colors";
 import MyText from "src/components/MyText";
 import ConnectionErrorState from "src/components/ConnectionErrorState";
 import ListFooterSpinner from "src/components/ListFooterSpinner";
-import { useNetwork } from "src/contexts/NetworkContext";
-import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
 import SongListItem from "src/features/ArtistSongs/components/SongListItem";
 import SearchPageSkeleton from "../skeletons/SearchPageSkeleton";
 import {
+  useConnectionErrorProps,
   useRefreshable,
   useInfinitePaginatedQuery,
   useScrollBottomInset,
@@ -47,7 +46,6 @@ function ExploreSearchResults({
   query,
   debouncedQuery,
 }: ExploreSearchResultsProps) {
-  const { isOffline } = useNetwork();
   const scrollBottomPadding = useScrollBottomInset({
     includeTabBar: true,
     extra: verticalScale(20),
@@ -60,7 +58,6 @@ function ExploreSearchResults({
     isLoading,
     isFetching,
     isError,
-    error,
     fetchNextPage,
     hasNextPage,
     isLoadingMore,
@@ -85,6 +82,11 @@ function ExploreSearchResults({
         await refetch();
       }
     },
+  });
+  const connectionErrorProps = useConnectionErrorProps({
+    isOffline: false,
+    refetch,
+    isFetching,
   });
 
   const renderItem: ListRenderItem<ArtistSong> = useCallback(
@@ -118,12 +120,8 @@ function ExploreSearchResults({
   if (isError && songs.length === 0) {
     return (
       <ConnectionErrorState
-        variant={
-          isNetworkRelatedError(error, isOffline) ? "offline" : "error"
-        }
+        {...connectionErrorProps}
         subtitle="We couldn't load search results. Please try again."
-        onRetry={() => void refetch()}
-        isRetrying={isFetching}
       />
     );
   }

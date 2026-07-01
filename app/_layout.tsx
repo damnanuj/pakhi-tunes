@@ -34,7 +34,9 @@ import FavoritesSyncProvider from "src/features/favorites/providers/FavoritesSyn
 import HistorySyncProvider from "src/features/history/providers/HistorySyncProvider";
 import { NearbySessionProvider } from "src/features/NearbySession";
 import { NetworkProvider } from "src/contexts/NetworkContext";
+import { AppConfigProvider } from "src/features/AppConfig";
 import { useEasUpdates } from "src/hooks/useEasUpdates";
+import { useNetworkQuerySync } from "src/hooks/useNetworkQuerySync";
 
 export { ErrorBoundary } from "expo-router";
 
@@ -103,27 +105,36 @@ export default function RootLayout() {
     </Providers>
   );
 }
+function NetworkQuerySyncGate({ children }: { children: React.ReactNode }) {
+  useNetworkQuerySync();
+  return <>{children}</>;
+}
+
 const Providers = ({ children }: { children: React.ReactNode }) => {
   return (
     <KeyboardProvider>
       <ThemeProviderCustom>
         <QueryClientProvider client={queryClient}>
           <NetworkProvider>
-            <PlayerProvider>
-              <Provider>
-                <AuthProvider>
-                  <FavoritesSyncProvider>
-                    <HistorySyncProvider>
-                      <NearbySessionProvider>
-                        {children}
-                        <MiniPlayerRootLayer />
-                        <AppToast />
-                      </NearbySessionProvider>
-                    </HistorySyncProvider>
-                  </FavoritesSyncProvider>
-                </AuthProvider>
-              </Provider>
-            </PlayerProvider>
+            <NetworkQuerySyncGate>
+            <AppConfigProvider>
+              <PlayerProvider>
+                <Provider>
+                  <AuthProvider>
+                    <FavoritesSyncProvider>
+                      <HistorySyncProvider>
+                        <NearbySessionProvider>
+                          {children}
+                          <MiniPlayerRootLayer />
+                          <AppToast />
+                        </NearbySessionProvider>
+                      </HistorySyncProvider>
+                    </FavoritesSyncProvider>
+                  </AuthProvider>
+                </Provider>
+              </PlayerProvider>
+            </AppConfigProvider>
+          </NetworkQuerySyncGate>
           </NetworkProvider>
         </QueryClientProvider>
       </ThemeProviderCustom>

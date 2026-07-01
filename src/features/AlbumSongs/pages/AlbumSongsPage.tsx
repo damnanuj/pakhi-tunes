@@ -6,9 +6,9 @@ import themeColors from "src/utils/theme/colors";
 import ConnectionErrorState from "src/components/ConnectionErrorState";
 import ScreenHeader from "src/components/ScreenHeader";
 import { useNetwork } from "src/contexts/NetworkContext";
-import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
 import ListFooterSpinner from "src/components/ListFooterSpinner";
 import {
+  useConnectionErrorProps,
   useRefreshable,
   useInfinitePaginatedQuery,
   useScrollBottomInset,
@@ -36,7 +36,6 @@ export default function AlbumSongsPage() {
     firstPage,
     isLoading,
     isError,
-    error,
     isFetching,
     fetchNextPage,
     hasNextPage,
@@ -51,6 +50,11 @@ export default function AlbumSongsPage() {
     onRefresh: async () => {
       await refetch();
     },
+  });
+  const connectionErrorProps = useConnectionErrorProps({
+    isOffline,
+    refetch,
+    isFetching,
   });
 
   const album = firstPage?.data?.album;
@@ -96,12 +100,10 @@ export default function AlbumSongsPage() {
       <YStack flex={1} bg={themeColors.dark.background}>
         <ScreenHeader showBack title={headerTitle} />
         <ConnectionErrorState
-          variant={
-            isNetworkRelatedError(error, isOffline) ? "offline" : "error"
+          {...connectionErrorProps}
+          subtitle={
+            isOffline ? undefined : "We couldn't load this album. Please try again."
           }
-          subtitle="We couldn't load this album. Please try again."
-          onRetry={() => void refetch()}
-          isRetrying={isFetching}
         />
       </YStack>
     );

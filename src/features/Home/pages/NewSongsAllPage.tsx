@@ -13,8 +13,7 @@ import ConnectionErrorState from "src/components/ConnectionErrorState";
 import ScreenHeader from "src/components/ScreenHeader";
 import PillTabs, { type PillTabItem } from "src/components/PillTabs";
 import { useNetwork } from "src/contexts/NetworkContext";
-import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
-import { useRefreshable, useScrollBottomInset } from "src/hooks";
+import { useConnectionErrorProps, useRefreshable, useScrollBottomInset } from "src/hooks";
 import SongListItem from "src/features/ArtistSongs/components/SongListItem";
 import { getSongListKey } from "src/features/ArtistSongs/utils/songListKeys";
 import { QueueProvider } from "src/features/Player/context/QueueContext";
@@ -32,7 +31,7 @@ export default function NewSongsAllPage() {
   const [supportedLanguages, setSupportedLanguages] = useState<string[]>([]);
   const [tabSwitching, setTabSwitching] = useState(false);
 
-  const { data, isPending, isError, error, isFetching, refetch } = useQuery(
+  const { data, isPending, isError, isFetching, refetch } = useQuery(
     getNewReleasesAllSongsQueryOptions(language)
   );
 
@@ -58,6 +57,11 @@ export default function NewSongsAllPage() {
     onRefresh: async () => {
       await refetch();
     },
+  });
+  const connectionErrorProps = useConnectionErrorProps({
+    isOffline,
+    refetch,
+    isFetching,
   });
 
   const languageTabs: PillTabItem[] = useMemo(() => {
@@ -119,13 +123,7 @@ export default function NewSongsAllPage() {
     return (
       <YStack flex={1} bg={themeColors.dark.background}>
         <ScreenHeader showBack title="New Songs" />
-        <ConnectionErrorState
-          variant={
-            isNetworkRelatedError(error, isOffline) ? "offline" : "error"
-          }
-          onRetry={() => void refetch()}
-          isRetrying={isFetching}
-        />
+        <ConnectionErrorState {...connectionErrorProps} />
       </YStack>
     );
   }

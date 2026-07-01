@@ -9,7 +9,6 @@ import ConnectionErrorState from "src/components/ConnectionErrorState";
 import { verticalScale } from "src/utils/functions/dimensions";
 import { useDebouncedValue } from "src/hooks";
 import { useNetwork } from "src/contexts/NetworkContext";
-import NetInfo from "@react-native-community/netinfo";
 import { useRecentSearchStore } from "../store/recentSearchStore";
 
 const SEARCH_DEBOUNCE_MS = 350;
@@ -44,7 +43,6 @@ export default function ExplorePage() {
           <ConnectionErrorState
             variant="offline"
             subtitle="Search needs an internet connection. Downloaded songs are in your Library."
-            onRetry={() => void NetInfo.fetch()}
           />
         ) : isSearchActive ? (
           <ExploreSearchResults

@@ -16,9 +16,8 @@ import { QueueProvider } from "src/features/Player/context/QueueContext";
 import SearchPageSkeleton from "../skeletons/SearchPageSkeleton";
 import RecentSearchesSection from "./RecentSearchesSection";
 import ConnectionErrorState from "src/components/ConnectionErrorState";
-import { useRefreshable, useScrollBottomInset } from "src/hooks";
+import { useConnectionErrorProps, useRefreshable, useScrollBottomInset } from "src/hooks";
 import { useNetwork } from "src/contexts/NetworkContext";
-import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
 import { getNewReleases } from "src/services";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import { getNewReleaseSongs } from "src/types/newReleases.types";
@@ -48,7 +47,7 @@ function ExploreNewReleasesList({
     extra: verticalScale(20),
   });
 
-  const { data, isLoading, isError, error, isFetching, refetch } = useQuery({
+  const { data, isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: [
       "newReleases",
       NEW_RELEASES_QUEUE_FETCH_LIMIT,
@@ -78,6 +77,11 @@ function ExploreNewReleasesList({
     onRefresh: async () => {
       await refetch();
     },
+  });
+  const connectionErrorProps = useConnectionErrorProps({
+    isOffline,
+    refetch,
+    isFetching,
   });
 
   const renderItem: ListRenderItem<ArtistSong> = useCallback(
@@ -130,19 +134,9 @@ function ExploreNewReleasesList({
     return <SearchPageSkeleton />;
   }
 
-  const showConnectionError =
-    (isOffline && allSongs.length === 0) ||
-    (isError && allSongs.length === 0);
-
-  if (showConnectionError) {
+  if ((isOffline || isError) && allSongs.length === 0) {
     return (
-      <ConnectionErrorState
-        variant={
-          isNetworkRelatedError(error, isOffline) ? "offline" : "error"
-        }
-        onRetry={() => void refetch()}
-        isRetrying={isFetching}
-      />
+      <ConnectionErrorState {...connectionErrorProps} />
     );
   }
 

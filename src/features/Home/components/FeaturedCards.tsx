@@ -8,9 +8,6 @@ import {
 import { SCREEN_WIDTH } from "src/utils/functions/dimensions";
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
-import ConnectionErrorState from "src/components/ConnectionErrorState";
-import { useNetwork } from "src/contexts/NetworkContext";
-import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
 import { getGenres } from "src/services";
 import { getGenreCardImageUrl } from "src/utils/constants/genreCardImages";
 import FeaturedCardsSkeleton from "../skeletons/FeaturedCardsSkeleton";
@@ -20,30 +17,23 @@ const CARD_HEIGHT = moderateScale(180);
 
 export default function FeaturedCards() {
   const router = useRouter();
-  const { isOffline } = useNetwork();
-  const { data, isLoading, isError, error, isFetching, refetch } = useQuery({
+  const { data, isPending, isLoading, isError } = useQuery({
     queryKey: ["genres"],
     queryFn: getGenres,
-    enabled: !isOffline,
   });
 
   const genres = data?.data ?? [];
 
-  if (isLoading) {
+  if ((isPending || isLoading) && !data) {
     return <FeaturedCardsSkeleton />;
   }
 
-  if (isError) {
-    return (
-      <ConnectionErrorState
-        compact
-        variant={
-          isNetworkRelatedError(error, isOffline) ? "offline" : "error"
-        }
-        onRetry={() => void refetch()}
-        isRetrying={isFetching}
-      />
-    );
+  if (isError && !data) {
+    return null;
+  }
+
+  if (genres.length === 0) {
+    return null;
   }
 
   return (

@@ -9,8 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import ConnectionErrorState from "src/components/ConnectionErrorState";
 import { useNetwork } from "src/contexts/NetworkContext";
-import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
-import { useRefreshable, useScrollBottomInset } from "src/hooks";
+import { useConnectionErrorProps, useRefreshable, useScrollBottomInset } from "src/hooks";
 import { getTopArtists } from "src/services";
 import LibraryCard from "./LibraryCard";
 import LibraryGridSkeleton from "../skeletons/LibraryGridSkeleton";
@@ -52,9 +51,14 @@ export default function LibraryArtistsGrid() {
     queryKeys: ["topArtists", TOP_ARTISTS_LIMIT],
   });
 
-  const { data, isLoading, isError, error, isFetching, refetch } = useQuery({
+  const { data, isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: ["topArtists", TOP_ARTISTS_LIMIT],
     queryFn: () => getTopArtists({ limit: TOP_ARTISTS_LIMIT }),
+  });
+  const connectionErrorProps = useConnectionErrorProps({
+    isOffline,
+    refetch,
+    isFetching,
   });
 
   const artists = data?.data?.results ?? [];
@@ -99,13 +103,7 @@ export default function LibraryArtistsGrid() {
 
   if (isError) {
     return (
-      <ConnectionErrorState
-        variant={
-          isNetworkRelatedError(error, isOffline) ? "offline" : "error"
-        }
-        onRetry={() => void refetch()}
-        isRetrying={isFetching}
-      />
+      <ConnectionErrorState {...connectionErrorProps} />
     );
   }
 

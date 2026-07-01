@@ -8,10 +8,7 @@ import {
   moderateScale,
 } from "src/utils/functions/dimensions";
 import MyText from "src/components/MyText";
-import ConnectionErrorState from "src/components/ConnectionErrorState";
 import themeColors from "src/utils/theme/colors";
-import { useNetwork } from "src/contexts/NetworkContext";
-import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
 import { getTopArtists } from "src/services";
 import TopArtistsSectionSkeleton from "src/features/Home/skeletons/TopArtistsSectionSkeleton";
 
@@ -20,29 +17,23 @@ const TOP_ARTISTS_LIMIT = 10;
 
 export default function TopArtistsSection() {
   const router = useRouter();
-  const { isOffline } = useNetwork();
-  const { data, isLoading, isError, error, isFetching, refetch } = useQuery({
+  const { data, isPending, isLoading, isError } = useQuery({
     queryKey: ["topArtists", TOP_ARTISTS_LIMIT],
     queryFn: () => getTopArtists({ limit: TOP_ARTISTS_LIMIT }),
   });
 
   const artists = data?.data?.results ?? [];
 
-  if (isLoading) {
+  if ((isPending || isLoading) && !data) {
     return <TopArtistsSectionSkeleton />;
   }
 
-  if (isError) {
-    return (
-      <ConnectionErrorState
-        compact
-        variant={
-          isNetworkRelatedError(error, isOffline) ? "offline" : "error"
-        }
-        onRetry={() => void refetch()}
-        isRetrying={isFetching}
-      />
-    );
+  if (isError && !data) {
+    return null;
+  }
+
+  if (artists.length === 0) {
+    return null;
   }
 
   return (

@@ -9,9 +9,6 @@ import {
 } from "src/utils/functions/dimensions";
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
-import ConnectionErrorState from "src/components/ConnectionErrorState";
-import { useNetwork } from "src/contexts/NetworkContext";
-import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
 import { getSongCoverUrl } from "src/utils/functions/songImage";
 import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
 import { NEW_RELEASES_DISPLAY_LIMIT_HOME_ALBUMS } from "src/utils/constants/newReleases";
@@ -22,8 +19,7 @@ const ALBUM_SIZE = moderateScale(72);
 
 export default function NewAlbumsSection() {
   const router = useRouter();
-  const { isOffline } = useNetwork();
-  const { data, isLoading, isError, error, isFetching, refetch } = useQuery(
+  const { data, isPending, isLoading, isError } = useQuery(
     getNewReleasesHomeAlbumsQueryOptions()
   );
 
@@ -32,21 +28,12 @@ export default function NewAlbumsSection() {
     NEW_RELEASES_DISPLAY_LIMIT_HOME_ALBUMS
   );
 
-  if (isLoading) {
+  if ((isPending || isLoading) && !data) {
     return <NewAlbumsSectionSkeleton />;
   }
 
-  if (isError) {
-    return (
-      <ConnectionErrorState
-        compact
-        variant={
-          isNetworkRelatedError(error, isOffline) ? "offline" : "error"
-        }
-        onRetry={() => void refetch()}
-        isRetrying={isFetching}
-      />
-    );
+  if (isError && !data) {
+    return null;
   }
 
   if (albums.length === 0) {

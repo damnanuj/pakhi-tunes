@@ -10,13 +10,13 @@ import ListFooterSpinner from "src/components/ListFooterSpinner";
 import themeColors from "src/utils/theme/colors";
 import { scale, verticalScale, moderateScale } from "src/utils/functions/dimensions";
 import {
+  useConnectionErrorProps,
   useRefreshable,
   useScrollBottomInset,
   useScrollEndReached,
 } from "src/hooks";
 import { useAuth } from "src/features/auth/hooks/useAuth";
 import { useNetwork } from "src/contexts/NetworkContext";
-import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
 import SongListItem from "src/features/ArtistSongs/components/SongListItem";
 import { getSongListKey } from "src/features/ArtistSongs/utils/songListKeys";
 import { QueueProvider } from "src/features/Player/context/QueueContext";
@@ -49,7 +49,6 @@ export default function LibraryRecentList() {
     history,
     isLoading,
     isError,
-    error,
     isFetching,
     fetchNextPage,
     hasNextPage,
@@ -74,6 +73,11 @@ export default function LibraryRecentList() {
   const { onScroll, onEndReached } = useScrollEndReached(fetchNextPage, {
     enabled: isAuthenticated && hasNextPage,
     isLoadingMore,
+  });
+  const connectionErrorProps = useConnectionErrorProps({
+    isOffline,
+    refetch,
+    isFetching,
   });
 
   const handleRemoveFromHistory = useCallback(
@@ -183,13 +187,9 @@ export default function LibraryRecentList() {
     return <HistoryPageSkeleton />;
   }
 
-  if ((isError || (isOffline && history.length === 0)) && history.length === 0) {
+  if ((isError || isOffline) && history.length === 0) {
     return (
-      <ConnectionErrorState
-        variant={isNetworkRelatedError(error, isOffline) ? "offline" : "error"}
-        onRetry={() => void refetch()}
-        isRetrying={isFetching}
-      />
+      <ConnectionErrorState {...connectionErrorProps} />
     );
   }
 

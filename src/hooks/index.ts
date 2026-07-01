@@ -10,3 +10,4 @@ export {
   useScrollEndReached,
   type UseScrollEndReachedOptions,
 } from "./useScrollEndReached";
+export { useConnectionErrorProps } from "./useConnectionErrorProps";

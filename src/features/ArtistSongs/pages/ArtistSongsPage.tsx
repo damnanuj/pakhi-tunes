@@ -6,9 +6,9 @@ import themeColors from "src/utils/theme/colors";
 import ConnectionErrorState from "src/components/ConnectionErrorState";
 import ScreenHeader from "src/components/ScreenHeader";
 import { useNetwork } from "src/contexts/NetworkContext";
-import { isNetworkRelatedError } from "src/utils/network/isNetworkRelatedError";
 import ListFooterSpinner from "src/components/ListFooterSpinner";
 import {
+  useConnectionErrorProps,
   useRefreshable,
   useInfinitePaginatedQuery,
   useScrollBottomInset,
@@ -33,7 +33,6 @@ export default function ArtistSongsPage() {
     firstPage,
     isLoading,
     isError,
-    error,
     isFetching,
     fetchNextPage,
     hasNextPage,
@@ -48,6 +47,11 @@ export default function ArtistSongsPage() {
     onRefresh: async () => {
       await refetch();
     },
+  });
+  const connectionErrorProps = useConnectionErrorProps({
+    isOffline,
+    refetch,
+    isFetching,
   });
 
   const artist = firstPage?.data?.artist;
@@ -89,13 +93,7 @@ export default function ArtistSongsPage() {
     return (
       <YStack flex={1} bg={themeColors.dark.background}>
         <ScreenHeader showBack title={`${artistName} songs`} />
-        <ConnectionErrorState
-          variant={
-            isNetworkRelatedError(error, isOffline) ? "offline" : "error"
-          }
-          onRetry={() => void refetch()}
-          isRetrying={isFetching}
-        />
+        <ConnectionErrorState {...connectionErrorProps} />
       </YStack>
     );
   }

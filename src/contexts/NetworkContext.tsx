@@ -7,7 +7,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import NetInfo, { type NetInfoState } from "@react-native-community/netinfo";
+import NetInfo from "@react-native-community/netinfo";
+import { deriveOffline } from "src/utils/network/deriveOffline";
 
 type NetworkContextValue = {
   isConnected: boolean;
@@ -18,12 +19,6 @@ type NetworkContextValue = {
 };
 
 const NetworkContext = createContext<NetworkContextValue | null>(null);
-
-function deriveOffline(state: NetInfoState): boolean {
-  if (state.isConnected === false) return true;
-  if (state.isInternetReachable === false) return true;
-  return false;
-}
 
 export function NetworkProvider({ children }: { children: ReactNode }) {
   const [isConnected, setIsConnected] = useState(true);
