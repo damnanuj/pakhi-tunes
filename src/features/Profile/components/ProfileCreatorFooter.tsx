@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Linking, TouchableOpacity, View } from "react-native";
 import * as WebBrowser from "expo-web-browser";
-import { Github, Globe, Heart, Repeat2 } from "@tamagui/lucide-icons";
+import { Github, Globe, Headphones, Heart, Repeat2 } from "@tamagui/lucide-icons";
 import { XStack, YStack } from "tamagui";
 import MyText from "src/components/MyText";
 import {
@@ -13,6 +13,8 @@ import themeColors from "src/utils/theme/colors";
 import {
   CREATOR_GITHUB_URL,
   CREATOR_HANDLE,
+  CREATOR_HELP_LABEL,
+  CREATOR_HELP_URL,
   CREATOR_WEBSITE_URL,
 } from "../constants/profileCreatorLinks";
 
@@ -22,13 +24,16 @@ const LINK_BUTTON_SIZE = moderateScale(36);
 
 async function openLink(url: string) {
   try {
+    await Linking.openURL(url);
+    return;
+  } catch {
+    // Fall through to in-app browser.
+  }
+
+  try {
     await WebBrowser.openBrowserAsync(url);
   } catch {
-    try {
-      await Linking.openURL(url);
-    } catch {
-      // Ignore link open failures.
-    }
+    // Ignore link open failures.
   }
 }
 
@@ -181,6 +186,24 @@ export default function ProfileCreatorFooter() {
           accessibilityLabel={`${CREATOR_HANDLE} on GitHub`}
         />
       </View>
+
+      <TouchableOpacity
+        onPress={() => void openLink(CREATOR_HELP_URL)}
+        activeOpacity={0.7}
+        accessibilityRole="link"
+        accessibilityLabel={CREATOR_HELP_LABEL}
+      >
+        <XStack items="center" gap={scale(6)}>
+          <Headphones size={LINK_ICON_SIZE} color={themeColors.dark.textMuted} />
+          <MyText
+            fontSize={moderateScale(13)}
+            weight="500"
+            color={themeColors.dark.textMuted}
+          >
+            {CREATOR_HELP_LABEL}
+          </MyText>
+        </XStack>
+      </TouchableOpacity>
     </YStack>
   );
 }
