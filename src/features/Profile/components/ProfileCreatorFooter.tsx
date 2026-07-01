@@ -6,6 +6,7 @@ import {
   Github,
   Globe,
   Heart,
+  Instagram,
   LifeBuoy,
   Repeat2,
   Star,
@@ -25,6 +26,7 @@ import {
   CREATOR_CONTACT_URL,
   CREATOR_GITHUB_URL,
   CREATOR_HANDLE,
+  CREATOR_INSTAGRAM_URL,
   CREATOR_REVIEW_SUBTITLE,
   CREATOR_REVIEW_TITLE,
   CREATOR_REVIEW_URL,
@@ -241,6 +243,11 @@ export default function ProfileCreatorFooter() {
           icon={<Github size={SOCIAL_ICON_SIZE} color={themeColors.dark.onSurface} />}
           onPress={() => void openLink(CREATOR_GITHUB_URL)}
           accessibilityLabel={`${CREATOR_HANDLE} on GitHub`}
+        />
+        <CompactLinkButton
+          icon={<Instagram size={SOCIAL_ICON_SIZE} color={themeColors.dark.onSurface} />}
+          onPress={() => void openLink(CREATOR_INSTAGRAM_URL)}
+          accessibilityLabel={`${CREATOR_HANDLE} on Instagram`}
         />
       </View>
 
