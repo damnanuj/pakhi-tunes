@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { LayoutAnimation, Platform, UIManager, View } from "react-native";
+import { Platform } from "react-native";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { Wifi, WifiOff } from "@tamagui/lucide-icons";
 import { XStack } from "tamagui";
 import MyText from "src/components/MyText";
@@ -9,13 +9,6 @@ import {
   scale,
   verticalScale,
 } from "src/utils/functions/dimensions";
-
-if (
-  Platform.OS === "android" &&
-  UIManager.setLayoutAnimationEnabledExperimental
-) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 export default function NetworkBanner() {
   const { bannerPhase } = useNetwork();
@@ -27,16 +20,14 @@ export default function NetworkBanner() {
     ? "You are offline — trying to reconnect…"
     : "Back online!";
 
-  useEffect(() => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-  }, [bannerPhase]);
-
   if (!isVisible) {
     return null;
   }
 
   return (
-    <View
+    <Animated.View
+      entering={FadeIn.duration(300)}
+      exiting={FadeOut.duration(300)}
       pointerEvents="none"
       style={{
         paddingVertical: verticalScale(10),
@@ -67,6 +58,6 @@ export default function NetworkBanner() {
           {message}
         </MyText>
       </XStack>
-    </View>
+    </Animated.View>
   );
 }

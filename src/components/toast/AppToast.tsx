@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { LayoutAnimation, Platform, UIManager, View } from "react-native";
+import { Platform, View } from "react-native";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { Check, Download, Heart, HeartOff, Trash2 } from "@tamagui/lucide-icons";
 import { XStack, YStack } from "tamagui";
 import MyText from "src/components/MyText";
@@ -54,13 +55,6 @@ const TOAST_STYLES: Record<
     iconColor: "#fecdd3",
   },
 };
-
-if (
-  Platform.OS === "android" &&
-  UIManager.setLayoutAnimationEnabledExperimental
-) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 function ToastIcon({ icon, color }: { icon: AppToastIcon; color: string }) {
   const size = moderateScale(18);
@@ -146,11 +140,6 @@ export default function AppToast() {
     toast?.variant === "error";
 
   useEffect(() => {
-    if (!toast) return;
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-  }, [toast?.id, toast?.variant, toast?.message, toast?.progress]);
-
-  useEffect(() => {
     if (!toast || !isAutoDismiss || toast.durationMs <= 0) return;
 
     const timer = setTimeout(() => {
@@ -167,7 +156,9 @@ export default function AppToast() {
   const styles = TOAST_STYLES[toast.variant];
 
   return (
-    <View
+    <Animated.View
+      entering={FadeIn.duration(200)}
+      exiting={FadeOut.duration(200)}
       pointerEvents="none"
       style={{
         position: "absolute",
@@ -197,6 +188,6 @@ export default function AppToast() {
       >
         <ToastContent toast={toast} />
       </View>
-    </View>
+    </Animated.View>
   );
 }

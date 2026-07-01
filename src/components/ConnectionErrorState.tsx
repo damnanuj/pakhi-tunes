@@ -130,10 +130,13 @@ export default function ConnectionErrorState({
   return (
     <YStack
       flex={compact ? undefined : 1}
+      mb={verticalScale(85)}
       items="center"
       justify="center"
       px={scale(compact ? 20 : 32)}
-      py={verticalScale(compact ? 16 : 24)}
+      // borderWidth={1}
+      // borderColor="red"
+      // py={verticalScale(compact ? 16 : 24)}
       gap={verticalScale(compact ? 10 : 16)}
     >
       {variant === "offline" ? (

@@ -1,17 +1,8 @@
-import { useEffect } from "react";
-import { Pressable, View } from "react-native";
+import { useEffect, useRef } from "react";
+import { Animated, Easing, Pressable, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Radio } from "@tamagui/lucide-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from "react-native-reanimated";
 import { XStack, YStack } from "tamagui";
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
@@ -29,52 +20,63 @@ function PulseRing({
   accent: string;
   delay: number;
 }) {
-  const scaleValue = useSharedValue(0.85);
-  const opacity = useSharedValue(0.55);
+  const scaleValue = useRef(new Animated.Value(0.85)).current;
+  const opacity = useRef(new Animated.Value(0.55)).current;
 
   useEffect(() => {
-    scaleValue.value = withDelay(
-      delay,
-      withRepeat(
-        withSequence(
-          withTiming(0.85, { duration: 0 }),
-          withTiming(1.35, { duration: 2000, easing: Easing.out(Easing.cubic) })
-        ),
-        -1,
-        false
-      )
+    const pulse = Animated.loop(
+      Animated.parallel([
+        Animated.sequence([
+          Animated.timing(scaleValue, {
+            toValue: 0.85,
+            duration: 0,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scaleValue, {
+            toValue: 1.35,
+            duration: 2000,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.sequence([
+          Animated.timing(opacity, {
+            toValue: 0.55,
+            duration: 0,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacity, {
+            toValue: 0,
+            duration: 2000,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+        ]),
+      ])
     );
-    opacity.value = withDelay(
-      delay,
-      withRepeat(
-        withSequence(
-          withTiming(0.55, { duration: 0 }),
-          withTiming(0, { duration: 2000, easing: Easing.out(Easing.cubic) })
-        ),
-        -1,
-        false
-      )
-    );
-  }, [delay, opacity, scaleValue]);
 
-  const style = useAnimatedStyle(() => ({
-    transform: [{ scale: scaleValue.value }],
-    opacity: opacity.value,
-  }));
+    const timer = setTimeout(() => {
+      pulse.start();
+    }, delay);
+
+    return () => {
+      clearTimeout(timer);
+      pulse.stop();
+    };
+  }, [delay, opacity, scaleValue]);
 
   return (
     <Animated.View
-      style={[
-        {
-          position: "absolute",
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          borderWidth: 1.5,
-          borderColor: accent,
-        },
-        style,
-      ]}
+      style={{
+        position: "absolute",
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        borderWidth: 1.5,
+        borderColor: accent,
+        opacity,
+        transform: [{ scale: scaleValue }],
+      }}
     />
   );
 }

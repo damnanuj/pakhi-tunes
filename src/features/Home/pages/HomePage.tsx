@@ -1,4 +1,4 @@
-import { ScrollView, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { YStack } from "tamagui";
 import { verticalScale } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
@@ -24,13 +24,34 @@ import {
 
 const SECTION_GAP = verticalScale(20);
 
+function HomeSections({ isAuthenticated }: { isAuthenticated: boolean }) {
+  return (
+    <>
+      {isAuthenticated ? (
+        <View style={{ marginBottom: SECTION_GAP }}>
+          <NearbyListeningCard />
+        </View>
+      ) : null}
+      <View style={{ marginBottom: SECTION_GAP }}>
+        <FeaturedCards />
+      </View>
+      <View style={{ marginBottom: SECTION_GAP }}>
+        <NewSongsSection />
+      </View>
+      <View style={{ marginBottom: SECTION_GAP }}>
+        <NewAlbumsSection />
+      </View>
+      <TopArtistsSection />
+    </>
+  );
+}
+
 export default function HomePage() {
   const { isAuthenticated } = useAuth();
   const { isOffline, bannerPhase } = useNetwork();
   const {
     hasDisplayableContent,
     isAnyFetching,
-    isAnyPending,
     allFailedWithoutData,
     refetchAll,
   } = useHomePageQueries();
@@ -47,8 +68,7 @@ export default function HomePage() {
     extra: verticalScale(20),
   });
 
-  const isRecoveringFromOffline =
-    bannerPhase === "reconnected" || isAnyFetching || isAnyPending;
+  const isRecoveringFromOffline = bannerPhase === "reconnected";
 
   const showFallback =
     !hasDisplayableContent &&
@@ -60,33 +80,36 @@ export default function HomePage() {
       <View style={{ marginBottom: SECTION_GAP }}>
         <HomeGreeting />
       </View>
-      {showFallback ? (
-        <ConnectionErrorState {...connectionErrorProps} />
-      ) : (
+      <View style={styles.body}>
         <ScrollView
           showsVerticalScrollIndicator={false}
+          scrollEnabled={!showFallback}
           contentContainerStyle={{
+            flexGrow: 1,
             paddingBottom: scrollBottomPadding,
           }}
-          refreshControl={refreshControl}
+          refreshControl={showFallback ? undefined : refreshControl}
         >
-          {isAuthenticated ? (
-            <View style={{ marginBottom: SECTION_GAP }}>
-              <NearbyListeningCard />
-            </View>
-          ) : null}
-          <View style={{ marginBottom: SECTION_GAP }}>
-            <FeaturedCards />
-          </View>
-          <View style={{ marginBottom: SECTION_GAP }}>
-            <NewSongsSection />
-          </View>
-          <View style={{ marginBottom: SECTION_GAP }}>
-            <NewAlbumsSection />
-          </View>
-          <TopArtistsSection />
+          {showFallback ? null : (
+            <HomeSections isAuthenticated={isAuthenticated} />
+          )}
         </ScrollView>
-      )}
+        {showFallback ? (
+          <View style={styles.errorOverlay}>
+            <ConnectionErrorState {...connectionErrorProps} />
+          </View>
+        ) : null}
+      </View>
     </YStack>
   );
 }
+
+const styles = StyleSheet.create({
+  body: {
+    flex: 1,
+  },
+  errorOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: themeColors.dark.background,
+  },
+});
