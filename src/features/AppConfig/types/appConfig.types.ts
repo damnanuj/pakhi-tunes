@@ -1,3 +1,8 @@
+export interface ReleaseSection {
+  title: string;
+  items: string[];
+}
+
 export interface AppConfigData {
   updateAvailable: boolean;
   forceUpdate: boolean;
@@ -5,6 +10,7 @@ export interface AppConfigData {
   downloadUrl: string;
   title: string;
   message: string;
+  releaseSections: ReleaseSection[];
 }
 
 export interface AppConfigResponse {

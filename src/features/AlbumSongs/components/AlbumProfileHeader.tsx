@@ -10,6 +10,10 @@ import themeColors from "src/utils/theme/colors";
 import { getSongCoverUrl } from "src/utils/functions/songImage";
 import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
 import type { AlbumDetail } from "src/types/albumSongs.types";
+import {
+  getAlbumArtistLine,
+  getAlbumMetadataLine,
+} from "../utils/albumDisplayMeta";
 
 const COVER_SIZE = moderateScale(120);
 
@@ -20,8 +24,8 @@ interface AlbumProfileHeaderProps {
 export default function AlbumProfileHeader({ album }: AlbumProfileHeaderProps) {
   const imageUrl = getSongCoverUrl(album.image);
   const title = decodeHtmlEntities(album.name);
-  const subtitle = decodeHtmlEntities(album.subtitle).trim();
-  const description = decodeHtmlEntities(album.description).trim();
+  const artistLine = getAlbumArtistLine(album);
+  const metadataLine = getAlbumMetadataLine(album);
 
   return (
     <YStack
@@ -49,7 +53,7 @@ export default function AlbumProfileHeader({ album }: AlbumProfileHeaderProps) {
       >
         {title}
       </MyText>
-      {subtitle ? (
+      {artistLine ? (
         <MyText
           fontSize={moderateScale(14)}
           weight="600"
@@ -57,10 +61,10 @@ export default function AlbumProfileHeader({ album }: AlbumProfileHeaderProps) {
           textAlign="center"
           mt={verticalScale(4)}
         >
-          {subtitle}
+          {artistLine}
         </MyText>
       ) : null}
-      {description ? (
+      {metadataLine ? (
         <MyText
           fontSize={moderateScale(13)}
           color={themeColors.dark.textMuted}
@@ -68,7 +72,7 @@ export default function AlbumProfileHeader({ album }: AlbumProfileHeaderProps) {
           mt={verticalScale(8)}
           lineHeight={moderateScale(18)}
         >
-          {description}
+          {metadataLine}
         </MyText>
       ) : null}
       <MyText

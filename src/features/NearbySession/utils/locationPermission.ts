@@ -2,8 +2,17 @@ import * as Location from "expo-location";
 import { Linking, Platform } from "react-native";
 import { useNearbySessionStore } from "../store/nearbySessionStore";
 
+export const LOCATION_PERMISSION_TITLE = "Need location access";
+export const LOCATION_PERMISSION_SUBTITLE = "Find music nearby";
 export const LOCATION_PERMISSION_MESSAGE =
   "Pakhi Tunes uses your location to discover people listening to music nearby. Your location is only used while the app is open and is never stored permanently.";
+
+export const LOCATION_SETTINGS_MESSAGE =
+  "Enable location in Settings to discover and share nearby listening sessions.";
+
+export const DIALOG_ALLOW = "Allow";
+export const DIALOG_CANCEL = "Cancel";
+export const DIALOG_SETTINGS = "Settings";
 
 let cachedCoords: { latitude: number; longitude: number; at: number } | null =
   null;

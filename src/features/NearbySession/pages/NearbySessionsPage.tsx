@@ -16,7 +16,13 @@ import { useNearbySessionActions } from "../providers/NearbySessionProvider";
 import { useNearbySessionStore } from "../store/nearbySessionStore";
 import type { NearbySession } from "../types/session.types";
 import {
+  DIALOG_ALLOW,
+  DIALOG_CANCEL,
+  DIALOG_SETTINGS,
   LOCATION_PERMISSION_MESSAGE,
+  LOCATION_PERMISSION_SUBTITLE,
+  LOCATION_PERMISSION_TITLE,
+  LOCATION_SETTINGS_MESSAGE,
   openAppSettings,
   requestLocationPermission,
 } from "../utils/locationPermission";
@@ -187,20 +193,22 @@ export default function NearbySessionsPage() {
       <ConfirmDialog
         open={showPermissionInfo}
         onOpenChange={setShowPermissionInfo}
-        title="Find music nearby"
+        title={LOCATION_PERMISSION_TITLE}
+        subtitle={LOCATION_PERMISSION_SUBTITLE}
         message={LOCATION_PERMISSION_MESSAGE}
-        confirmLabel="Allow location"
-        cancelLabel="Not now"
+        confirmLabel={DIALOG_ALLOW}
+        cancelLabel={DIALOG_CANCEL}
         onConfirm={() => void handlePermissionConfirm()}
       />
 
       <ConfirmDialog
         open={showSettingsPrompt}
         onOpenChange={setShowSettingsPrompt}
-        title="Location permission needed"
-        message="Enable location in Settings to scan for nearby listening sessions."
-        confirmLabel="Open Settings"
-        cancelLabel="Cancel"
+        title={LOCATION_PERMISSION_TITLE}
+        subtitle={LOCATION_PERMISSION_SUBTITLE}
+        message={LOCATION_SETTINGS_MESSAGE}
+        confirmLabel={DIALOG_SETTINGS}
+        cancelLabel={DIALOG_CANCEL}
         onConfirm={() => void openAppSettings()}
       />
     </YStack>

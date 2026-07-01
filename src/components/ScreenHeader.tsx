@@ -64,32 +64,37 @@ export default function ScreenHeader({
   const renderLeft = () => {
     if (leftContent != null) return leftContent;
     const backButton = showBack ? (
-      <CircularButton onPress={handleBack}>
-        {backIcon === "down" ? (
-          <ChevronDown
-            size={moderateScale(20)}
-            color={themeColors.dark.onSurface}
-          />
-        ) : (
-          <ArrowLeft
-            size={moderateScale(20)}
-            color={themeColors.dark.onSurface}
-          />
-        )}
-      </CircularButton>
+      <XStack shrink={0}>
+        <CircularButton onPress={handleBack}>
+          {backIcon === "down" ? (
+            <ChevronDown
+              size={moderateScale(20)}
+              color={themeColors.dark.onSurface}
+            />
+          ) : (
+            <ArrowLeft
+              size={moderateScale(20)}
+              color={themeColors.dark.onSurface}
+            />
+          )}
+        </CircularButton>
+      </XStack>
     ) : null;
     const titleText = title ? (
       <MyText
+        flex={1}
         fontSize={moderateScale(18)}
         weight="700"
         color={themeColors.dark.onSurface}
+        numberOfLines={1}
+        ellipsizeMode="tail"
       >
         {title}
       </MyText>
     ) : null;
     if (backButton || titleText) {
       return (
-        <XStack items="center" gap={scale(15)}>
+        <XStack flex={1} items="center" gap={scale(15)} minW={0}>
           {backButton}
           {titleText}
         </XStack>
@@ -113,19 +118,24 @@ export default function ScreenHeader({
     return null;
   };
 
+  const rightSlot = renderRight();
+
   return (
     <XStack
       px={scale(20)}
       py={verticalScale(20)}
       justify="space-between"
       items="center"
+      gap={scale(12)}
     >
-      <XStack flex={1} items="center" justify="flex-start">
+      <XStack flex={1} items="center" justify="flex-start" minW={0}>
         {renderLeft()}
       </XStack>
-      <XStack flex={1} items="center" justify="flex-end">
-        {renderRight()}
-      </XStack>
+      {rightSlot ? (
+        <XStack shrink={0} items="center" justify="flex-end">
+          {rightSlot}
+        </XStack>
+      ) : null}
     </XStack>
   );
 }

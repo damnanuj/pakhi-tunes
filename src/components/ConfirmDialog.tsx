@@ -19,6 +19,7 @@ interface ConfirmDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
+  subtitle?: string;
   message: string;
   confirmLabel?: string;
   cancelLabel?: string;
@@ -29,6 +30,7 @@ export default function ConfirmDialog({
   open,
   onOpenChange,
   title,
+  subtitle,
   message,
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
@@ -68,6 +70,15 @@ export default function ConfirmDialog({
                 {title}
               </MyText>
             </AlertDialog.Title>
+            {subtitle ? (
+              <MyText
+                fontSize={moderateScale(15)}
+                weight="600"
+                color={themeColors.dark.onSurface}
+              >
+                {subtitle}
+              </MyText>
+            ) : null}
             <AlertDialog.Description>
               <MyText
                 fontSize={moderateScale(14)}
@@ -86,14 +97,14 @@ export default function ConfirmDialog({
                 bg={themeColors.dark.surfaceSecondary}
                 size="$4"
               >
-                <MyText color={themeColors.dark.onSurface}>
+                <MyText color={themeColors.dark.onSurface} numberOfLines={1}>
                   {cancelLabel}
                 </MyText>
               </Button>
             </AlertDialog.Cancel>
             <AlertDialog.Action asChild onPress={onConfirm}>
               <Button flex={1} bg={themeColors.dark.accent} size="$4">
-                <MyText color={themeColors.dark.onAccent}>
+                <MyText color={themeColors.dark.onAccent} numberOfLines={1}>
                   {confirmLabel}
                 </MyText>
               </Button>

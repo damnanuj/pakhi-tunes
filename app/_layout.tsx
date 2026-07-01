@@ -118,25 +118,25 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
         <QueryClientProvider client={queryClient}>
           <NetworkProvider>
             <NetworkQuerySyncGate>
-            <AppConfigProvider>
               <PlayerProvider>
                 <Provider>
-                  <AuthProvider>
-                    <FavoritesSyncProvider>
-                      <HistorySyncProvider>
-                        <NearbySessionProvider>
-                          {children}
-                          <MiniPlayerRootLayer />
-                          <AppToast />
-                          <GuestLimitDialog />
-                        </NearbySessionProvider>
-                      </HistorySyncProvider>
-                    </FavoritesSyncProvider>
-                  </AuthProvider>
+                  <AppConfigProvider>
+                    <AuthProvider>
+                      <FavoritesSyncProvider>
+                        <HistorySyncProvider>
+                          <NearbySessionProvider>
+                            {children}
+                            <MiniPlayerRootLayer />
+                            <AppToast />
+                            <GuestLimitDialog />
+                          </NearbySessionProvider>
+                        </HistorySyncProvider>
+                      </FavoritesSyncProvider>
+                    </AuthProvider>
+                  </AppConfigProvider>
                 </Provider>
               </PlayerProvider>
-            </AppConfigProvider>
-          </NetworkQuerySyncGate>
+            </NetworkQuerySyncGate>
           </NetworkProvider>
         </QueryClientProvider>
       </ThemeProviderCustom>

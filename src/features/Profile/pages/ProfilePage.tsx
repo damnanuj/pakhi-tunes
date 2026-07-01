@@ -17,6 +17,7 @@ import GuestProfileSection from "../components/GuestProfileSection";
 import AuthenticatedProfileSection from "../components/AuthenticatedProfileSection";
 import ProfileLibraryShortcuts from "../components/ProfileLibraryShortcuts";
 import ProfileMenu from "../components/ProfileMenu";
+import ProfileCreatorFooter from "../components/ProfileCreatorFooter";
 import { FAVORITES_QUERY_KEY } from "src/features/favorites/hooks/useFavorites";
 import { HISTORY_QUERY_KEY } from "src/features/history/hooks/useHistoryList";
 
@@ -73,6 +74,8 @@ export default function ProfilePage() {
           isAuthenticated={isAuthenticated}
           onLogoutPress={handleLogoutPress}
         />
+
+        <ProfileCreatorFooter />
       </ScrollView>
 
       <ConfirmDialog

@@ -9,7 +9,13 @@ import ProfileMenuItem from "src/features/Profile/components/ProfileMenuItem";
 import ConfirmDialog from "src/components/ConfirmDialog";
 import { updateDiscoverable } from "../services/session.service";
 import {
+  DIALOG_ALLOW,
+  DIALOG_CANCEL,
+  DIALOG_SETTINGS,
   LOCATION_PERMISSION_MESSAGE,
+  LOCATION_PERMISSION_SUBTITLE,
+  LOCATION_PERMISSION_TITLE,
+  LOCATION_SETTINGS_MESSAGE,
   openAppSettings,
   requestLocationPermission,
 } from "../utils/locationPermission";
@@ -104,20 +110,22 @@ export default function DiscoverabilityToggle() {
       <ConfirmDialog
         open={showPermissionInfo}
         onOpenChange={setShowPermissionInfo}
-        title="Allow location access?"
+        title={LOCATION_PERMISSION_TITLE}
+        subtitle={LOCATION_PERMISSION_SUBTITLE}
         message={LOCATION_PERMISSION_MESSAGE}
-        confirmLabel="Continue"
-        cancelLabel="Not now"
+        confirmLabel={DIALOG_ALLOW}
+        cancelLabel={DIALOG_CANCEL}
         onConfirm={() => void handlePermissionConfirm()}
       />
 
       <ConfirmDialog
         open={showSettingsPrompt}
         onOpenChange={setShowSettingsPrompt}
-        title="Location permission needed"
-        message="Enable location in Settings to discover and share nearby listening sessions."
-        confirmLabel="Open Settings"
-        cancelLabel="Cancel"
+        title={LOCATION_PERMISSION_TITLE}
+        subtitle={LOCATION_PERMISSION_SUBTITLE}
+        message={LOCATION_SETTINGS_MESSAGE}
+        confirmLabel={DIALOG_SETTINGS}
+        cancelLabel={DIALOG_CANCEL}
         onConfirm={() => void openAppSettings()}
       />
     </>
