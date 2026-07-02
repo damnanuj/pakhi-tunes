@@ -44,7 +44,7 @@ const AuthPage = () => {
       >
         <YStack
           px={scale(25)}
-          py={verticalScale(20)}
+          // py={verticalScale(20)}/
           items="center"
         >
           <AuthBranding />

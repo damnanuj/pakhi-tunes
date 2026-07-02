@@ -5,14 +5,10 @@ import {
   YStack,
   XStack,
   Stack,
-  Checkbox,
-  CheckboxProps,
   useTheme,
   Form,
 } from "tamagui";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Check as CheckIcon } from "@tamagui/lucide-icons";
-import { Label } from "tamagui";
 import MyText from "src/components/MyText";
 import { appToast } from "src/components/toast/appToastHelpers";
 import { scale, verticalScale, moderateScale } from "src/utils/functions/dimensions";
@@ -140,6 +136,7 @@ export default function SignInForm({
           width="100%"
           gap={verticalScale(10)}
           borderColor={"white"}
+          mb={verticalScale(20)}
         >
           <MyText color={"$textPrimary"} fontSize={moderateScale(16)}>
             Password
@@ -153,12 +150,12 @@ export default function SignInForm({
           />
           {errors.password && <MyText color={"red"}>{errors.password}</MyText>}
         </YStack>
-        <XStack width="100%" items={"center"} justify={"space-between"}>
+        {/* <XStack width="100%" items={"center"} justify={"space-between"}>
           <CheckboxWithLabel size="$3" />
           <MyText color="#3BB154" fontSize="$2" fontWeight="500">
             Forgot password?
           </MyText>
-        </XStack>
+        </XStack> */}
         <Form.Trigger asChild>
           <Button
             width="100%"
@@ -206,7 +203,7 @@ export default function SignInForm({
   );
 }
 
-function CheckboxWithLabel({
+/* function CheckboxWithLabel({
   size,
   label = "Remember Me",
   ...checkboxProps
@@ -232,4 +229,4 @@ function CheckboxWithLabel({
       </Label>
     </XStack>
   );
-}
+} */
