@@ -7,7 +7,6 @@ import {
 } from "tamagui";
 import {
   BackHandler,
-  Linking,
   Platform,
   ScrollView,
   useWindowDimensions,
@@ -31,6 +30,7 @@ import {
   hasNonEmptyText,
   normalizeReleaseSections,
 } from "../utils/normalizeReleaseSections";
+import { openExternalUrl } from "src/utils/linking/openExternalUrl";
 
 interface UpdateDialogProps {
   open: boolean;
@@ -220,15 +220,7 @@ export default function UpdateDialog({
 
   const handleDownload = async () => {
     if (!hasDownloadUrl) return;
-
-    try {
-      const canOpen = await Linking.canOpenURL(downloadUrl);
-      if (canOpen) {
-        await Linking.openURL(downloadUrl);
-      }
-    } catch {
-      // Ignore link open failures.
-    }
+    await openExternalUrl(downloadUrl);
   };
 
   const handleCloseApp = () => {
