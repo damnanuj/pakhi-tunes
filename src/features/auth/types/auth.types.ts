@@ -4,6 +4,8 @@ export interface AuthUser {
   email: string;
   avatar?: string | null;
   discoverable?: boolean;
+  role?: "user" | "admin";
+  isAdmin?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
