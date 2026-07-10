@@ -109,4 +109,12 @@ export const appToast = {
       icon: "check",
     });
   },
+
+  signInRequired(message = "You need to sign in to use this feature") {
+    useAppToastStore.getState().show({
+      variant: "success",
+      message,
+      icon: "check",
+    });
+  },
 };

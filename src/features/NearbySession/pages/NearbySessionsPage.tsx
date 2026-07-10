@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView } from "react-native";
 import { YStack } from "tamagui";
+import { useRouter } from "expo-router";
 import ScreenHeader from "src/components/ScreenHeader";
 import MyText from "src/components/MyText";
 import ConfirmDialog from "src/components/ConfirmDialog";
@@ -8,8 +9,8 @@ import themeColors from "src/utils/theme/colors";
 import { scale, verticalScale } from "src/utils/functions/dimensions";
 import { useScrollBottomInset, useRefreshable } from "src/hooks";
 import { useAuth } from "src/features/auth/hooks/useAuth";
-import { useRequireAuth } from "src/features/auth/hooks/useRequireAuth";
 import RadarScanView from "../components/RadarScanView";
+import NearbyListeningControl from "../components/NearbyListeningControl";
 import NearbySessionCard from "../components/NearbySessionCard";
 import { isSessionFresh, useNearbyDiscovery } from "../hooks/useNearbyDiscovery";
 import { useNearbySessionActions } from "../providers/NearbySessionProvider";
@@ -26,10 +27,15 @@ import {
   openAppSettings,
   requestLocationPermission,
 } from "../utils/locationPermission";
+import {
+  NEARBY_HOME_REDIRECT,
+  redirectToSignInForNearby,
+} from "../utils/nearbyAuthGate";
 
 export default function NearbySessionsPage() {
-  useRequireAuth();
-  const { isAuthenticated } = useAuth();
+  const router = useRouter();
+  const { user, isAuthenticated, isHydrated } = useAuth();
+  const discoverable = Boolean(user?.discoverable);
   const nearbySessions = useNearbySessionStore((s) => s.nearbySessions);
   const isScanning = useNearbySessionStore((s) => s.isScanning);
   const role = useNearbySessionStore((s) => s.role);
@@ -37,20 +43,24 @@ export default function NearbySessionsPage() {
   const liveListenerCount = useNearbySessionStore((s) => s.listenerCount);
   const locationPermission = useNearbySessionStore((s) => s.locationPermission);
 
-  const [permissionReady, setPermissionReady] = useState(false);
   const [showPermissionInfo, setShowPermissionInfo] = useState(false);
   const [showSettingsPrompt, setShowSettingsPrompt] = useState(false);
   const [joiningSessionId, setJoiningSessionId] = useState<string | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
 
+  const permissionReady = locationPermission === "granted";
+  const discoveryEnabled =
+    permissionReady &&
+    isAuthenticated &&
+    discoverable &&
+    role !== "listener";
+
   const { joinSession, leaveSession } = useNearbySessionActions();
-  const { scanOnce } = useNearbyDiscovery(
-    permissionReady && isAuthenticated && role !== "listener"
-  );
+  const { scanOnce } = useNearbyDiscovery(discoveryEnabled);
 
   const { refreshControl } = useRefreshable({
     onRefresh: async () => {
-      if (!permissionReady) return;
+      if (!discoveryEnabled) return;
       await scanOnce();
     },
   });
@@ -61,26 +71,37 @@ export default function NearbySessionsPage() {
   });
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isHydrated || isAuthenticated) return;
+    redirectToSignInForNearby(router, NEARBY_HOME_REDIRECT);
+  }, [isAuthenticated, isHydrated, router]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !discoverable) return;
     void (async () => {
       const granted = await requestLocationPermission();
       if (!granted) {
         setShowPermissionInfo(true);
-        return;
       }
-      setPermissionReady(true);
     })();
-  }, [isAuthenticated]);
+  }, [discoverable, isAuthenticated]);
+
+  useEffect(() => {
+    if (discoverable || role === "listener") return;
+    useNearbySessionStore.getState().setNearbySessions([]);
+    useNearbySessionStore.getState().setIsScanning(false);
+  }, [discoverable, role]);
 
   const handleLeave = useCallback(async () => {
     setIsLeaving(true);
     try {
       await leaveSession();
-      void scanOnce();
+      if (discoveryEnabled) {
+        void scanOnce();
+      }
     } finally {
       setIsLeaving(false);
     }
-  }, [leaveSession, scanOnce]);
+  }, [discoveryEnabled, leaveSession, scanOnce]);
 
   const orderedSessions = useMemo(() => {
     const freshSessions = nearbySessions.filter(
@@ -100,6 +121,7 @@ export default function NearbySessionsPage() {
 
   const handleJoin = useCallback(
     async (session: NearbySession) => {
+      if (!discoverable) return;
       setJoiningSessionId(session.id);
       try {
         const joined = await joinSession(session);
@@ -114,7 +136,7 @@ export default function NearbySessionsPage() {
         setJoiningSessionId(null);
       }
     },
-    [joinSession, scanOnce]
+    [discoverable, joinSession, scanOnce]
   );
 
   const handlePermissionConfirm = useCallback(async () => {
@@ -124,9 +146,10 @@ export default function NearbySessionsPage() {
       setShowSettingsPrompt(true);
       return;
     }
-    setPermissionReady(true);
-    void scanOnce();
-  }, [scanOnce]);
+    if (discoverable) {
+      void scanOnce();
+    }
+  }, [discoverable, scanOnce]);
 
   return (
     <YStack flex={1} bg={themeColors.dark.background}>
@@ -150,9 +173,15 @@ export default function NearbySessionsPage() {
           Discover people playing music around you and join their session in sync.
         </MyText>
 
-        <RadarScanView sessions={orderedSessions} isScanning={isScanning} />
+        <NearbyListeningControl />
 
-        {locationPermission === "denied" ? (
+        <RadarScanView
+          sessions={orderedSessions}
+          isScanning={isScanning}
+          discoverable={discoverable}
+        />
+
+        {locationPermission === "denied" && discoverable ? (
           <MyText
             fontSize={scale(13)}
             weight="600"

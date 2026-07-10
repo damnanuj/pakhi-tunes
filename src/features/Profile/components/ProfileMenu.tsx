@@ -14,18 +14,16 @@ export default function ProfileMenu({
   isAuthenticated,
   onLogoutPress,
 }: ProfileMenuProps) {
-  if (!isAuthenticated) {
-    return null;
-  }
-
   return (
     <YStack gap={verticalScale(12)} mt={verticalScale(24)}>
       <DiscoverabilityToggle />
-      <ProfileMenuItem
-        icon={<LogOut size={18} color={themeColors.dark.onSurface} />}
-        label="Log out"
-        onPress={onLogoutPress}
-      />
+      {isAuthenticated ? (
+        <ProfileMenuItem
+          icon={<LogOut size={18} color={themeColors.dark.onSurface} />}
+          label="Log out"
+          onPress={onLogoutPress}
+        />
+      ) : null}
     </YStack>
   );
 }

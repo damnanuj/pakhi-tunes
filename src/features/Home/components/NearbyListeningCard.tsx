@@ -5,6 +5,11 @@ import { Radio } from "@tamagui/lucide-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { XStack, YStack } from "tamagui";
 import MyText from "src/components/MyText";
+import { useAuth } from "src/features/auth/hooks/useAuth";
+import {
+  NEARBY_HOME_REDIRECT,
+  redirectToSignInForNearby,
+} from "src/features/NearbySession/utils/nearbyAuthGate";
 import themeColors from "src/utils/theme/colors";
 import { moderateScale, scale, verticalScale } from "src/utils/functions/dimensions";
 
@@ -83,12 +88,21 @@ function PulseRing({
 
 export default function NearbyListeningCard() {
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
   const accent = themeColors.dark.accent;
   const surface = themeColors.dark.surfaceSecondary;
 
+  const handlePress = () => {
+    if (!isAuthenticated) {
+      redirectToSignInForNearby(router, NEARBY_HOME_REDIRECT);
+      return;
+    }
+    router.push("/home/nearby");
+  };
+
   return (
     <Pressable
-      onPress={() => router.push("/home/nearby")}
+      onPress={handlePress}
       style={{ paddingHorizontal: scale(20) }}
     >
       <View
