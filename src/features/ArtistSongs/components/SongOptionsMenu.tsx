@@ -14,7 +14,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { Download, Heart, History, ListEnd, ListStart, RefreshCw, Trash2 } from "@tamagui/lucide-icons";
+import { Download, Heart, History, ListEnd, ListStart, ListX, RefreshCw, Trash2 } from "@tamagui/lucide-icons";
 import {
   moderateScale,
   scale,
@@ -73,6 +73,7 @@ export default function SongOptionsMenu({
     2 +
     (actions.playNext ? 1 : 0) +
     (actions.addToQueue ? 1 : 0) +
+    (actions.removeFromQueue ? 1 : 0) +
     (actions.removeFromHistory ? 1 : 0);
   const menuHeight = MENU_ITEM_HEIGHT * menuItemCount + MENU_PADDING_V * 2;
   const menuTop = anchor ? getMenuTop(anchor, menuHeight, windowHeight) : 0;
@@ -156,6 +157,11 @@ export default function SongOptionsMenu({
     animateClose(actions.addToQueue.onPress);
   }, [actions.addToQueue, animateClose]);
 
+  const handleRemoveFromQueuePress = useCallback(() => {
+    if (!actions.removeFromQueue) return;
+    animateClose(actions.removeFromQueue.onPress);
+  }, [actions.removeFromQueue, animateClose]);
+
   const iconSize = moderateScale(20);
   const iconColor = themeColors.dark.onSurface;
   const accentColor = themeColors.dark.accent;
@@ -232,6 +238,13 @@ export default function SongOptionsMenu({
                 icon={<ListEnd size={iconSize} color={iconColor} />}
                 label={actions.addToQueue.label}
                 onPress={handleAddToQueuePress}
+              />
+            ) : null}
+            {actions.removeFromQueue ? (
+              <SongOptionsMenuItem
+                icon={<ListX size={iconSize} color="#f87171" />}
+                label={actions.removeFromQueue.label}
+                onPress={handleRemoveFromQueuePress}
               />
             ) : null}
             {actions.removeFromHistory ? (

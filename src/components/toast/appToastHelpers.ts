@@ -133,4 +133,12 @@ export const appToast = {
       icon: "check",
     });
   },
+
+  removedFromQueue(title: string) {
+    useAppToastStore.getState().show({
+      variant: "removed",
+      message: `Removed "${title}" from queue`,
+      icon: "trash",
+    });
+  },
 };

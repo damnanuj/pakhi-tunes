@@ -47,6 +47,10 @@ export type SongOptionsMenuActions = {
     label: string;
     onPress: () => void;
   };
+  removeFromQueue?: {
+    label: string;
+    onPress: () => void;
+  };
   qualityDialog: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -78,6 +82,7 @@ export function useSongOptionsActions(
   const activeTrackId = usePlayerStore((s) => s.activeTrack?.id);
   const addSongToQueue = usePlayerStore((s) => s.addSongToQueue);
   const playSongNext = usePlayerStore((s) => s.playSongNext);
+  const removeSongFromQueue = usePlayerStore((s) => s.removeSongFromQueue);
 
   const queueActive = hasQueue({ queue, queueIndex, queueSource, repeatMode: "off" });
   const isCurrentlyPlaying = activeTrackId === song.id;
@@ -183,8 +188,15 @@ export function useSongOptionsActions(
     appToast.playingNext(songTitle);
   }, [playSongNext, song, songTitle]);
 
+  const handleRemoveFromQueuePress = useCallback(() => {
+    removeSongFromQueue(song.id);
+    appToast.removedFromQueue(songTitle);
+  }, [removeSongFromQueue, song.id, songTitle]);
+
   const showPlayNext = queueActive && !isCurrentlyPlaying;
   const showAddToQueue = queueActive && !isCurrentlyPlaying && !songAlreadyInQueue;
+  const showRemoveFromQueue =
+    queueActive && !isCurrentlyPlaying && songAlreadyInQueue;
 
   return {
     favorite: {
@@ -215,6 +227,14 @@ export function useSongOptionsActions(
           addToQueue: {
             label: "Add to queue",
             onPress: handleAddToQueuePress,
+          },
+        }
+      : {}),
+    ...(showRemoveFromQueue
+      ? {
+          removeFromQueue: {
+            label: "Remove from queue",
+            onPress: handleRemoveFromQueuePress,
           },
         }
       : {}),

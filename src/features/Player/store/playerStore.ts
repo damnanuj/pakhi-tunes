@@ -44,6 +44,7 @@ type PlayerActions = {
   appendQueueSongs: (newSongs: ArtistSong[]) => void;
   addSongToQueue: (song: ArtistSong) => void;
   playSongNext: (song: ArtistSong) => void;
+  removeSongFromQueue: (songId: string) => void;
 };
 
 const initialPlayback: PlaybackSlice = {
@@ -172,5 +173,25 @@ export const usePlayerStore = create<PlayerState & PlayerActions>((set, get) => 
       queueIndex,
       originalQueue: state.shuffleEnabled ? state.originalQueue : [...queue],
     });
+  },
+  removeSongFromQueue: (songId) => {
+    const state = get();
+    if (!state.queueSource || state.queue.length === 0) return;
+
+    const removeIndex = findSongIndex(state.queue, songId);
+    if (removeIndex < 0) return;
+    if (state.activeTrack?.id === songId) return;
+
+    const queue = state.queue.filter((s) => s.id !== songId);
+    let queueIndex = state.queueIndex;
+    if (removeIndex < queueIndex) {
+      queueIndex -= 1;
+    }
+
+    const originalQueue = state.shuffleEnabled
+      ? state.originalQueue.filter((s) => s.id !== songId)
+      : queue;
+
+    set({ queue, originalQueue, queueIndex });
   },
 }));
