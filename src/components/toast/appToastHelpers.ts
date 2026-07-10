@@ -110,11 +110,15 @@ export const appToast = {
     });
   },
 
-  signInRequired(message = "You need to sign in to use this feature") {
+  signInRequired(
+    message = "You need to sign in to use this feature",
+    durationMs = 3000
+  ) {
     useAppToastStore.getState().show({
       variant: "success",
       message,
       icon: "check",
+      durationMs,
     });
   },
 

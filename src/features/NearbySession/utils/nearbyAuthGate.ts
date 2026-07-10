@@ -1,3 +1,4 @@
+import { InteractionManager } from "react-native";
 import type { Router } from "expo-router";
 import { appToast } from "src/components/toast/appToastHelpers";
 
@@ -8,9 +9,12 @@ export function redirectToSignInForNearby(
   router: Router,
   redirectPath: string
 ) {
-  appToast.signInRequired();
   router.push({
     pathname: "/auth",
     params: { mode: "signin", redirect: redirectPath },
+  });
+
+  InteractionManager.runAfterInteractions(() => {
+    appToast.signInRequired(undefined, 4500);
   });
 }

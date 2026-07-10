@@ -166,7 +166,13 @@ function RootLayoutNav() {
         <Stack.Screen name="index" />
         <Stack.Screen name="entry" />
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="auth" />
+        <Stack.Screen
+          name="auth"
+          options={{
+            animation: "fade",
+            animationDuration: 200,
+          }}
+        />
         <Stack.Screen
           name="player"
           options={{ animation: "slide_from_bottom", headerShown: false }}

@@ -28,7 +28,7 @@ export default function ProfileSection({
 }: ProfileSectionProps) {
   return (
     <XStack items="center" gap={scale(20)} >
-      <Avatar source={avatarSource} size={moderateScale(100)} />
+      <Avatar source={avatarSource} size={moderateScale(72)} />
       <YStack flex={1} gap={verticalScale(4)}>
         <MyText
           fontSize={moderateScale(20)}

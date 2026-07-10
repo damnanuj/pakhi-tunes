@@ -1,9 +1,14 @@
+import { useEffect } from "react";
 import { View } from "react-native";
 import { Tabs } from "expo-router";
 import BottomTabBar from "src/components/BottomTabBar";
 import { MiniPlayer } from "src/features/Player";
 
 export default function TabLayout() {
+  useEffect(() => {
+    void import("src/features/auth/pages/AuthPage");
+  }, []);
+
   return (
     <Tabs
       tabBar={(props) => (
