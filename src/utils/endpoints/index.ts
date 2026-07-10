@@ -39,4 +39,11 @@ export const endpoints = {
     discoverable: "/users/me/discoverable",
   },
   appConfig: "/app-config",
+  guests: {
+    ping: "/guests/ping",
+  },
+  presence: {
+    heartbeat: "/presence/heartbeat",
+    end: "/presence/end",
+  },
 } as const;

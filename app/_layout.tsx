@@ -31,6 +31,8 @@ import { MiniPlayerRootLayer, PlayerProvider } from "src/features/Player";
 import AppToast from "src/components/toast/AppToast";
 import GuestLimitDialog from "src/components/guestLimit/GuestLimitDialog";
 import AuthProvider from "src/features/auth/providers/AuthProvider";
+import GuestProvider from "src/features/guest/providers/GuestProvider";
+import PresenceProvider from "src/features/presence/providers/PresenceProvider";
 import FavoritesSyncProvider from "src/features/favorites/providers/FavoritesSyncProvider";
 import HistorySyncProvider from "src/features/history/providers/HistorySyncProvider";
 import { NearbySessionProvider } from "src/features/NearbySession";
@@ -122,16 +124,20 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
                 <Provider>
                   <AppConfigProvider>
                     <AuthProvider>
-                      <FavoritesSyncProvider>
-                        <HistorySyncProvider>
-                          <NearbySessionProvider>
-                            {children}
-                            <MiniPlayerRootLayer />
-                            <AppToast />
-                            <GuestLimitDialog />
-                          </NearbySessionProvider>
-                        </HistorySyncProvider>
-                      </FavoritesSyncProvider>
+                      <GuestProvider>
+                        <PresenceProvider>
+                          <FavoritesSyncProvider>
+                            <HistorySyncProvider>
+                              <NearbySessionProvider>
+                                {children}
+                                <MiniPlayerRootLayer />
+                                <AppToast />
+                                <GuestLimitDialog />
+                              </NearbySessionProvider>
+                            </HistorySyncProvider>
+                          </FavoritesSyncProvider>
+                        </PresenceProvider>
+                      </GuestProvider>
                     </AuthProvider>
                   </AppConfigProvider>
                 </Provider>
