@@ -11,6 +11,7 @@ export interface GuestRecord {
   convertedUserId: string | null;
   convertedAt: string | null;
   lastActiveAt: string;
+  totalListenedMs?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -20,6 +21,9 @@ export interface GuestPingResponse {
   isNew?: boolean;
   converted?: boolean;
   reactivated?: boolean;
+  totalListenedMs?: number;
+  guestListeningLimitMs?: number;
+  guestRemainingMs?: number;
 }
 
 export interface GuestPingPayload {

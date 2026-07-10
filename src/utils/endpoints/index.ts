@@ -47,4 +47,7 @@ export const endpoints = {
     heartbeat: "/presence/heartbeat",
     end: "/presence/end",
   },
+  listening: {
+    report: "/listening/report",
+  },
 } as const;

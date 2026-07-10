@@ -1,3 +1,4 @@
 export const GUEST_DOWNLOAD_LIMIT = 5;
 export const GUEST_FAVORITES_LIMIT = 5;
 export const GUEST_HISTORY_LIMIT = 10;
+export const GUEST_LISTENING_LIMIT_MS = 120 * 60 * 1000;

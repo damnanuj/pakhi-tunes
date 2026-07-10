@@ -30,6 +30,8 @@ import { queryClient } from "src/utils/query/queryClient";
 import { MiniPlayerRootLayer, PlayerProvider } from "src/features/Player";
 import AppToast from "src/components/toast/AppToast";
 import GuestLimitDialog from "src/components/guestLimit/GuestLimitDialog";
+import GuestListeningLimitDialog from "src/components/guestLimit/GuestListeningLimitDialog";
+import GuestListeningGuard from "src/features/guest/providers/GuestListeningGuard";
 import AuthProvider from "src/features/auth/providers/AuthProvider";
 import GuestProvider from "src/features/guest/providers/GuestProvider";
 import PresenceProvider from "src/features/presence/providers/PresenceProvider";
@@ -125,18 +127,21 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
                   <AppConfigProvider>
                     <AuthProvider>
                       <GuestProvider>
-                        <PresenceProvider>
-                          <FavoritesSyncProvider>
-                            <HistorySyncProvider>
-                              <NearbySessionProvider>
-                                {children}
-                                <MiniPlayerRootLayer />
-                                <AppToast />
-                                <GuestLimitDialog />
-                              </NearbySessionProvider>
-                            </HistorySyncProvider>
-                          </FavoritesSyncProvider>
-                        </PresenceProvider>
+                        <GuestListeningGuard>
+                          <PresenceProvider>
+                            <FavoritesSyncProvider>
+                              <HistorySyncProvider>
+                                <NearbySessionProvider>
+                                  {children}
+                                  <MiniPlayerRootLayer />
+                                  <AppToast />
+                                  <GuestLimitDialog />
+                                  <GuestListeningLimitDialog />
+                                </NearbySessionProvider>
+                              </HistorySyncProvider>
+                            </FavoritesSyncProvider>
+                          </PresenceProvider>
+                        </GuestListeningGuard>
                       </GuestProvider>
                     </AuthProvider>
                   </AppConfigProvider>

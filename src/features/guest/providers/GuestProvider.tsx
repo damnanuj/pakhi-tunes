@@ -3,6 +3,7 @@ import { AppState, type AppStateStatus } from "react-native";
 import { useAuth } from "src/features/auth/hooks/useAuth";
 import { pingGuest } from "../services/guest.service";
 import { useGuestStore } from "../store/guestStore";
+import { useGuestListeningStore } from "src/features/listening/store/guestListeningStore";
 
 export default function GuestProvider({
   children,
@@ -37,6 +38,16 @@ export default function GuestProvider({
         if (result.guest?.status === "banned") {
           setGuestStatus("banned");
           return;
+        }
+
+        if (typeof result.totalListenedMs === "number") {
+          useGuestListeningStore
+            .getState()
+            .setTotalListenedMs(result.totalListenedMs);
+        } else if (typeof result.guest?.totalListenedMs === "number") {
+          useGuestListeningStore
+            .getState()
+            .setTotalListenedMs(result.guest.totalListenedMs);
         }
 
         setGuestStatus("active");
