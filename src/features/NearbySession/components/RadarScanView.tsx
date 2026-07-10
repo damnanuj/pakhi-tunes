@@ -13,7 +13,11 @@ import Animated, {
 import { XStack, YStack } from "tamagui";
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
-import { moderateScale, scale, verticalScale } from "src/utils/functions/dimensions";
+import {
+  moderateScale,
+  scale,
+  verticalScale,
+} from "src/utils/functions/dimensions";
 import type { NearbySession } from "../types/session.types";
 
 const RADAR_SIZE = moderateScale(260);
@@ -193,9 +197,7 @@ function ScanEmptyState({ discoverable }: { discoverable: boolean }) {
         weight="600"
         color={themeColors.dark.textMuted}
       >
-        {discoverable
-          ? "No sessions nearby yet"
-          : "Turn on nearby listening to find sessions"}
+        No sessions nearby yet
       </MyText>
     </XStack>
   );
@@ -335,7 +337,7 @@ export default function RadarScanView({
         </MyText>
       </XStack>
 
-      {hasSessions ? (
+      {hasSessions && discoverable ? (
         <View
           style={{
             paddingHorizontal: scale(12),
@@ -355,9 +357,9 @@ export default function RadarScanView({
             {sessions.length} session{sessions.length === 1 ? "" : "s"} found
           </MyText>
         </View>
-      ) : (
+      ) : discoverable ? (
         <ScanEmptyState discoverable={discoverable} />
-      )}
+      ) : null}
     </YStack>
   );
 }

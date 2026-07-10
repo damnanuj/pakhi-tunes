@@ -1,7 +1,6 @@
 import { LogOut } from "@tamagui/lucide-icons";
 import { YStack } from "tamagui";
 import { verticalScale } from "src/utils/functions/dimensions";
-import themeColors from "src/utils/theme/colors";
 import ProfileMenuItem from "./ProfileMenuItem";
 import DiscoverabilityToggle from "src/features/NearbySession/components/DiscoverabilityToggle";
 
@@ -9,6 +8,8 @@ type ProfileMenuProps = {
   isAuthenticated: boolean;
   onLogoutPress: () => void;
 };
+
+const LOGOUT_COLOR = "#f87171";
 
 export default function ProfileMenu({
   isAuthenticated,
@@ -19,8 +20,9 @@ export default function ProfileMenu({
       <DiscoverabilityToggle />
       {isAuthenticated ? (
         <ProfileMenuItem
-          icon={<LogOut size={18} color={themeColors.dark.onSurface} />}
+          icon={<LogOut size={18} color={LOGOUT_COLOR} />}
           label="Log out"
+          labelColor={LOGOUT_COLOR}
           onPress={onLogoutPress}
         />
       ) : null}

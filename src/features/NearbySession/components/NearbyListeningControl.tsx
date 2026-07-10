@@ -2,7 +2,11 @@ import { Radio } from "@tamagui/lucide-icons";
 import { Switch, XStack, YStack } from "tamagui";
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
-import { moderateScale, scale, verticalScale } from "src/utils/functions/dimensions";
+import {
+  moderateScale,
+  scale,
+  verticalScale,
+} from "src/utils/functions/dimensions";
 import { NEARBY_HOME_REDIRECT } from "../utils/nearbyAuthGate";
 import { useNearbyDiscoverability } from "../hooks/useNearbyDiscoverability";
 import NearbyDiscoverabilityDialogs from "./NearbyDiscoverabilityDialogs";
@@ -37,15 +41,11 @@ export default function NearbyListeningControl() {
       >
         <XStack items="center" justify="space-between" gap={scale(12)}>
           <XStack items="center" gap={scale(10)} flex={1}>
-            <Radio size={moderateScale(18)} color={themeColors.dark.onSurface} />
+            <Radio
+              size={moderateScale(18)}
+              color={themeColors.dark.onSurface}
+            />
             <YStack flex={1} gap={verticalScale(2)}>
-              <MyText
-                fontSize={moderateScale(15)}
-                weight="600"
-                color={themeColors.dark.onSurface}
-              >
-                Nearby Listening
-              </MyText>
               <MyText
                 fontSize={moderateScale(12)}
                 weight="500"
@@ -60,9 +60,7 @@ export default function NearbyListeningControl() {
             onCheckedChange={(checked) => void handleToggle(Boolean(checked))}
             disabled={isUpdating}
             backgroundColor={
-              discoverable
-                ? themeColors.dark.accent
-                : themeColors.dark.surface
+              discoverable ? themeColors.dark.accent : themeColors.dark.surface
             }
           >
             <Switch.Thumb animation="quick" />

@@ -16,6 +16,7 @@ const ITEM_HEIGHT = verticalScale(80);
 interface ProfileMenuItemProps {
   icon: React.ReactNode;
   label: string;
+  labelColor?: string;
   onPress?: () => void;
   trailing?: React.ReactNode;
 }
@@ -23,6 +24,7 @@ interface ProfileMenuItemProps {
 export default function ProfileMenuItem({
   icon,
   label,
+  labelColor,
   onPress,
   trailing,
 }: ProfileMenuItemProps) {
@@ -40,7 +42,7 @@ export default function ProfileMenuItem({
       <MyText
         fontSize={moderateScale(15)}
         weight="500"
-        color={themeColors.dark.onSurface}
+        color={labelColor ?? themeColors.dark.onSurface}
         flex={1}
       >
         {label}
@@ -48,7 +50,7 @@ export default function ProfileMenuItem({
       {trailing ?? (
         <ChevronRight
           size={moderateScale(20)}
-          color={themeColors.dark.onSurface}
+          color={labelColor ?? themeColors.dark.onSurface}
         />
       )}
     </XStack>
