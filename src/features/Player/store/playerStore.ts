@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import type { ActiveTrack, QueueSource, RepeatMode } from "../types";
-import { findSongIndex } from "../utils/queueHelpers";
+import { findSongIndex, isSongInQueue } from "../utils/queueHelpers";
 
 type PlaybackSlice = {
   isPlaying: boolean;
@@ -42,6 +42,8 @@ type PlayerActions = {
   updateQueueOrder: (songs: ArtistSong[], index: number) => void;
   syncQueueSongs: (songs: ArtistSong[]) => void;
   appendQueueSongs: (newSongs: ArtistSong[]) => void;
+  addSongToQueue: (song: ArtistSong) => void;
+  playSongNext: (song: ArtistSong) => void;
 };
 
 const initialPlayback: PlaybackSlice = {
@@ -129,6 +131,46 @@ export const usePlayerStore = create<PlayerState & PlayerActions>((set, get) => 
       queue: merged,
       originalQueue: merged,
       queueIndex: newIndex,
+    });
+  },
+  addSongToQueue: (song) => {
+    const state = get();
+    if (!state.queueSource || state.queue.length === 0) return;
+    if (isSongInQueue(state.queue, song.id)) return;
+
+    const queue = [...state.queue, song];
+    set({
+      queue,
+      originalQueue: state.shuffleEnabled
+        ? state.originalQueue
+        : [...state.originalQueue, song],
+    });
+  },
+  playSongNext: (song) => {
+    const state = get();
+    if (!state.queueSource || state.queue.length === 0 || state.queueIndex < 0) {
+      return;
+    }
+    if (state.activeTrack?.id === song.id) return;
+
+    let queue = [...state.queue];
+    let queueIndex = state.queueIndex;
+    const existingIdx = findSongIndex(queue, song.id);
+
+    if (existingIdx >= 0) {
+      queue.splice(existingIdx, 1);
+      if (existingIdx < queueIndex) {
+        queueIndex -= 1;
+      }
+    }
+
+    const insertAt = queueIndex + 1;
+    queue.splice(insertAt, 0, song);
+
+    set({
+      queue,
+      queueIndex,
+      originalQueue: state.shuffleEnabled ? state.originalQueue : [...queue],
     });
   },
 }));

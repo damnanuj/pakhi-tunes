@@ -117,4 +117,20 @@ export const appToast = {
       icon: "check",
     });
   },
+
+  addedToQueue(title: string) {
+    useAppToastStore.getState().show({
+      variant: "success",
+      message: `Added "${title}" to queue`,
+      icon: "check",
+    });
+  },
+
+  playingNext(title: string) {
+    useAppToastStore.getState().show({
+      variant: "success",
+      message: `"${title}" will play next`,
+      icon: "check",
+    });
+  },
 };

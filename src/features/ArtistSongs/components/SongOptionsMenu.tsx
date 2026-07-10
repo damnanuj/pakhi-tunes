@@ -14,7 +14,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { Download, Heart, History, RefreshCw, Trash2 } from "@tamagui/lucide-icons";
+import { Download, Heart, History, ListEnd, ListStart, RefreshCw, Trash2 } from "@tamagui/lucide-icons";
 import {
   moderateScale,
   scale,
@@ -69,7 +69,11 @@ export default function SongOptionsMenu({
   actions,
 }: SongOptionsMenuProps) {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-  const menuItemCount = actions.removeFromHistory ? 3 : 2;
+  const menuItemCount =
+    2 +
+    (actions.playNext ? 1 : 0) +
+    (actions.addToQueue ? 1 : 0) +
+    (actions.removeFromHistory ? 1 : 0);
   const menuHeight = MENU_ITEM_HEIGHT * menuItemCount + MENU_PADDING_V * 2;
   const menuTop = anchor ? getMenuTop(anchor, menuHeight, windowHeight) : 0;
   const menuMaxWidth = windowWidth - SCREEN_EDGE_PADDING * 2;
@@ -142,6 +146,16 @@ export default function SongOptionsMenu({
     animateClose(actions.removeFromHistory.onPress);
   }, [actions.removeFromHistory, animateClose]);
 
+  const handlePlayNextPress = useCallback(() => {
+    if (!actions.playNext) return;
+    animateClose(actions.playNext.onPress);
+  }, [actions.playNext, animateClose]);
+
+  const handleAddToQueuePress = useCallback(() => {
+    if (!actions.addToQueue) return;
+    animateClose(actions.addToQueue.onPress);
+  }, [actions.addToQueue, animateClose]);
+
   const iconSize = moderateScale(20);
   const iconColor = themeColors.dark.onSurface;
   const accentColor = themeColors.dark.accent;
@@ -206,6 +220,20 @@ export default function SongOptionsMenu({
               disabled={actions.download.disabled}
               loading={actions.download.loading}
             />
+            {actions.playNext ? (
+              <SongOptionsMenuItem
+                icon={<ListStart size={iconSize} color={iconColor} />}
+                label={actions.playNext.label}
+                onPress={handlePlayNextPress}
+              />
+            ) : null}
+            {actions.addToQueue ? (
+              <SongOptionsMenuItem
+                icon={<ListEnd size={iconSize} color={iconColor} />}
+                label={actions.addToQueue.label}
+                onPress={handleAddToQueuePress}
+              />
+            ) : null}
             {actions.removeFromHistory ? (
               <SongOptionsMenuItem
                 icon={<History size={iconSize} color="#f87171" />}
