@@ -11,6 +11,7 @@ type AuthPasswordInputProps = {
   placeholder: string;
   hasError?: boolean;
   htmlFor?: string;
+  disabled?: boolean;
 };
 
 export default function AuthPasswordInput({
@@ -19,6 +20,7 @@ export default function AuthPasswordInput({
   placeholder,
   hasError = false,
   htmlFor,
+  disabled = false,
 }: AuthPasswordInputProps) {
   const theme = useTheme();
   const [isVisible, setIsVisible] = useState(false);
@@ -31,6 +33,7 @@ export default function AuthPasswordInput({
         value={value}
         onChangeText={onChangeText}
         htmlFor={htmlFor}
+        editable={!disabled}
         bg={"transparent"}
         placeholder={placeholder}
         secureTextEntry={!isVisible}
@@ -48,6 +51,7 @@ export default function AuthPasswordInput({
       />
       <Pressable
         onPress={() => setIsVisible((current) => !current)}
+        disabled={disabled}
         hitSlop={8}
         style={{
           position: "absolute",

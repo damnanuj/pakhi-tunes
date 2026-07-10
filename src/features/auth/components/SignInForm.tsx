@@ -8,6 +8,7 @@ import {
   useTheme,
   Form,
 } from "tamagui";
+import { View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import MyText from "src/components/MyText";
 import { appToast } from "src/components/toast/appToastHelpers";
@@ -22,7 +23,7 @@ import {
   validateSignInForm,
 } from "../utils/validation";
 import AuthSwitchLink from "./AuthSwitchLink";
-import DisabledGoogleAuthButton from "./DisabledGoogleAuthButton";
+import GoogleAuthButton from "./GoogleAuthButton";
 import AuthPasswordInput from "./AuthPasswordInput";
 
 export default function SignInForm({
@@ -35,7 +36,9 @@ export default function SignInForm({
   const { redirect } = useLocalSearchParams<{ redirect?: string }>();
   const { setSession } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [apiError, setApiError] = useState("");
+  const isFormLocked = isLoading || isGoogleLoading;
 
   const [signInForm, setSignInForm] = useState({
     email: "",
@@ -98,6 +101,22 @@ export default function SignInForm({
           </MyText>
         ) : null}
 
+        <Stack width="100%" position="relative" opacity={isGoogleLoading ? 0.6 : 1}>
+          {isGoogleLoading ? (
+            <View
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 1,
+                backgroundColor: "rgba(0,0,0,0.35)",
+              }}
+              pointerEvents="auto"
+            />
+          ) : null}
+
         <YStack
           width="100%"
           gap={verticalScale(10)}
@@ -116,6 +135,7 @@ export default function SignInForm({
             htmlFor="email"
             autoCapitalize="none"
             keyboardType="email-address"
+            editable={!isFormLocked}
             bg={"transparent"}
             placeholder="Enter Your Email"
             width="100%"
@@ -147,6 +167,7 @@ export default function SignInForm({
             htmlFor="password"
             placeholder="Enter Your Password"
             hasError={Boolean(errors.password)}
+            disabled={isFormLocked}
           />
           {errors.password && <MyText color={"red"}>{errors.password}</MyText>}
         </YStack>
@@ -162,8 +183,8 @@ export default function SignInForm({
             bg={themeColors.dark.accent}
             size="$4"
             onPress={handleSignIn}
-            disabled={isLoading}
-            opacity={isLoading ? 0.7 : 1}
+            disabled={isFormLocked}
+            opacity={isFormLocked ? 0.7 : 1}
           >
             <MyText color={"$accentBlack"}>
               {isLoading ? "Signing in..." : "Sign In"}
@@ -191,12 +212,19 @@ export default function SignInForm({
             borderColor={"#fff"}
           />
         </XStack>
-        <DisabledGoogleAuthButton label="Sign in with Google" />
+        </Stack>
+
+        <GoogleAuthButton
+          label="Sign in with Google"
+          onError={(message) => setApiError(message)}
+          onLoadingChange={setIsGoogleLoading}
+        />
 
         <AuthSwitchLink
           prompt="Don't have an account?"
           linkText="Sign up here"
           onPress={onSwitchMode}
+          disabled={isFormLocked}
         />
       </Form>
     </>

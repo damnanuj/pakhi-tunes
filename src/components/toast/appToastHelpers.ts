@@ -70,6 +70,14 @@ export const appToast = {
     });
   },
 
+  welcome(name: string) {
+    useAppToastStore.getState().show({
+      variant: "success",
+      message: `Welcome, ${name}`,
+      icon: "check",
+    });
+  },
+
   welcomeBack(name: string) {
     useAppToastStore.getState().show({
       variant: "success",

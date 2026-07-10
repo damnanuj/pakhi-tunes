@@ -6,8 +6,14 @@ export interface AuthUser {
   discoverable?: boolean;
   role?: "user" | "admin";
   isAdmin?: boolean;
+  authProvider?: "password" | "google" | "both";
+  lastLoginAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface GoogleLoginPayload {
+  idToken: string;
 }
 
 export interface LoginPayload {
@@ -36,6 +42,11 @@ export interface MeResponse {
   data: { user: AuthUser };
   error: Record<string, unknown>;
   isSuccess: boolean;
+}
+
+export interface GoogleAuthResult {
+  session: AuthSession;
+  isNewUser: boolean;
 }
 
 export type AuthMode = "signin" | "signup";
