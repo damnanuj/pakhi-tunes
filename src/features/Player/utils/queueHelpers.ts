@@ -5,6 +5,10 @@ export function findSongIndex(songs: ArtistSong[], songId: string): number {
   return songs.findIndex((s) => s.id === songId);
 }
 
+export function isSongInQueue(queue: ArtistSong[], songId: string): boolean {
+  return queue.some((s) => s.id === songId);
+}
+
 export function sourcesMatch(
   a: QueueSource | null,
   b: QueueSource | null

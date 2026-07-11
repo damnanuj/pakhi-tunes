@@ -16,7 +16,6 @@ import NewAlbumsSection from "../components/NewAlbumsSection";
 import NewSongsSection from "../components/NewSongsSection";
 import TopArtistsSection from "../components/TopArtistsSection";
 import NearbyListeningCard from "../components/NearbyListeningCard";
-import { useAuth } from "src/features/auth/hooks/useAuth";
 import {
   HOME_QUERY_KEYS,
   useHomePageQueries,
@@ -24,14 +23,12 @@ import {
 
 const SECTION_GAP = verticalScale(20);
 
-function HomeSections({ isAuthenticated }: { isAuthenticated: boolean }) {
+function HomeSections() {
   return (
     <>
-      {isAuthenticated ? (
-        <View style={{ marginBottom: SECTION_GAP }}>
-          <NearbyListeningCard />
-        </View>
-      ) : null}
+      <View style={{ marginBottom: SECTION_GAP }}>
+        <NearbyListeningCard />
+      </View>
       <View style={{ marginBottom: SECTION_GAP }}>
         <FeaturedCards />
       </View>
@@ -47,7 +44,6 @@ function HomeSections({ isAuthenticated }: { isAuthenticated: boolean }) {
 }
 
 export default function HomePage() {
-  const { isAuthenticated } = useAuth();
   const { isOffline, bannerPhase } = useNetwork();
   const {
     hasDisplayableContent,
@@ -91,7 +87,7 @@ export default function HomePage() {
           refreshControl={showFallback ? undefined : refreshControl}
         >
           {showFallback ? null : (
-            <HomeSections isAuthenticated={isAuthenticated} />
+            <HomeSections />
           )}
         </ScrollView>
         {showFallback ? (

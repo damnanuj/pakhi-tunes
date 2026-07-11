@@ -30,7 +30,11 @@ import { queryClient } from "src/utils/query/queryClient";
 import { MiniPlayerRootLayer, PlayerProvider } from "src/features/Player";
 import AppToast from "src/components/toast/AppToast";
 import GuestLimitDialog from "src/components/guestLimit/GuestLimitDialog";
+import GuestListeningLimitDialog from "src/components/guestLimit/GuestListeningLimitDialog";
+import GuestListeningGuard from "src/features/guest/providers/GuestListeningGuard";
 import AuthProvider from "src/features/auth/providers/AuthProvider";
+import GuestProvider from "src/features/guest/providers/GuestProvider";
+import PresenceProvider from "src/features/presence/providers/PresenceProvider";
 import FavoritesSyncProvider from "src/features/favorites/providers/FavoritesSyncProvider";
 import HistorySyncProvider from "src/features/history/providers/HistorySyncProvider";
 import { NearbySessionProvider } from "src/features/NearbySession";
@@ -122,16 +126,23 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
                 <Provider>
                   <AppConfigProvider>
                     <AuthProvider>
-                      <FavoritesSyncProvider>
-                        <HistorySyncProvider>
-                          <NearbySessionProvider>
-                            {children}
-                            <MiniPlayerRootLayer />
-                            <AppToast />
-                            <GuestLimitDialog />
-                          </NearbySessionProvider>
-                        </HistorySyncProvider>
-                      </FavoritesSyncProvider>
+                      <GuestProvider>
+                        <GuestListeningGuard>
+                          <PresenceProvider>
+                            <FavoritesSyncProvider>
+                              <HistorySyncProvider>
+                                <NearbySessionProvider>
+                                  {children}
+                                  <MiniPlayerRootLayer />
+                                  <AppToast />
+                                  <GuestLimitDialog />
+                                  <GuestListeningLimitDialog />
+                                </NearbySessionProvider>
+                              </HistorySyncProvider>
+                            </FavoritesSyncProvider>
+                          </PresenceProvider>
+                        </GuestListeningGuard>
+                      </GuestProvider>
                     </AuthProvider>
                   </AppConfigProvider>
                 </Provider>
@@ -155,7 +166,13 @@ function RootLayoutNav() {
         <Stack.Screen name="index" />
         <Stack.Screen name="entry" />
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="auth" />
+        <Stack.Screen
+          name="auth"
+          options={{
+            animation: "fade",
+            animationDuration: 200,
+          }}
+        />
         <Stack.Screen
           name="player"
           options={{ animation: "slide_from_bottom", headerShown: false }}

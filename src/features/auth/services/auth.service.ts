@@ -1,5 +1,9 @@
 import apiClient from "src/utils/api/client";
 import { endpoints } from "src/utils/endpoints";
+import {
+  getGuestDeviceId,
+  markGuestConverted,
+} from "src/features/guest/store/guestStore";
 import type {
   AuthResponse,
   LoginPayload,
@@ -7,19 +11,28 @@ import type {
   RegisterPayload,
 } from "../types/auth.types";
 
+function withDeviceId<T extends Record<string, unknown>>(payload: T) {
+  return {
+    ...payload,
+    deviceId: getGuestDeviceId(),
+  };
+}
+
 export async function register(payload: RegisterPayload) {
   const { data } = await apiClient.post<AuthResponse>(
     endpoints.auth.register,
-    payload
+    withDeviceId(payload)
   );
+  markGuestConverted();
   return data.data;
 }
 
 export async function login(payload: LoginPayload) {
   const { data } = await apiClient.post<AuthResponse>(
     endpoints.auth.login,
-    payload
+    withDeviceId(payload)
   );
+  markGuestConverted();
   return data.data;
 }
 

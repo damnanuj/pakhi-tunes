@@ -13,17 +13,27 @@ import Animated, {
 import { XStack, YStack } from "tamagui";
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
-import { moderateScale, scale, verticalScale } from "src/utils/functions/dimensions";
+import {
+  moderateScale,
+  scale,
+  verticalScale,
+} from "src/utils/functions/dimensions";
 import type { NearbySession } from "../types/session.types";
 
 const RADAR_SIZE = moderateScale(260);
 const PULSE_COUNT = 3;
 
-function PulseRing({ delay }: { delay: number }) {
+function PulseRing({ delay, active }: { delay: number; active: boolean }) {
   const scaleValue = useSharedValue(0.3);
   const opacity = useSharedValue(0.8);
 
   useEffect(() => {
+    if (!active) {
+      scaleValue.value = 0.3;
+      opacity.value = 0;
+      return;
+    }
+
     scaleValue.value = withDelay(
       delay,
       withRepeat(
@@ -46,12 +56,14 @@ function PulseRing({ delay }: { delay: number }) {
         false
       )
     );
-  }, [delay, opacity, scaleValue]);
+  }, [active, delay, opacity, scaleValue]);
 
   const style = useAnimatedStyle(() => ({
     transform: [{ scale: scaleValue.value }],
     opacity: opacity.value,
   }));
+
+  if (!active) return null;
 
   return (
     <Animated.View
@@ -74,10 +86,12 @@ function HostDot({
   session,
   index,
   total,
+  active,
 }: {
   session: NearbySession;
   index: number;
   total: number;
+  active: boolean;
 }) {
   const angle = (index / Math.max(total, 1)) * Math.PI * 2 - Math.PI / 2;
   const radius = RADAR_SIZE * 0.34;
@@ -86,6 +100,10 @@ function HostDot({
   const pulse = useSharedValue(1);
 
   useEffect(() => {
+    if (!active) {
+      pulse.value = 1;
+      return;
+    }
     pulse.value = withRepeat(
       withSequence(
         withTiming(1.25, { duration: 700 }),
@@ -94,7 +112,7 @@ function HostDot({
       -1,
       true
     );
-  }, [pulse]);
+  }, [active, pulse]);
 
   const dotStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulse.value }],
@@ -143,6 +161,8 @@ function ScanningDot({ active }: { active: boolean }) {
     opacity: opacity.value,
   }));
 
+  if (!active) return null;
+
   return (
     <Animated.View
       style={[
@@ -158,7 +178,7 @@ function ScanningDot({ active }: { active: boolean }) {
   );
 }
 
-function ScanEmptyState() {
+function ScanEmptyState({ discoverable }: { discoverable: boolean }) {
   return (
     <XStack
       items="center"
@@ -186,24 +206,37 @@ function ScanEmptyState() {
 type RadarScanViewProps = {
   sessions: NearbySession[];
   isScanning: boolean;
+  discoverable?: boolean;
 };
 
-export default function RadarScanView({ sessions, isScanning }: RadarScanViewProps) {
+export default function RadarScanView({
+  sessions,
+  isScanning,
+  discoverable = true,
+}: RadarScanViewProps) {
   const rotate = useSharedValue(0);
+  const isActive = discoverable;
 
   useEffect(() => {
+    if (!isActive) {
+      rotate.value = 0;
+      return;
+    }
     rotate.value = withRepeat(
       withTiming(360, { duration: 4000, easing: Easing.linear }),
       -1,
       false
     );
-  }, [rotate]);
+  }, [isActive, rotate]);
 
   const sweepStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${rotate.value}deg` }],
   }));
 
   const hasSessions = sessions.length > 0;
+  const statusText = discoverable
+    ? "Scanning nearby sessions…"
+    : "Nearby listening is off";
 
   return (
     <YStack items="center" gap={verticalScale(14)} width="100%">
@@ -226,41 +259,56 @@ export default function RadarScanView({ sessions, isScanning }: RadarScanViewPro
             overflow: "hidden",
             alignItems: "center",
             justifyContent: "center",
+            opacity: discoverable ? 1 : 0.75,
           }}
         >
           {Array.from({ length: PULSE_COUNT }).map((_, i) => (
-            <PulseRing key={i} delay={i * 800} />
+            <PulseRing key={i} delay={i * 800} active={isActive} />
           ))}
 
-          <Animated.View
-            style={[
-              {
-                position: "absolute",
-                width: RADAR_SIZE / 2,
-                height: RADAR_SIZE / 2,
-                left: RADAR_SIZE / 2,
-                top: RADAR_SIZE / 2,
-                transformOrigin: "left top",
-                borderTopWidth: 2,
-                borderTopColor: "rgba(255,255,255,0.35)",
-                backgroundColor: "rgba(255,255,255,0.06)",
-              },
-              sweepStyle,
-            ]}
-          />
+          {isActive ? (
+            <Animated.View
+              style={[
+                {
+                  position: "absolute",
+                  width: RADAR_SIZE / 2,
+                  height: RADAR_SIZE / 2,
+                  left: RADAR_SIZE / 2,
+                  top: RADAR_SIZE / 2,
+                  transformOrigin: "left top",
+                  borderTopWidth: 2,
+                  borderTopColor: "rgba(255,255,255,0.35)",
+                  backgroundColor: "rgba(255,255,255,0.06)",
+                },
+                sweepStyle,
+              ]}
+            />
+          ) : null}
 
           <View
             style={{
               width: moderateScale(56),
               height: moderateScale(56),
               borderRadius: moderateScale(28),
-              backgroundColor: themeColors.dark.accent,
+              backgroundColor: discoverable
+                ? themeColors.dark.accent
+                : themeColors.dark.surfaceSecondary,
               alignItems: "center",
               justifyContent: "center",
               zIndex: 2,
+              borderWidth: discoverable ? 0 : 1,
+              borderColor: themeColors.dark.borderSecondary,
             }}
           >
-            <MyText fontSize={moderateScale(22)} weight="800" color={themeColors.dark.onAccent}>
+            <MyText
+              fontSize={moderateScale(22)}
+              weight="800"
+              color={
+                discoverable
+                  ? themeColors.dark.onAccent
+                  : themeColors.dark.textMuted
+              }
+            >
               ♪
             </MyText>
           </View>
@@ -271,24 +319,25 @@ export default function RadarScanView({ sessions, isScanning }: RadarScanViewPro
               session={session}
               index={index}
               total={Math.min(sessions.length, 8)}
+              active={isActive}
             />
           ))}
         </View>
       </View>
 
       <XStack items="center" justify="center" gap={scale(8)}>
-        <ScanningDot active={isScanning} />
+        <ScanningDot active={discoverable && isScanning} />
         <MyText
           fontSize={moderateScale(13)}
           weight="600"
           color={themeColors.dark.textMuted}
           textAlign="center"
         >
-          Scanning nearby sessions…
+          {statusText}
         </MyText>
       </XStack>
 
-      {hasSessions ? (
+      {hasSessions && discoverable ? (
         <View
           style={{
             paddingHorizontal: scale(12),
@@ -308,9 +357,9 @@ export default function RadarScanView({ sessions, isScanning }: RadarScanViewPro
             {sessions.length} session{sessions.length === 1 ? "" : "s"} found
           </MyText>
         </View>
-      ) : (
-        <ScanEmptyState />
-      )}
+      ) : discoverable ? (
+        <ScanEmptyState discoverable={discoverable} />
+      ) : null}
     </YStack>
   );
 }

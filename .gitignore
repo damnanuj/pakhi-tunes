@@ -46,3 +46,6 @@ node_modules
 .expo
 ios
 android
+
+# image optimization backups (local only)
+assets/images/_originals/

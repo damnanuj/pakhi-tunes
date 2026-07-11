@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { View } from "react-native";
 import { Button, Input, YStack, XStack, Stack, useTheme, Form } from "tamagui";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import MyText from "src/components/MyText";
@@ -17,7 +18,7 @@ import {
   validateSignUpForm,
 } from "../utils/validation";
 import AuthSwitchLink from "./AuthSwitchLink";
-import DisabledGoogleAuthButton from "./DisabledGoogleAuthButton";
+import GoogleAuthButton from "./GoogleAuthButton";
 import AuthPasswordInput from "./AuthPasswordInput";
 
 export default function SignUpForm({
@@ -30,7 +31,9 @@ export default function SignUpForm({
   const { redirect } = useLocalSearchParams<{ redirect?: string }>();
   const { setSession } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [apiError, setApiError] = useState("");
+  const isFormLocked = isLoading || isGoogleLoading;
 
   const [form, setForm] = useState({
     name: "",
@@ -96,6 +99,22 @@ export default function SignUpForm({
           </MyText>
         ) : null}
 
+        <Stack width="100%" position="relative" opacity={isGoogleLoading ? 0.6 : 1}>
+          {isGoogleLoading ? (
+            <View
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 1,
+                backgroundColor: "rgba(0,0,0,0.35)",
+              }}
+              pointerEvents="auto"
+            />
+          ) : null}
+
         <YStack
           width="100%"
           gap={verticalScale(10)}
@@ -110,6 +129,7 @@ export default function SignUpForm({
             focusStyle={{ borderColor: theme.accentYellow }}
             value={form.name}
             onChangeText={(text) => handleChange("name", text)}
+            editable={!isFormLocked}
             bg={"transparent"}
             placeholder="Enter Your Name"
             width="100%"
@@ -142,6 +162,7 @@ export default function SignUpForm({
             onChangeText={(text) => handleChange("email", text)}
             autoCapitalize="none"
             keyboardType="email-address"
+            editable={!isFormLocked}
             bg={"transparent"}
             placeholder="Enter Your Email"
             width="100%"
@@ -167,6 +188,7 @@ export default function SignUpForm({
             onChangeText={(text) => handleChange("password", text)}
             placeholder="Create a Password"
             hasError={Boolean(errors.password)}
+            disabled={isFormLocked}
           />
           {errors.password ? (
             <MyText color={"red"}>{errors.password}</MyText>
@@ -179,8 +201,8 @@ export default function SignUpForm({
             bg={themeColors.dark.accent}
             size="$4"
             onPress={handleSignUp}
-            disabled={isLoading}
-            opacity={isLoading ? 0.7 : 1}
+            disabled={isFormLocked}
+            opacity={isFormLocked ? 0.7 : 1}
             mt={verticalScale(16)}
           >
             <MyText color={"$accentBlack"}>
@@ -210,13 +232,19 @@ export default function SignUpForm({
             borderColor={"#fff"}
           />
         </XStack>
+        </Stack>
 
-        <DisabledGoogleAuthButton label="Sign up with Google" />
+        <GoogleAuthButton
+          label="Sign up with Google"
+          onError={(message) => setApiError(message)}
+          onLoadingChange={setIsGoogleLoading}
+        />
 
         <AuthSwitchLink
           prompt="Already have an account?"
           linkText="Sign in here"
           onPress={onSwitchMode}
+          disabled={isFormLocked}
         />
       </Form>
     </>

@@ -47,6 +47,16 @@ import {
   resetPositionSyncSuspension,
   suspendPositionSyncFromStatusForMs,
 } from "../utils/playerPositionSync";
+import {
+  assertCanGuestListen,
+  reportAndSwitch,
+  startTracking,
+  stopTracking,
+} from "src/features/listening/services/listeningTracker";
+import {
+  endPresenceIfBackgroundAndNotPlaying,
+  endPresenceSession,
+} from "src/features/presence/utils/presenceHeartbeatCoordinator";
 
 type PlayerContextValue = {
   playSong: (song: ArtistSong) => Promise<void>;
@@ -224,6 +234,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const loadAndPlayActiveTrack = useCallback(
     async (track: ActiveTrack) => {
+      if (!assertCanGuestListen()) {
+        return;
+      }
+
       leaveListenerSessionIfActive();
 
       const requestGen = ++playRequestGenerationRef.current;
@@ -245,6 +259,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           historyRecordedForTrackIdRef.current = track.id;
           recordPlayToHistory(activeTrackToHistoryPayload(track));
         }
+
+        void reportAndSwitch(track);
 
         const progress = await TrackPlayer.getProgress();
         usePlayerStore.getState().setPlayback({
@@ -442,6 +458,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const handleTrackEnded = useCallback(async () => {
     try {
+      await stopTracking();
+
       const state = usePlayerStore.getState();
       const { repeatMode } = state;
 
@@ -463,7 +481,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      if (!hasQueue(state)) return;
+      if (!hasQueue(state)) {
+        void endPresenceIfBackgroundAndNotPlaying();
+        return;
+      }
 
       if (hasNext(state)) {
         if (state.queueIndex < state.queue.length - 1) {
@@ -471,6 +492,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         } else if (state.repeatMode === "all") {
           await playQueueAtIndex(0);
         }
+      } else {
+        void endPresenceIfBackgroundAndNotPlaying();
       }
     } finally {
       trackEndedHandledForId = null;
@@ -501,9 +524,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const repeatMode = usePlayerStore.getState().repeatMode;
       if (state.state === State.Playing) {
         await TrackPlayer.pause();
+        void stopTracking();
+        void endPresenceIfBackgroundAndNotPlaying();
         emitHostPauseIfHosting(positionMs, repeatMode);
       } else {
+        if (!assertCanGuestListen()) {
+          return;
+        }
         await TrackPlayer.play();
+        const activeTrack = usePlayerStore.getState().activeTrack;
+        if (activeTrack) {
+          startTracking(activeTrack);
+        }
         emitHostPlayIfHosting(positionMs, repeatMode);
       }
     } catch {
@@ -560,6 +592,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [applyRepeatModeToPlayer]);
 
   const stopPlaybackAndClear = useCallback(async () => {
+    await stopTracking();
+    void endPresenceSession();
     await resetNativePlayer();
     usePlayerStore.getState().setActiveTrack(null);
     usePlayerStore.getState().resetPlayback();

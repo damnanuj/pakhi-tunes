@@ -8,12 +8,14 @@ type AuthSwitchLinkProps = {
   prompt: string;
   linkText: string;
   onPress: () => void;
+  disabled?: boolean;
 };
 
 export default function AuthSwitchLink({
   prompt,
   linkText,
   onPress,
+  disabled = false,
 }: AuthSwitchLinkProps) {
   return (
     <XStack
@@ -22,13 +24,15 @@ export default function AuthSwitchLink({
       items="center"
       gap={moderateScale(4)}
       flexWrap="wrap"
+      opacity={disabled ? 0.5 : 1}
+      pointerEvents={disabled ? "none" : "auto"}
     >
       <MyText color={"$textSecondary"} fontSize={moderateScale(14)}>
         {prompt}
       </MyText>
-      <Pressable onPress={onPress}>
+      <Pressable onPress={disabled ? undefined : onPress} disabled={disabled}>
         <MyText
-          color={themeColors.dark.accent}
+          color={disabled ? themeColors.dark.textMuted : themeColors.dark.accent}
           fontSize={moderateScale(14)}
           weight="600"
         >

@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
-import { Linking, StyleSheet, TouchableOpacity, View } from "react-native";
-import * as WebBrowser from "expo-web-browser";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 import {
   ChevronRight,
   Github,
@@ -20,6 +19,7 @@ import {
   verticalScale,
 } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
+import { openExternalUrl } from "src/utils/linking/openExternalUrl";
 import {
   CREATOR_CONTACT_SUBTITLE,
   CREATOR_CONTACT_TITLE,
@@ -38,21 +38,6 @@ const LINK_ICON_SIZE = moderateScale(20);
 const SOCIAL_ICON_SIZE = moderateScale(18);
 const LINK_BUTTON_SIZE = moderateScale(36);
 const CARD_ICON_SIZE = moderateScale(44);
-
-async function openLink(url: string) {
-  try {
-    await Linking.openURL(url);
-    return;
-  } catch {
-    // Fall through to in-app browser.
-  }
-
-  try {
-    await WebBrowser.openBrowserAsync(url);
-  } catch {
-    // Ignore link open failures.
-  }
-}
 
 function QuoteLine({
   before,
@@ -197,7 +182,7 @@ export default function ProfileCreatorFooter() {
 
       <YStack gap={verticalScale(4)} items="center">
         <QuoteLine
-          before="Not made with"
+          before="Not just made with"
           icon={
             <Heart
               size={QUOTE_ICON_SIZE}
@@ -218,7 +203,7 @@ export default function ProfileCreatorFooter() {
 
       <View style={styles.creatorPill}>
         <TouchableOpacity
-          onPress={() => void openLink(CREATOR_WEBSITE_URL)}
+          onPress={() => void openExternalUrl(CREATOR_WEBSITE_URL)}
           activeOpacity={0.7}
           accessibilityRole="link"
           accessibilityLabel={`Open ${CREATOR_HANDLE} website`}
@@ -236,17 +221,17 @@ export default function ProfileCreatorFooter() {
 
         <CompactLinkButton
           icon={<Globe size={SOCIAL_ICON_SIZE} color={themeColors.dark.onSurface} />}
-          onPress={() => void openLink(CREATOR_WEBSITE_URL)}
+          onPress={() => void openExternalUrl(CREATOR_WEBSITE_URL)}
           accessibilityLabel={`${CREATOR_HANDLE} website`}
         />
         <CompactLinkButton
           icon={<Github size={SOCIAL_ICON_SIZE} color={themeColors.dark.onSurface} />}
-          onPress={() => void openLink(CREATOR_GITHUB_URL)}
+          onPress={() => void openExternalUrl(CREATOR_GITHUB_URL)}
           accessibilityLabel={`${CREATOR_HANDLE} on GitHub`}
         />
         <CompactLinkButton
           icon={<Instagram size={SOCIAL_ICON_SIZE} color={themeColors.dark.onSurface} />}
-          onPress={() => void openLink(CREATOR_INSTAGRAM_URL)}
+          onPress={() => void openExternalUrl(CREATOR_INSTAGRAM_URL)}
           accessibilityLabel={`${CREATOR_HANDLE} on Instagram`}
         />
       </View>
@@ -256,7 +241,7 @@ export default function ProfileCreatorFooter() {
           icon={<LifeBuoy size={LINK_ICON_SIZE} color={themeColors.dark.onSurface} />}
           title={CREATOR_CONTACT_TITLE}
           subtitle={CREATOR_CONTACT_SUBTITLE}
-          onPress={() => void openLink(CREATOR_CONTACT_URL)}
+          onPress={() => void openExternalUrl(CREATOR_CONTACT_URL)}
           accessibilityLabel={`${CREATOR_CONTACT_TITLE}. ${CREATOR_CONTACT_SUBTITLE}`}
         />
 
@@ -270,7 +255,7 @@ export default function ProfileCreatorFooter() {
           }
           title={CREATOR_REVIEW_TITLE}
           subtitle={CREATOR_REVIEW_SUBTITLE}
-          onPress={() => void openLink(CREATOR_REVIEW_URL)}
+          onPress={() => void openExternalUrl(CREATOR_REVIEW_URL)}
           accessibilityLabel={`${CREATOR_REVIEW_TITLE}. ${CREATOR_REVIEW_SUBTITLE}`}
           accentIcon
         />

@@ -1,88 +1,23 @@
-import { useCallback, useState } from "react";
 import { Radio } from "@tamagui/lucide-icons";
 import { Switch, YStack } from "tamagui";
-import { useAuth } from "src/features/auth/hooks/useAuth";
-import { appToast } from "src/components/toast/appToastHelpers";
 import themeColors from "src/utils/theme/colors";
 import { verticalScale } from "src/utils/functions/dimensions";
 import ProfileMenuItem from "src/features/Profile/components/ProfileMenuItem";
-import ConfirmDialog from "src/components/ConfirmDialog";
-import { updateDiscoverable } from "../services/session.service";
-import {
-  DIALOG_ALLOW,
-  DIALOG_CANCEL,
-  DIALOG_SETTINGS,
-  LOCATION_PERMISSION_MESSAGE,
-  LOCATION_PERMISSION_SUBTITLE,
-  LOCATION_PERMISSION_TITLE,
-  LOCATION_SETTINGS_MESSAGE,
-  openAppSettings,
-  requestLocationPermission,
-} from "../utils/locationPermission";
+import { useNearbyDiscoverability } from "../hooks/useNearbyDiscoverability";
+import NearbyDiscoverabilityDialogs from "./NearbyDiscoverabilityDialogs";
 
 export default function DiscoverabilityToggle() {
-  const { user, isAuthenticated, setUser } = useAuth();
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [showPermissionInfo, setShowPermissionInfo] = useState(false);
-  const [showSettingsPrompt, setShowSettingsPrompt] = useState(false);
-
-  const discoverable = Boolean(user?.discoverable);
-
-  const applyDiscoverable = useCallback(
-    async (next: boolean) => {
-      if (!user) return;
-      setIsUpdating(true);
-      try {
-        const updated = await updateDiscoverable(next);
-        setUser(updated);
-      } catch {
-        appToast.error("Could not update nearby listening setting");
-      } finally {
-        setIsUpdating(false);
-      }
-    },
-    [setUser, user]
-  );
-
-  const handleToggle = useCallback(
-    async (checked: boolean) => {
-      if (!user) return;
-
-      if (checked) {
-        setShowPermissionInfo(true);
-        return;
-      }
-
-      await applyDiscoverable(false);
-    },
-    [applyDiscoverable, user]
-  );
-
-  const handlePermissionConfirm = useCallback(async () => {
-    setShowPermissionInfo(false);
-    if (!user) return;
-
-    const granted = await requestLocationPermission();
-    if (!granted) {
-      setShowSettingsPrompt(true);
-      return;
-    }
-
-    setIsUpdating(true);
-    try {
-      const updated = await updateDiscoverable(true);
-      setUser(updated);
-      appToast.info(
-        "Nearby listening is on. Others can find you while you play music."
-      );
-    } catch {
-      appToast.error("Could not enable nearby listening");
-    } finally {
-      setIsUpdating(false);
-    }
-  }, [setUser, user]);
-
-  if (!isAuthenticated || !user) return null;
+  const {
+    discoverable,
+    isAuthenticated,
+    isUpdating,
+    handleToggle,
+    showPermissionInfo,
+    setShowPermissionInfo,
+    showSettingsPrompt,
+    setShowSettingsPrompt,
+    handlePermissionConfirm,
+  } = useNearbyDiscoverability();
 
   return (
     <>
@@ -92,7 +27,7 @@ export default function DiscoverabilityToggle() {
           label="Nearby Listening"
           trailing={
             <Switch
-              checked={discoverable}
+              checked={isAuthenticated ? discoverable : false}
               onCheckedChange={(checked) => void handleToggle(Boolean(checked))}
               disabled={isUpdating}
               backgroundColor={
@@ -107,26 +42,12 @@ export default function DiscoverabilityToggle() {
         />
       </YStack>
 
-      <ConfirmDialog
-        open={showPermissionInfo}
-        onOpenChange={setShowPermissionInfo}
-        title={LOCATION_PERMISSION_TITLE}
-        subtitle={LOCATION_PERMISSION_SUBTITLE}
-        message={LOCATION_PERMISSION_MESSAGE}
-        confirmLabel={DIALOG_ALLOW}
-        cancelLabel={DIALOG_CANCEL}
-        onConfirm={() => void handlePermissionConfirm()}
-      />
-
-      <ConfirmDialog
-        open={showSettingsPrompt}
-        onOpenChange={setShowSettingsPrompt}
-        title={LOCATION_PERMISSION_TITLE}
-        subtitle={LOCATION_PERMISSION_SUBTITLE}
-        message={LOCATION_SETTINGS_MESSAGE}
-        confirmLabel={DIALOG_SETTINGS}
-        cancelLabel={DIALOG_CANCEL}
-        onConfirm={() => void openAppSettings()}
+      <NearbyDiscoverabilityDialogs
+        showPermissionInfo={showPermissionInfo}
+        setShowPermissionInfo={setShowPermissionInfo}
+        showSettingsPrompt={showSettingsPrompt}
+        setShowSettingsPrompt={setShowSettingsPrompt}
+        onPermissionConfirm={() => void handlePermissionConfirm()}
       />
     </>
   );

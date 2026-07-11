@@ -70,6 +70,14 @@ export const appToast = {
     });
   },
 
+  welcome(name: string) {
+    useAppToastStore.getState().show({
+      variant: "success",
+      message: `Welcome, ${name}`,
+      icon: "check",
+    });
+  },
+
   welcomeBack(name: string) {
     useAppToastStore.getState().show({
       variant: "success",
@@ -99,6 +107,42 @@ export const appToast = {
       variant: "success",
       message,
       icon: "check",
+    });
+  },
+
+  signInRequired(
+    message = "You need to sign in to use this feature",
+    durationMs = 3000
+  ) {
+    useAppToastStore.getState().show({
+      variant: "success",
+      message,
+      icon: "check",
+      durationMs,
+    });
+  },
+
+  addedToQueue(title: string) {
+    useAppToastStore.getState().show({
+      variant: "success",
+      message: `Added "${title}" to queue`,
+      icon: "check",
+    });
+  },
+
+  playingNext(title: string) {
+    useAppToastStore.getState().show({
+      variant: "success",
+      message: `"${title}" will play next`,
+      icon: "check",
+    });
+  },
+
+  removedFromQueue(title: string) {
+    useAppToastStore.getState().show({
+      variant: "removed",
+      message: `Removed "${title}" from queue`,
+      icon: "trash",
     });
   },
 };

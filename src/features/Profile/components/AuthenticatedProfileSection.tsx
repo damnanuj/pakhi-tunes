@@ -12,10 +12,12 @@ type AuthenticatedProfileSectionProps = {
 export default function AuthenticatedProfileSection({
   user,
 }: AuthenticatedProfileSectionProps) {
+  const avatarSource = user.avatar ? { uri: user.avatar } : GUEST_AVATAR;
+
   return (
     <YStack >
       <ProfileSection
-        avatarSource={GUEST_AVATAR}
+        avatarSource={avatarSource}
         name={user.name}
         subtitle={user.email}
         showEditButton={false}

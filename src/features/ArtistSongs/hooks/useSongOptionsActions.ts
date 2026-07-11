@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { appToast } from "src/components/toast/appToastHelpers";
 import { useAuth } from "src/features/auth/hooks/useAuth";
 import { useDownload } from "src/features/Downloads/hooks/useDownload";
 import type { DownloadQuality } from "src/features/Downloads/types/download.types";
@@ -6,6 +7,9 @@ import { useFavoriteStatus } from "src/features/favorites/hooks/useFavoriteStatu
 import { useLocalFavoriteSongIds } from "src/features/favorites/hooks/useLocalFavorites";
 import { useToggleFavorite } from "src/features/favorites/hooks/useToggleFavorite";
 import { artistSongToFavoritePayload } from "src/features/favorites/types/favorites.types";
+import { usePlayerStore } from "src/features/Player/store/playerStore";
+import { hasQueue, isSongInQueue } from "src/features/Player/utils/queueHelpers";
+import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
 import type { ArtistSong } from "src/types/artistSongs.types";
 
 export type SongOptionsDownloadStatus =
@@ -35,6 +39,18 @@ export type SongOptionsMenuActions = {
     label: string;
     onPress: () => void;
   };
+  playNext?: {
+    label: string;
+    onPress: () => void;
+  };
+  addToQueue?: {
+    label: string;
+    onPress: () => void;
+  };
+  removeFromQueue?: {
+    label: string;
+    onPress: () => void;
+  };
   qualityDialog: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -59,6 +75,19 @@ export function useSongOptionsActions(
   const [qualityDialogOpen, setQualityDialogOpen] = useState(false);
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [isSubmittingQuality, setIsSubmittingQuality] = useState(false);
+
+  const queue = usePlayerStore((s) => s.queue);
+  const queueSource = usePlayerStore((s) => s.queueSource);
+  const queueIndex = usePlayerStore((s) => s.queueIndex);
+  const activeTrackId = usePlayerStore((s) => s.activeTrack?.id);
+  const addSongToQueue = usePlayerStore((s) => s.addSongToQueue);
+  const playSongNext = usePlayerStore((s) => s.playSongNext);
+  const removeSongFromQueue = usePlayerStore((s) => s.removeSongFromQueue);
+
+  const queueActive = hasQueue({ queue, queueIndex, queueSource, repeatMode: "off" });
+  const isCurrentlyPlaying = activeTrackId === song.id;
+  const songAlreadyInQueue = isSongInQueue(queue, song.id);
+  const songTitle = useMemo(() => decodeHtmlEntities(song.name), [song.name]);
 
   const favoriteStatusSongId = isAuthenticated
     ? menuOpen
@@ -149,6 +178,26 @@ export function useSongOptionsActions(
     options?.onRemoveFromHistory?.();
   }, [options]);
 
+  const handleAddToQueuePress = useCallback(() => {
+    addSongToQueue(song);
+    appToast.addedToQueue(songTitle);
+  }, [addSongToQueue, song, songTitle]);
+
+  const handlePlayNextPress = useCallback(() => {
+    playSongNext(song);
+    appToast.playingNext(songTitle);
+  }, [playSongNext, song, songTitle]);
+
+  const handleRemoveFromQueuePress = useCallback(() => {
+    removeSongFromQueue(song.id);
+    appToast.removedFromQueue(songTitle);
+  }, [removeSongFromQueue, song.id, songTitle]);
+
+  const showPlayNext = queueActive && !isCurrentlyPlaying;
+  const showAddToQueue = queueActive && !isCurrentlyPlaying && !songAlreadyInQueue;
+  const showRemoveFromQueue =
+    queueActive && !isCurrentlyPlaying && songAlreadyInQueue;
+
   return {
     favorite: {
       label: favoriteLabel,
@@ -165,6 +214,30 @@ export function useSongOptionsActions(
       progress,
       onPress: handleDownloadPress,
     },
+    ...(showPlayNext
+      ? {
+          playNext: {
+            label: "Play next",
+            onPress: handlePlayNextPress,
+          },
+        }
+      : {}),
+    ...(showAddToQueue
+      ? {
+          addToQueue: {
+            label: "Add to queue",
+            onPress: handleAddToQueuePress,
+          },
+        }
+      : {}),
+    ...(showRemoveFromQueue
+      ? {
+          removeFromQueue: {
+            label: "Remove from queue",
+            onPress: handleRemoveFromQueuePress,
+          },
+        }
+      : {}),
     ...(options?.onRemoveFromHistory
       ? {
           removeFromHistory: {

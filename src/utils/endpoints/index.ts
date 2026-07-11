@@ -13,6 +13,7 @@ export const endpoints = {
   auth: {
     register: "/auth/register",
     login: "/auth/login",
+    google: "/auth/google",
     me: "/auth/me",
   },
   favorites: {
@@ -39,4 +40,14 @@ export const endpoints = {
     discoverable: "/users/me/discoverable",
   },
   appConfig: "/app-config",
+  guests: {
+    ping: "/guests/ping",
+  },
+  presence: {
+    heartbeat: "/presence/heartbeat",
+    end: "/presence/end",
+  },
+  listening: {
+    report: "/listening/report",
+  },
 } as const;
