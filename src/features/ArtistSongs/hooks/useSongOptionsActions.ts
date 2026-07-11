@@ -8,7 +8,7 @@ import { useLocalFavoriteSongIds } from "src/features/favorites/hooks/useLocalFa
 import { useToggleFavorite } from "src/features/favorites/hooks/useToggleFavorite";
 import { artistSongToFavoritePayload } from "src/features/favorites/types/favorites.types";
 import { usePlayerStore } from "src/features/Player/store/playerStore";
-import { hasQueue, isSongInQueue } from "src/features/Player/utils/queueHelpers";
+import { hasQueue, isSongInQueue, canBootstrapQueue, isSongImmediatelyNext } from "src/features/Player/utils/queueHelpers";
 import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
 import type { ArtistSong } from "src/types/artistSongs.types";
 
@@ -79,14 +79,26 @@ export function useSongOptionsActions(
   const queue = usePlayerStore((s) => s.queue);
   const queueSource = usePlayerStore((s) => s.queueSource);
   const queueIndex = usePlayerStore((s) => s.queueIndex);
-  const activeTrackId = usePlayerStore((s) => s.activeTrack?.id);
+  const activeTrack = usePlayerStore((s) => s.activeTrack);
+  const activeArtistSong = usePlayerStore((s) => s.activeArtistSong);
+  const activeTrackId = activeTrack?.id;
   const addSongToQueue = usePlayerStore((s) => s.addSongToQueue);
   const playSongNext = usePlayerStore((s) => s.playSongNext);
   const removeSongFromQueue = usePlayerStore((s) => s.removeSongFromQueue);
 
-  const queueActive = hasQueue({ queue, queueIndex, queueSource, repeatMode: "off" });
+  const queueActive =
+    hasQueue({ queue, queueIndex, queueSource, repeatMode: "off" }) ||
+    canBootstrapQueue({
+      queue,
+      queueIndex,
+      queueSource,
+      repeatMode: "off",
+      activeArtistSong,
+      activeTrack,
+    });
   const isCurrentlyPlaying = activeTrackId === song.id;
   const songAlreadyInQueue = isSongInQueue(queue, song.id);
+  const isImmediateNext = isSongImmediatelyNext(queue, queueIndex, song.id);
   const songTitle = useMemo(() => decodeHtmlEntities(song.name), [song.name]);
 
   const favoriteStatusSongId = isAuthenticated
@@ -193,7 +205,8 @@ export function useSongOptionsActions(
     appToast.removedFromQueue(songTitle);
   }, [removeSongFromQueue, song.id, songTitle]);
 
-  const showPlayNext = queueActive && !isCurrentlyPlaying;
+  const showPlayNext =
+    queueActive && !isCurrentlyPlaying && !isImmediateNext;
   const showAddToQueue = queueActive && !isCurrentlyPlaying && !songAlreadyInQueue;
   const showRemoveFromQueue =
     queueActive && !isCurrentlyPlaying && songAlreadyInQueue;

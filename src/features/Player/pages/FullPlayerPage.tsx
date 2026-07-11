@@ -675,7 +675,13 @@ export default function FullPlayerPage() {
                 ) : (
                   <Repeat
                     size={moderateScale(20)}
-                    color={displayRepeatMode === "all" ? accent : muted}
+                    color={
+                      displayRepeatMode === "all"
+                        ? accent
+                        : isListener
+                          ? muted
+                          : onSurface
+                    }
                   />
                 )}
               </IconControl>

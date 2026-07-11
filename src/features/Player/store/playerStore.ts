@@ -1,7 +1,15 @@
 import { create } from "zustand";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import type { ActiveTrack, QueueSource, RepeatMode } from "../types";
-import { findSongIndex, isSongInQueue } from "../utils/queueHelpers";
+import {
+  canBootstrapQueue,
+  collapsedQueueState,
+  findSongIndex,
+  hasQueue,
+  isSongInQueue,
+  SEARCH_QUEUE_SOURCE,
+  shouldCollapseQueue,
+} from "../utils/queueHelpers";
 
 type PlaybackSlice = {
   isPlaying: boolean;
@@ -61,6 +69,23 @@ const initialQueue = {
   shuffleEnabled: false,
   repeatMode: "off" as RepeatMode,
 };
+
+function bootstrapQueueFromActiveSong(
+  get: () => PlayerState & PlayerActions,
+  set: (partial: Partial<PlayerState>) => void
+): boolean {
+  const state = get();
+  if (!canBootstrapQueue(state) || !state.activeArtistSong) return false;
+
+  const song = state.activeArtistSong;
+  set({
+    queue: [song],
+    originalQueue: [song],
+    queueIndex: 0,
+    queueSource: SEARCH_QUEUE_SOURCE,
+  });
+  return true;
+}
 
 export const usePlayerStore = create<PlayerState & PlayerActions>((set, get) => ({
   activeTrack: null,
@@ -136,26 +161,40 @@ export const usePlayerStore = create<PlayerState & PlayerActions>((set, get) => 
   },
   addSongToQueue: (song) => {
     const state = get();
-    if (!state.queueSource || state.queue.length === 0) return;
-    if (isSongInQueue(state.queue, song.id)) return;
+    if (!hasQueue(state)) {
+      if (!bootstrapQueueFromActiveSong(get, set)) return;
+    }
 
-    const queue = [...state.queue, song];
+    const nextState = get();
+    if (!nextState.queueSource || nextState.queue.length === 0) return;
+    if (isSongInQueue(nextState.queue, song.id)) return;
+
+    const queue = [...nextState.queue, song];
     set({
       queue,
-      originalQueue: state.shuffleEnabled
-        ? state.originalQueue
-        : [...state.originalQueue, song],
+      originalQueue: nextState.shuffleEnabled
+        ? nextState.originalQueue
+        : [...nextState.originalQueue, song],
     });
   },
   playSongNext: (song) => {
     const state = get();
-    if (!state.queueSource || state.queue.length === 0 || state.queueIndex < 0) {
+    if (!hasQueue(state)) {
+      if (!bootstrapQueueFromActiveSong(get, set)) return;
+    }
+
+    const nextState = get();
+    if (
+      !nextState.queueSource ||
+      nextState.queue.length === 0 ||
+      nextState.queueIndex < 0
+    ) {
       return;
     }
-    if (state.activeTrack?.id === song.id) return;
+    if (nextState.activeTrack?.id === song.id) return;
 
-    let queue = [...state.queue];
-    let queueIndex = state.queueIndex;
+    let queue = [...nextState.queue];
+    let queueIndex = nextState.queueIndex;
     const existingIdx = findSongIndex(queue, song.id);
 
     if (existingIdx >= 0) {
@@ -171,7 +210,9 @@ export const usePlayerStore = create<PlayerState & PlayerActions>((set, get) => 
     set({
       queue,
       queueIndex,
-      originalQueue: state.shuffleEnabled ? state.originalQueue : [...queue],
+      originalQueue: nextState.shuffleEnabled
+        ? nextState.originalQueue
+        : [...queue],
     });
   },
   removeSongFromQueue: (songId) => {
@@ -193,5 +234,16 @@ export const usePlayerStore = create<PlayerState & PlayerActions>((set, get) => 
       : queue;
 
     set({ queue, originalQueue, queueIndex });
+
+    const updated = get();
+    if (
+      shouldCollapseQueue({
+        queue: updated.queue,
+        queueIndex: updated.queueIndex,
+        activeTrack: updated.activeTrack,
+      })
+    ) {
+      set(collapsedQueueState);
+    }
   },
 }));

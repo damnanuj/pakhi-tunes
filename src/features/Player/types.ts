@@ -20,6 +20,7 @@ export type QueueSource =
   | { type: "artist"; id: string; name: string }
   | { type: "genre"; slug: string; name: string }
   | { type: "favorites"; name: string }
-  | { type: "history"; name: string };
+  | { type: "history"; name: string }
+  | { type: "search" };
 
 export type RepeatMode = "off" | "one" | "all";

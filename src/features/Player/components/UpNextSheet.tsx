@@ -36,7 +36,7 @@ import type { ArtistSong } from "src/types/artistSongs.types";
 import { QueueProvider } from "../context/QueueContext";
 import { useQueuePagination } from "../hooks/useQueuePagination";
 import { usePlayerStore } from "../store/playerStore";
-import { getQueueSourceLabel } from "../utils/queueHelpers";
+import { getQueueSourceLabel, shouldShowQueueSourceLabel } from "../utils/queueHelpers";
 import { useScrollEndReached } from "src/hooks";
 
 const SHEET_HEIGHT_RATIO = 0.7;
@@ -236,6 +236,7 @@ function UpNextSheet({ open, onOpenChange }: UpNextSheetProps) {
   }));
 
   const sourceLabel = getQueueSourceLabel(queueSource);
+  const showSourceLabel = shouldShowQueueSourceLabel(queueSource);
 
   const renderItem: ListRenderItem<ArtistSong> = useCallback(
     ({ item }) => <SongListItem song={item} />,
@@ -286,14 +287,16 @@ function UpNextSheet({ open, onOpenChange }: UpNextSheetProps) {
               >
                 Up Next
               </MyText>
-              <MyText
-                fontSize={moderateScale(13)}
-                weight="500"
-                color={themeColors.dark.textMuted}
-                numberOfLines={1}
-              >
-                Playing from {sourceLabel}
-              </MyText>
+              {showSourceLabel ? (
+                <MyText
+                  fontSize={moderateScale(13)}
+                  weight="500"
+                  color={themeColors.dark.textMuted}
+                  numberOfLines={1}
+                >
+                  Playing from {sourceLabel}
+                </MyText>
+              ) : null}
             </YStack>
           </View>
           <QueueProvider songs={queue} source={queueSource}>

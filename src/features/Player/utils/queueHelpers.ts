@@ -1,5 +1,7 @@
 import type { ArtistSong } from "src/types/artistSongs.types";
-import type { QueueSource, RepeatMode } from "../types";
+import type { ActiveTrack, QueueSource, RepeatMode } from "../types";
+
+export const SEARCH_QUEUE_SOURCE: QueueSource = { type: "search" };
 
 export function findSongIndex(songs: ArtistSong[], songId: string): number {
   return songs.findIndex((s) => s.id === songId);
@@ -7,6 +9,16 @@ export function findSongIndex(songs: ArtistSong[], songId: string): number {
 
 export function isSongInQueue(queue: ArtistSong[], songId: string): boolean {
   return queue.some((s) => s.id === songId);
+}
+
+export function isSongImmediatelyNext(
+  queue: ArtistSong[],
+  queueIndex: number,
+  songId: string
+): boolean {
+  const nextIndex = queueIndex + 1;
+  if (nextIndex < 0 || nextIndex >= queue.length) return false;
+  return queue[nextIndex]?.id === songId;
 }
 
 export function sourcesMatch(
@@ -27,6 +39,7 @@ export function sourcesMatch(
   if (a.type === "genre" && b.type === "genre") return a.slug === b.slug;
   if (a.type === "favorites" && b.type === "favorites") return true;
   if (a.type === "history" && b.type === "history") return true;
+  if (a.type === "search" && b.type === "search") return true;
   return false;
 }
 
@@ -55,9 +68,15 @@ export function getQueueSourceLabel(source: QueueSource | null): string {
       return source.name || "Favourites";
     case "history":
       return source.name || "Listening history";
+    case "search":
+      return "";
     default:
       return "Your library";
   }
+}
+
+export function shouldShowQueueSourceLabel(source: QueueSource | null): boolean {
+  return source?.type !== "search";
 }
 
 export function shuffleArray<T>(items: T[]): T[] {
@@ -88,8 +107,37 @@ type QueueStateSlice = {
   repeatMode: RepeatMode;
 };
 
+type BootstrapQueueStateSlice = QueueStateSlice & {
+  activeArtistSong: ArtistSong | null;
+  activeTrack: ActiveTrack | null;
+};
+
 export function hasQueue(state: QueueStateSlice): boolean {
-  return state.queue.length > 0 && state.queueSource !== null;
+  return state.queue.length > 1 && state.queueSource !== null;
+}
+
+export function shouldCollapseQueue(state: {
+  queue: ArtistSong[];
+  queueIndex: number;
+  activeTrack: ActiveTrack | null;
+}): boolean {
+  if (state.queue.length !== 1) return false;
+  const onlySong = state.queue[0];
+  if (!onlySong || state.queueIndex !== 0) return false;
+  return state.activeTrack?.id === onlySong.id;
+}
+
+export const collapsedQueueState = {
+  queue: [] as ArtistSong[],
+  originalQueue: [] as ArtistSong[],
+  queueIndex: -1,
+  queueSource: null as QueueSource | null,
+};
+
+export function canBootstrapQueue(state: BootstrapQueueStateSlice): boolean {
+  if (hasQueue(state)) return false;
+  if (!state.activeArtistSong) return false;
+  return state.activeTrack?.id === state.activeArtistSong.id;
 }
 
 export function hasNext(state: QueueStateSlice): boolean {

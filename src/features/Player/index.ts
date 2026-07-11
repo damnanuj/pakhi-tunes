@@ -14,8 +14,13 @@ export type {
   RepeatMode,
 } from "./types";
 export {
+  canBootstrapQueue,
+  collapsedQueueState,
   getQueueSourceLabel,
   hasNext,
   hasPreviousSong,
   hasQueue,
+  SEARCH_QUEUE_SOURCE,
+  shouldCollapseQueue,
+  shouldShowQueueSourceLabel,
 } from "./utils/queueHelpers";
