@@ -3,7 +3,7 @@
     "name": "Pakhi Tunes",
     "slug": "pakhi-tunes",
     "owner": "damnanuj",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "runtimeVersion": {
       "policy": "appVersion"

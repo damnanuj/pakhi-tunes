@@ -1,7 +1,7 @@
 {
   "name": "pakhi-tunes",
   "main": "./index.js",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "pyarnrivate": true,
   "scripts": {
     "upgrade:tamagui": "yarn up '*tamagui*'@latest '@tamagui/*'@latest",
