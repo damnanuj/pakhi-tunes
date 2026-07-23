@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
+import Constants from "expo-constants";
 import {
   ChevronRight,
   Github,
@@ -32,6 +33,14 @@ import {
   CREATOR_REVIEW_URL,
   CREATOR_WEBSITE_URL,
 } from "../constants/profileCreatorLinks";
+
+function getInstalledAppVersion(): string {
+  return (
+    Constants.expoConfig?.version ??
+    Constants.nativeAppVersion ??
+    "0.0.0"
+  );
+}
 
 const QUOTE_ICON_SIZE = moderateScale(13);
 const LINK_ICON_SIZE = moderateScale(20);
@@ -158,7 +167,7 @@ function FooterLinkCard({
 
         <ChevronRight
           size={moderateScale(20)}
-          color={accentIcon ? themeColors.dark.accent : themeColors.dark.textMuted}
+          color={accentIcon ? themeColors.dark.onSurface : themeColors.dark.textMuted}
         />
       </XStack>
     </TouchableOpacity>
@@ -166,6 +175,8 @@ function FooterLinkCard({
 }
 
 export default function ProfileCreatorFooter() {
+  const appVersion = getInstalledAppVersion();
+
   return (
     <YStack
       width="100%"
@@ -249,8 +260,8 @@ export default function ProfileCreatorFooter() {
           icon={
             <Star
               size={LINK_ICON_SIZE}
-              color={themeColors.dark.onAccent}
-              fill={themeColors.dark.accent}
+              color={themeColors.dark.onSurface}
+              fill={themeColors.dark.onSurface}
             />
           }
           title={CREATOR_REVIEW_TITLE}
@@ -260,6 +271,20 @@ export default function ProfileCreatorFooter() {
           accentIcon
         />
       </YStack>
+
+      <View
+        style={styles.versionChip}
+        accessibilityRole="text"
+        accessibilityLabel={`App version ${appVersion}`}
+      >
+        <MyText
+          fontSize={moderateScale(11)}
+          weight="700"
+          color={themeColors.dark.onSurface}
+        >
+          {`v${appVersion}`}
+        </MyText>
+      </View>
     </YStack>
   );
 }
@@ -308,5 +333,14 @@ const styles = StyleSheet.create({
     paddingVertical: verticalScale(14),
     minHeight: verticalScale(76),
     justifyContent: "center",
+  },
+  versionChip: {
+    marginTop: verticalScale(6),
+    paddingHorizontal: scale(14),
+    paddingVertical: verticalScale(6),
+    borderRadius: moderateScale(999),
+    backgroundColor: themeColors.dark.surfaceSecondary,
+    borderWidth: 1,
+    borderColor: themeColors.dark.borderSecondary,
   },
 });
