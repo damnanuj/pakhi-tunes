@@ -37,7 +37,8 @@ export default function PrivateRoomPanel({
   const [isEnding, setIsEnding] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
 
-  const isHostingPrivate = role === "host" && Boolean(roomCode);
+  const isHostingPrivate =
+    role === "host" && Boolean(roomCode) && Boolean(activeTrack);
   const isListeningPrivate =
     role === "listener" && activeSession?.visibility === "private";
 

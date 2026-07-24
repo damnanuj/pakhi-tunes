@@ -15,6 +15,21 @@ import { getCurrentCoordinates } from "../utils/locationPermission";
 
 const HEARTBEAT_INTERVAL_MS = 3_000;
 
+function patchActiveSessionPlayback(patch: {
+  playing?: boolean;
+  positionMs?: number;
+  trackId?: string;
+  trackTitle?: string;
+  trackArtist?: string;
+  trackArtwork?: string;
+  trackUri?: string;
+  trackDuration?: number;
+}) {
+  const active = useNearbySessionStore.getState().activeSession;
+  if (!active) return;
+  useNearbySessionStore.getState().setActiveSession({ ...active, ...patch });
+}
+
 export function useHostSession() {
   const { isAuthenticated, user } = useAuth();
   const activeTrack = usePlayerStore((s) => s.activeTrack);
@@ -116,22 +131,40 @@ export function useHostSession() {
     setSessionHostBridge({
       onPlay: (positionMs, repeatMode) => {
         if (useNearbySessionStore.getState().role !== "host") return;
+        patchActiveSessionPlayback({ playing: true, positionMs });
         sessionSocketService.emitHostPlay(positionMs, repeatMode);
       },
       onPause: (positionMs, repeatMode) => {
         if (useNearbySessionStore.getState().role !== "host") return;
+        patchActiveSessionPlayback({ playing: false, positionMs });
         sessionSocketService.emitHostPause(positionMs, repeatMode);
       },
       onSeek: (positionMs, repeatMode) => {
         if (useNearbySessionStore.getState().role !== "host") return;
+        patchActiveSessionPlayback({ positionMs });
         sessionSocketService.emitHostSeek(positionMs, repeatMode);
       },
       onTrackChange: (payload) => {
         if (useNearbySessionStore.getState().role !== "host") return;
+        patchActiveSessionPlayback({
+          trackId: payload.trackId,
+          trackTitle: payload.trackTitle,
+          trackArtist: payload.trackArtist,
+          trackArtwork: payload.trackArtwork,
+          trackUri: payload.trackUri,
+          trackDuration: payload.trackDuration,
+          positionMs: payload.positionMs,
+          playing: payload.playing,
+        });
         sessionSocketService.emitHostTrackChange(payload);
       },
       onHeartbeat: async (payload) => {
         if (useNearbySessionStore.getState().role !== "host") return;
+        patchActiveSessionPlayback({
+          playing: payload.playing,
+          positionMs: payload.positionMs,
+          ...(payload.trackId ? { trackId: payload.trackId } : {}),
+        });
         sessionSocketService.emitHostHeartbeat(payload);
         const sessionId = useNearbySessionStore.getState().activeSession?.id;
         if (!sessionId) return;
@@ -181,6 +214,11 @@ export function useHostSession() {
           longitude: coords?.longitude,
           repeatMode: state.repeatMode,
         };
+        patchActiveSessionPlayback({
+          playing: payload.playing,
+          positionMs: payload.positionMs,
+          trackId: payload.trackId,
+        });
         sessionSocketService.emitHostHeartbeat(payload);
         const sessionId = useNearbySessionStore.getState().activeSession?.id;
         if (!sessionId) return;

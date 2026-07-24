@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import TrackPlayer from "react-native-track-player";
 import { appToast } from "src/components/toast/appToastHelpers";
 import { useAuth } from "src/features/auth/hooks/useAuth";
@@ -43,6 +43,9 @@ async function connectAndStartHost(sessionId: string) {
 
 export function usePrivateRoomHost() {
   const { isAuthenticated } = useAuth();
+  const activeTrack = usePlayerStore((s) => s.activeTrack);
+  const role = useNearbySessionStore((s) => s.role);
+  const roomCode = useNearbySessionStore((s) => s.roomCode);
 
   const stopRoom = useCallback(async () => {
     const sessionId = useNearbySessionStore.getState().activeSession?.id;
@@ -66,6 +69,13 @@ export function usePrivateRoomHost() {
     useNearbySessionStore.getState().resetSession();
   }, []);
 
+  // End private room when host clears playback (any path)
+  useEffect(() => {
+    if (role !== "host" || !roomCode) return;
+    if (activeTrack) return;
+    void stopRoom();
+  }, [activeTrack, role, roomCode, stopRoom]);
+
   const createRoom = useCallback(async () => {
     if (!isAuthenticated) {
       appToast.error("Sign in required to create a room");
@@ -78,8 +88,8 @@ export function usePrivateRoomHost() {
     }
 
     const state = usePlayerStore.getState();
-    const activeTrack = state.activeTrack;
-    if (!activeTrack) {
+    const track = state.activeTrack;
+    if (!track) {
       appToast.error("Play a song first to create a room");
       return null;
     }
@@ -94,15 +104,13 @@ export function usePrivateRoomHost() {
 
     try {
       const session = await createPrivateRoom({
-        trackId: activeTrack.id,
-        trackTitle: activeTrack.title,
-        trackArtist: activeTrack.artist,
-        trackArtwork: activeTrack.artworkUrl,
-        trackUri: activeTrack.uri,
+        trackId: track.id,
+        trackTitle: track.title,
+        trackArtist: track.artist,
+        trackArtwork: track.artworkUrl,
+        trackUri: track.uri,
         trackDuration:
-          activeTrack.durationSec > 0
-            ? activeTrack.durationSec * 1000
-            : positionMs,
+          track.durationSec > 0 ? track.durationSec * 1000 : positionMs,
         playing: state.isPlaying,
         positionMs,
       });

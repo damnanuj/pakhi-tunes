@@ -47,7 +47,7 @@ function MiniPlayer() {
   const router = useRouter();
   const segments = useSegments();
   const { togglePlayPause, stopPlaybackAndClear } = usePlayback();
-  const { leaveSession } = useNearbySessionActions();
+  const { leaveSession, stopRoom } = useNearbySessionActions();
 
   const handleLeave = useCallback(async () => {
     await leaveSession();
@@ -57,12 +57,16 @@ function MiniPlayer() {
   }, [leaveSession, pathname, router]);
 
   const handleDismissSwipe = useCallback(async () => {
-    if (useNearbySessionStore.getState().role === "listener") {
+    const sessionState = useNearbySessionStore.getState();
+    if (sessionState.role === "listener") {
       await handleLeave();
       return;
     }
+    if (sessionState.role === "host" && sessionState.roomCode) {
+      await stopRoom();
+    }
     await stopPlaybackAndClear();
-  }, [handleLeave, stopPlaybackAndClear]);
+  }, [handleLeave, stopPlaybackAndClear, stopRoom]);
 
   const dismissSwipeRef = useRef(handleDismissSwipe);
   dismissSwipeRef.current = handleDismissSwipe;
