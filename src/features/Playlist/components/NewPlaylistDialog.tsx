@@ -28,7 +28,6 @@ import {
 import themeColors from "src/utils/theme/colors";
 import {
   PLAYLIST_COVER_URLS,
-  getRandomPlaylistCoverUrl,
 } from "../constants/playlistCovers";
 
 interface NewPlaylistDialogProps {
@@ -38,6 +37,8 @@ interface NewPlaylistDialogProps {
   isSubmitting?: boolean;
 }
 
+const DEFAULT_COVER_URL = PLAYLIST_COVER_URLS[0];
+
 export default function NewPlaylistDialog({
   open,
   onOpenChange,
@@ -45,13 +46,13 @@ export default function NewPlaylistDialog({
   isSubmitting = false,
 }: NewPlaylistDialogProps) {
   const [title, setTitle] = useState("");
-  const [coverUrl, setCoverUrl] = useState(getRandomPlaylistCoverUrl());
+  const [coverUrl, setCoverUrl] = useState(DEFAULT_COVER_URL);
   const wasOpenRef = useRef(false);
 
   useEffect(() => {
     if (open && !wasOpenRef.current) {
       setTitle("");
-      setCoverUrl(getRandomPlaylistCoverUrl());
+      setCoverUrl(DEFAULT_COVER_URL);
     }
     wasOpenRef.current = open;
   }, [open]);

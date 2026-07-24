@@ -8,7 +8,7 @@ import {
 import SkeletonPlaceholder from "src/components/SkeletonPlaceholder";
 import { SongListItemSkeleton } from "src/features/ArtistSongs/skeletons/ArtistSongsPageSkeleton";
 
-const COVER_SIZE = moderateScale(140);
+const COVER_SIZE = moderateScale(110);
 const SKELETON_COUNT = 8;
 
 function PlaylistHeaderSkeleton() {

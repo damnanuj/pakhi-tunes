@@ -15,7 +15,7 @@ interface PlaylistDetailHeaderProps {
   songCount: number;
 }
 
-const COVER_SIZE = moderateScale(140);
+const COVER_SIZE = moderateScale(110);
 
 function PlaylistDetailHeader({
   name,
