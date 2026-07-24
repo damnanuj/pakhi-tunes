@@ -77,7 +77,7 @@ export default function PlaylistsGrid() {
   const handlePress = useCallback(
     (item: PlaylistListItem) => {
       router.push(
-        `/home/playlist/${encodeURIComponent(item.id)}?name=${encodeURIComponent(item.name)}`
+        `/library/playlist/${encodeURIComponent(item.id)}?name=${encodeURIComponent(item.name)}`
       );
     },
     [router]

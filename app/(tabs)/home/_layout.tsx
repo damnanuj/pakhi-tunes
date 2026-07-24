@@ -32,10 +32,6 @@ export default function HomeLayout() {
         name="nearby"
         options={{ animation: "slide_from_right" }}
       />
-      <Stack.Screen
-        name="playlist/[id]"
-        options={{ animation: "slide_from_right" }}
-      />
     </Stack>
   );
 }
