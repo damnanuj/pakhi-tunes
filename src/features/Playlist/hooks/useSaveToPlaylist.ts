@@ -14,7 +14,7 @@ import { useCreatePlaylist } from "./useCreatePlaylist";
 import { getRandomPlaylistCoverUrl } from "../constants/playlistCovers";
 import {
   PLAYLISTS_QUERY_KEY,
-  getPlaylistDetailQueryKey,
+  getPlaylistDetailBaseQueryKey,
 } from "../queries/playlistQuery";
 
 function setsEqual(a: Set<string>, b: Set<string>): boolean {
@@ -133,7 +133,7 @@ export function useSaveToPlaylist(song: ArtistSong | null, sheetOpen = false) {
       void queryClient.invalidateQueries({ queryKey: PLAYLISTS_QUERY_KEY });
       for (const playlistId of [...toAdd, ...toRemove]) {
         void queryClient.invalidateQueries({
-          queryKey: getPlaylistDetailQueryKey(playlistId),
+          queryKey: getPlaylistDetailBaseQueryKey(playlistId),
         });
       }
 
@@ -173,7 +173,7 @@ export function useSaveToPlaylist(song: ArtistSong | null, sheetOpen = false) {
       });
       void queryClient.invalidateQueries({ queryKey: PLAYLISTS_QUERY_KEY });
       void queryClient.invalidateQueries({
-        queryKey: getPlaylistDetailQueryKey(playlist.id),
+        queryKey: getPlaylistDetailBaseQueryKey(playlist.id),
       });
       resetSelection();
     },

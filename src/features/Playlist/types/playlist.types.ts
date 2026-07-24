@@ -14,6 +14,12 @@ export interface PlaylistSong {
 
 export type PlaylistVisibility = "private" | "public";
 
+export type PlaylistSongSort =
+  | "addedAt_desc"
+  | "addedAt_asc"
+  | "title_asc"
+  | "title_desc";
+
 export interface PlaylistListItem {
   id: string;
   name: string;

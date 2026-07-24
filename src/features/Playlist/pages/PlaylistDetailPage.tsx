@@ -30,15 +30,23 @@ import {
 import { usePlaylistDetail } from "../hooks/usePlaylistDetail";
 import { playlistSongToQueueStub } from "../utils/playlistSongToQueueStub";
 import PlaylistDetailHeader from "../components/PlaylistDetailHeader";
+import PlaylistSortBar from "../components/PlaylistSortBar";
+import PlaylistSortMenu from "../components/PlaylistSortMenu";
 import PlaylistDetailSkeleton from "../skeletons/PlaylistDetailSkeleton";
 import { getPlaylistCoverUrl } from "../constants/playlistCovers";
+import {
+  usePlaylistSongSort,
+  useSetPlaylistSongSort,
+} from "../store/playlistSortStore";
+import type { PlaylistSongSort } from "../types/playlist.types";
+import type { MenuAnchor } from "src/features/ArtistSongs/components/SongOptionsMenu";
 import {
   deletePlaylist,
   removeSongFromPlaylist,
 } from "../services/playlist.service";
 import {
   PLAYLISTS_QUERY_KEY,
-  getPlaylistDetailQueryKey,
+  getPlaylistDetailBaseQueryKey,
 } from "../queries/playlistQuery";
 
 export default function PlaylistDetailPage() {
@@ -51,6 +59,10 @@ export default function PlaylistDetailPage() {
   const { isOffline } = useNetwork();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [sortMenuAnchor, setSortMenuAnchor] = useState<MenuAnchor | null>(null);
+  const sortMenuOpen = sortMenuAnchor !== null;
+  const sort = usePlaylistSongSort();
+  const setSort = useSetPlaylistSongSort();
   const scrollBottomPadding = useScrollBottomInset({
     includeTabBar: true,
     extra: 0,
@@ -62,7 +74,7 @@ export default function PlaylistDetailPage() {
     isError,
     isFetching,
     refetch,
-  } = usePlaylistDetail(id);
+  } = usePlaylistDetail(id, sort);
 
   const { refreshControl } = useRefreshable({
     onRefresh: async () => {
@@ -98,7 +110,7 @@ export default function PlaylistDetailPage() {
       const title = decodeHtmlEntities(song.name);
       await removeSongFromPlaylist(id, song.id);
       void queryClient.invalidateQueries({
-        queryKey: getPlaylistDetailQueryKey(id),
+        queryKey: getPlaylistDetailBaseQueryKey(id),
       });
       void queryClient.invalidateQueries({ queryKey: PLAYLISTS_QUERY_KEY });
       appToast.removedFromPlaylist(title);
@@ -113,7 +125,7 @@ export default function PlaylistDetailPage() {
       await deletePlaylist(id);
       void queryClient.invalidateQueries({ queryKey: PLAYLISTS_QUERY_KEY });
       void queryClient.removeQueries({
-        queryKey: getPlaylistDetailQueryKey(id),
+        queryKey: getPlaylistDetailBaseQueryKey(id),
       });
       setDeleteDialogOpen(false);
       appToast.playlistDeleted(headerTitle);
@@ -155,6 +167,17 @@ export default function PlaylistDetailPage() {
     []
   );
 
+  const handleOpenSortMenu = useCallback((anchor: MenuAnchor) => {
+    setSortMenuAnchor(anchor);
+  }, []);
+
+  const handleSelectSort = useCallback(
+    (next: PlaylistSongSort) => {
+      setSort(next);
+    },
+    [setSort]
+  );
+
   // isPending covers first load; also show while fetching with no data yet
   // (React Query v5: isLoading = isPending && isFetching can miss disabled→enabled)
   if (isPending || (isFetching && !playlist)) {
@@ -183,11 +206,16 @@ export default function PlaylistDetailPage() {
   }
 
   const listHeader = (
-    <PlaylistDetailHeader
-      name={playlist.name}
-      coverUrl={getPlaylistCoverUrl(playlist.coverUrl, playlist.id)}
-      songCount={playlist.songCount}
-    />
+    <>
+      <PlaylistDetailHeader
+        name={playlist.name}
+        coverUrl={getPlaylistCoverUrl(playlist.coverUrl, playlist.id)}
+        songCount={playlist.songCount}
+      />
+      {songs.length > 0 ? (
+        <PlaylistSortBar activeSort={sort} onOpenMenu={handleOpenSortMenu} />
+      ) : null}
+    </>
   );
 
   const emptyList = (
@@ -264,6 +292,15 @@ export default function PlaylistDetailPage() {
         onConfirm={() => {
           void handleDeletePlaylist();
         }}
+      />
+      <PlaylistSortMenu
+        open={sortMenuOpen}
+        onOpenChange={(open) => {
+          if (!open) setSortMenuAnchor(null);
+        }}
+        anchor={sortMenuAnchor}
+        activeSort={sort}
+        onSelect={handleSelectSort}
       />
     </YStack>
   );

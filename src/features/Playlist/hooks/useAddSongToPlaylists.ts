@@ -5,7 +5,7 @@ import { addSongToPlaylists } from "../services/playlist.service";
 import type { AddSongToPlaylistsPayload } from "../types/playlist.types";
 import {
   PLAYLISTS_QUERY_KEY,
-  getPlaylistDetailQueryKey,
+  getPlaylistDetailBaseQueryKey,
 } from "../queries/playlistQuery";
 
 export function useAddSongToPlaylists() {
@@ -18,7 +18,7 @@ export function useAddSongToPlaylists() {
       void queryClient.invalidateQueries({ queryKey: PLAYLISTS_QUERY_KEY });
       for (const playlistId of variables.playlistIds) {
         void queryClient.invalidateQueries({
-          queryKey: getPlaylistDetailQueryKey(playlistId),
+          queryKey: getPlaylistDetailBaseQueryKey(playlistId),
         });
       }
     },

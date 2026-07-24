@@ -8,6 +8,7 @@ import type {
   Playlist,
   PlaylistResponse,
   PlaylistSongPayload,
+  PlaylistSongSort,
   PlaylistsContainingSongResponse,
   PlaylistsParams,
   PlaylistsResponse,
@@ -25,9 +26,13 @@ export async function getPlaylists(
   return data;
 }
 
-export async function getPlaylist(id: string): Promise<Playlist> {
+export async function getPlaylist(
+  id: string,
+  sort?: PlaylistSongSort
+): Promise<Playlist> {
   const { data } = await apiClient.get<PlaylistResponse>(
-    endpoints.playlists.item(id)
+    endpoints.playlists.item(id),
+    { params: sort ? { sort } : undefined }
   );
   return data.data;
 }

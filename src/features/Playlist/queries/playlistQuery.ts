@@ -1,6 +1,7 @@
 import { getPlaylists } from "../services/playlist.service";
 import type {
   PlaylistListItem,
+  PlaylistSongSort,
   PlaylistsResponse,
 } from "../types/playlist.types";
 import type { UseInfinitePaginatedQueryOptions } from "src/hooks/useInfinitePaginatedQuery";
@@ -18,8 +19,12 @@ export function getPlaylistsInfiniteQueryKey(): unknown[] {
   return [...PLAYLISTS_QUERY_KEY, PLAYLISTS_PAGE_SIZE];
 }
 
-export function getPlaylistDetailQueryKey(id: string) {
+export function getPlaylistDetailBaseQueryKey(id: string) {
   return [...PLAYLIST_DETAIL_QUERY_KEY, id] as const;
+}
+
+export function getPlaylistDetailQueryKey(id: string, sort: PlaylistSongSort) {
+  return [...PLAYLIST_DETAIL_QUERY_KEY, id, sort] as const;
 }
 
 function getItems(res: PlaylistsResponse) {
