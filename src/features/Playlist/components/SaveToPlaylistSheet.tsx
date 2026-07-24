@@ -33,6 +33,7 @@ import type { PlaylistListItem } from "../types/playlist.types";
 import { useSaveToPlaylist } from "../hooks/useSaveToPlaylist";
 import SaveToPlaylistItem from "./SaveToPlaylistItem";
 import NewPlaylistDialog from "./NewPlaylistDialog";
+import SaveToPlaylistListSkeleton from "../skeletons/SaveToPlaylistListSkeleton";
 
 const SHEET_HEIGHT_RATIO = 0.65;
 const DISMISS_DRAG_THRESHOLD = verticalScale(80);
@@ -243,9 +244,7 @@ function SaveToPlaylistSheet({
               </View>
 
               {save.isLoading ? (
-                <YStack flex={1} items="center" justify="center">
-                  <ActivityIndicator color={themeColors.dark.accent} />
-                </YStack>
+                <SaveToPlaylistListSkeleton />
               ) : save.playlists.length === 0 ? (
                 <YStack
                   flex={1}
