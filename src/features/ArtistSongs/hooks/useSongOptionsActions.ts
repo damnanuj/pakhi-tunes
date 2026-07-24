@@ -51,6 +51,10 @@ export type SongOptionsMenuActions = {
     label: string;
     onPress: () => void;
   };
+  saveToPlaylist: {
+    label: string;
+    onPress: () => void;
+  };
   qualityDialog: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -67,7 +71,10 @@ export type SongOptionsMenuActions = {
 export function useSongOptionsActions(
   song: ArtistSong,
   menuOpen: boolean,
-  options?: { onRemoveFromHistory?: () => void }
+  options?: {
+    onRemoveFromHistory?: () => void;
+    onSaveToPlaylist?: () => void;
+  }
 ): SongOptionsMenuActions {
   const { isAuthenticated } = useAuth();
   const localSongIds = useLocalFavoriteSongIds();
@@ -205,6 +212,14 @@ export function useSongOptionsActions(
     appToast.removedFromQueue(songTitle);
   }, [removeSongFromQueue, song.id, songTitle]);
 
+  const handleSaveToPlaylistPress = useCallback(() => {
+    if (!isAuthenticated) {
+      appToast.signInRequired("Sign in to save songs to playlists");
+      return;
+    }
+    options?.onSaveToPlaylist?.();
+  }, [isAuthenticated, options]);
+
   const showPlayNext =
     queueActive && !isCurrentlyPlaying && !isImmediateNext;
   const showAddToQueue = queueActive && !isCurrentlyPlaying && !songAlreadyInQueue;
@@ -259,6 +274,10 @@ export function useSongOptionsActions(
           },
         }
       : {}),
+    saveToPlaylist: {
+      label: "Save to playlist",
+      onPress: handleSaveToPlaylistPress,
+    },
     qualityDialog: {
       open: qualityDialogOpen,
       onOpenChange: setQualityDialogOpen,

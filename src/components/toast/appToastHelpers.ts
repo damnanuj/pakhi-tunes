@@ -145,4 +145,28 @@ export const appToast = {
       icon: "trash",
     });
   },
+
+  savedToPlaylist(title: string) {
+    useAppToastStore.getState().show({
+      variant: "success",
+      message: `Saved "${title}" to playlist`,
+      icon: "check",
+    });
+  },
+
+  playlistCreated(name: string) {
+    useAppToastStore.getState().show({
+      variant: "success",
+      message: `Created playlist "${name}"`,
+      icon: "check",
+    });
+  },
+
+  removedFromPlaylist(title: string) {
+    useAppToastStore.getState().show({
+      variant: "removed",
+      message: `Removed "${title}" from playlist`,
+      icon: "trash",
+    });
+  },
 };

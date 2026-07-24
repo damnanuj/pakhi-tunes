@@ -32,6 +32,7 @@ import {
   DownloadedArtworkBadge,
 } from "src/features/Downloads/components/DownloadArtworkOverlay";
 import { useDownload } from "src/features/Downloads/hooks/useDownload";
+import SaveToPlaylistSheet from "src/features/Playlist/components/SaveToPlaylistSheet";
 import { useSongOptionsActions } from "../hooks/useSongOptionsActions";
 import { PlayingArtworkIndicator } from "./PlayingArtworkIndicator";
 import SongOptionsMenu, { type MenuAnchor } from "./SongOptionsMenu";
@@ -48,6 +49,7 @@ interface SongListItemProps {
 function SongListItem({ song, onRemoveFromHistory }: SongListItemProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<MenuAnchor | null>(null);
+  const [saveSheetOpen, setSaveSheetOpen] = useState(false);
   const menuTriggerRef = useRef<View>(null);
   const { playSong, playSongFromQueue, togglePlayPause } = usePlayback();
   const queueContext = useQueueContext();
@@ -121,6 +123,7 @@ function SongListItem({ song, onRemoveFromHistory }: SongListItemProps) {
 
   const songOptions = useSongOptionsActions(song, menuOpen, {
     onRemoveFromHistory,
+    onSaveToPlaylist: () => setSaveSheetOpen(true),
   });
   const { isDownloaded, isDownloading, progress } = useDownload(song.id);
 
@@ -262,6 +265,11 @@ function SongListItem({ song, onRemoveFromHistory }: SongListItemProps) {
         confirmLabel="Remove"
         cancelLabel="Keep"
         onConfirm={songOptions.removeDialog.onConfirm}
+      />
+      <SaveToPlaylistSheet
+        open={saveSheetOpen}
+        onOpenChange={setSaveSheetOpen}
+        song={song}
       />
       {/* <Pressable hitSlop={8} onPress={handlePlayAction}>
         {showLoadingOnRow ? (

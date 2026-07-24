@@ -28,6 +28,15 @@ export const endpoints = {
     bulk: "/history/bulk",
     item: (songId: string) => `/history/${encodeURIComponent(songId)}`,
   },
+  playlists: {
+    list: "/playlists",
+    item: (id: string) => `/playlists/${encodeURIComponent(id)}`,
+    addSong: (id: string) =>
+      `/playlists/${encodeURIComponent(id)}/songs`,
+    removeSong: (id: string, songId: string) =>
+      `/playlists/${encodeURIComponent(id)}/songs/${encodeURIComponent(songId)}`,
+    addSongBulk: "/playlists/add-song",
+  },
   sessions: {
     create: "/sessions",
     nearby: "/sessions/nearby",

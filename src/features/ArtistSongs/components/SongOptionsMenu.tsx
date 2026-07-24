@@ -14,7 +14,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { Download, Heart, History, ListEnd, ListStart, ListX, RefreshCw, Trash2 } from "@tamagui/lucide-icons";
+import { Download, Heart, History, ListEnd, ListMusic, ListStart, ListX, RefreshCw, Trash2 } from "@tamagui/lucide-icons";
 import {
   moderateScale,
   scale,
@@ -70,7 +70,7 @@ export default function SongOptionsMenu({
 }: SongOptionsMenuProps) {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const menuItemCount =
-    2 +
+    3 +
     (actions.playNext ? 1 : 0) +
     (actions.addToQueue ? 1 : 0) +
     (actions.removeFromQueue ? 1 : 0) +
@@ -162,6 +162,10 @@ export default function SongOptionsMenu({
     animateClose(actions.removeFromQueue.onPress);
   }, [actions.removeFromQueue, animateClose]);
 
+  const handleSaveToPlaylistPress = useCallback(() => {
+    animateClose(actions.saveToPlaylist.onPress);
+  }, [actions.saveToPlaylist, animateClose]);
+
   const iconSize = moderateScale(20);
   const iconColor = themeColors.dark.onSurface;
   const accentColor = themeColors.dark.accent;
@@ -225,6 +229,11 @@ export default function SongOptionsMenu({
               onPress={handleDownloadPress}
               disabled={actions.download.disabled}
               loading={actions.download.loading}
+            />
+            <SongOptionsMenuItem
+              icon={<ListMusic size={iconSize} color={iconColor} />}
+              label={actions.saveToPlaylist.label}
+              onPress={handleSaveToPlaylistPress}
             />
             {actions.playNext ? (
               <SongOptionsMenuItem

@@ -21,6 +21,7 @@ export type QueueSource =
   | { type: "genre"; slug: string; name: string }
   | { type: "favorites"; name: string }
   | { type: "history"; name: string }
+  | { type: "playlist"; id: string; name: string }
   | { type: "search" };
 
 export type RepeatMode = "off" | "one" | "all";

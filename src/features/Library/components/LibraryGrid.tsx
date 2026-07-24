@@ -1,7 +1,7 @@
 import DownloadsList from "src/features/Downloads/components/DownloadsList";
 import LibraryFavouritesList from "src/features/favorites/components/LibraryFavouritesList";
 import LibraryRecentList from "src/features/history/components/LibraryRecentList";
-import LibraryPlaylistsPlaceholder from "./LibraryPlaylistsPlaceholder";
+import PlaylistsGrid from "src/features/Playlist/components/PlaylistsGrid";
 import type { LibraryTabId } from "./LibraryTabs";
 
 export type { LibraryItem } from "../types/libraryItem";
@@ -23,5 +23,5 @@ export default function LibraryGrid({ activeTab }: LibraryGridProps) {
     return <DownloadsList />;
   }
 
-  return <LibraryPlaylistsPlaceholder />;
+  return <PlaylistsGrid />;
 }
