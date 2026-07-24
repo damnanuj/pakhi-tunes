@@ -42,7 +42,6 @@ function SkeletonArtistHeader() {
 }
 
 const ICON_SIZE = moderateScale(20);
-const PLAY_ICON_SIZE = moderateScale(30);
 
 export function SongListItemSkeleton() {
   return (
@@ -73,11 +72,6 @@ export function SongListItemSkeleton() {
         width={ICON_SIZE}
         height={ICON_SIZE}
         borderRadius={moderateScale(4)}
-      />
-      <SkeletonPlaceholder
-        width={PLAY_ICON_SIZE}
-        height={PLAY_ICON_SIZE}
-        borderRadius={PLAY_ICON_SIZE / 2}
       />
     </XStack>
   );
