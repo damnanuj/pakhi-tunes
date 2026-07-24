@@ -12,10 +12,14 @@ export interface PlaylistSong {
   addedAt?: string;
 }
 
+export type PlaylistVisibility = "private" | "public";
+
 export interface PlaylistListItem {
   id: string;
   name: string;
   coverUrl: string;
+  visibility: PlaylistVisibility;
+  likesCount: number;
   songCount: number;
   createdAt?: string;
   updatedAt?: string;
