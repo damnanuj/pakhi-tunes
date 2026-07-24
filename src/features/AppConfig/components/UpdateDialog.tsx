@@ -256,7 +256,13 @@ export default function UpdateDialog({
           overflow="hidden"
         >
           {hasHeader ? (
-            <YStack gap={verticalScale(8)} shrink={0}>
+            <YStack
+              gap={verticalScale(8)}
+              shrink={0}
+              pb={verticalScale(12)}
+              borderBottomWidth={1}
+              borderBottomColor={themeColors.dark.borderSecondary}
+            >
               {hasTitle || hasVersion ? (
                 <XStack
                   justify={hasTitle ? "space-between" : "flex-end"}
@@ -265,11 +271,18 @@ export default function UpdateDialog({
                   width="100%"
                 >
                   {hasTitle ? (
-                    <AlertDialog.Title flex={1}>
+                    <AlertDialog.Title
+                      flex={1}
+                      p={0}
+                      m={0}
+                      fontSize={moderateScale(18)}
+                      lineHeight={moderateScale(24)}
+                    >
                       <MyText
                         fontSize={moderateScale(18)}
+                        lineHeight={moderateScale(24)}
                         weight="700"
-                        color={themeColors.dark.onSurface}
+                        color="#f87171"
                       >
                         {trimmedTitle}
                       </MyText>
@@ -279,9 +292,15 @@ export default function UpdateDialog({
                 </XStack>
               ) : null}
               {hasMessage ? (
-                <AlertDialog.Description>
+                <AlertDialog.Description
+                  p={0}
+                  m={0}
+                  fontSize={moderateScale(12)}
+                  lineHeight={moderateScale(16)}
+                >
                   <MyText
-                    fontSize={moderateScale(14)}
+                    fontSize={moderateScale(12)}
+                    lineHeight={moderateScale(16)}
                     weight="400"
                     color={themeColors.dark.textMuted}
                   >
