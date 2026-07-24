@@ -1,12 +1,14 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { FlatList, type ListRenderItem, View } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { YStack } from "tamagui";
-import { ListMusic } from "@tamagui/lucide-icons";
+import { ListMusic, Trash2 } from "@tamagui/lucide-icons";
 import themeColors from "src/utils/theme/colors";
 import ConnectionErrorState from "src/components/ConnectionErrorState";
 import ScreenHeader from "src/components/ScreenHeader";
+import CircularButton from "src/components/CircularButton";
+import ConfirmDialog from "src/components/ConfirmDialog";
 import MyText from "src/components/MyText";
 import { appToast } from "src/components/toast/appToastHelpers";
 import { useNetwork } from "src/contexts/NetworkContext";
@@ -30,19 +32,25 @@ import { playlistSongToQueueStub } from "../utils/playlistSongToQueueStub";
 import PlaylistDetailHeader from "../components/PlaylistDetailHeader";
 import PlaylistDetailSkeleton from "../skeletons/PlaylistDetailSkeleton";
 import { getPlaylistCoverUrl } from "../constants/playlistCovers";
-import { removeSongFromPlaylist } from "../services/playlist.service";
+import {
+  deletePlaylist,
+  removeSongFromPlaylist,
+} from "../services/playlist.service";
 import {
   PLAYLISTS_QUERY_KEY,
   getPlaylistDetailQueryKey,
 } from "../queries/playlistQuery";
 
 export default function PlaylistDetailPage() {
+  const router = useRouter();
   const { id, name: nameParam } = useLocalSearchParams<{
     id: string;
     name?: string;
   }>();
   const queryClient = useQueryClient();
   const { isOffline } = useNetwork();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const scrollBottomPadding = useScrollBottomInset({
     includeTabBar: true,
     extra: 0,
@@ -96,6 +104,37 @@ export default function PlaylistDetailPage() {
       appToast.removedFromPlaylist(title);
     },
     [id, queryClient]
+  );
+
+  const handleDeletePlaylist = useCallback(async () => {
+    if (!id || isDeleting) return;
+    setIsDeleting(true);
+    try {
+      await deletePlaylist(id);
+      void queryClient.invalidateQueries({ queryKey: PLAYLISTS_QUERY_KEY });
+      void queryClient.removeQueries({
+        queryKey: getPlaylistDetailQueryKey(id),
+      });
+      setDeleteDialogOpen(false);
+      appToast.playlistDeleted(headerTitle);
+      router.back();
+    } catch {
+      appToast.error("Couldn't delete playlist. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [headerTitle, id, isDeleting, queryClient, router]);
+
+  const deleteHeaderButton = useMemo(
+    () => (
+      <CircularButton
+        onPress={() => setDeleteDialogOpen(true)}
+        accessibilityLabel="Delete playlist"
+      >
+        <Trash2 size={moderateScale(20)} color="#f87171" />
+      </CircularButton>
+    ),
+    []
   );
 
   const renderItem: ListRenderItem<ArtistSong> = useCallback(
@@ -195,7 +234,11 @@ export default function PlaylistDetailPage() {
 
   return (
     <YStack flex={1} bg={themeColors.dark.background}>
-      <ScreenHeader showBack title={headerTitle} />
+      <ScreenHeader
+        showBack
+        title={headerTitle}
+        rightContent={deleteHeaderButton}
+      />
       <QueueProvider songs={songs} source={queueSource}>
         <FlatList
           data={songs}
@@ -211,6 +254,17 @@ export default function PlaylistDetailPage() {
           }}
         />
       </QueueProvider>
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete playlist?"
+        message={`This will permanently delete "${headerTitle}" and all songs in it.`}
+        confirmLabel={isDeleting ? "Deleting…" : "Delete"}
+        cancelLabel="Keep"
+        onConfirm={() => {
+          void handleDeletePlaylist();
+        }}
+      />
     </YStack>
   );
 }

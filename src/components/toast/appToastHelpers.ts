@@ -169,4 +169,12 @@ export const appToast = {
       icon: "trash",
     });
   },
+
+  playlistDeleted(name: string) {
+    useAppToastStore.getState().show({
+      variant: "removed",
+      message: `Deleted playlist "${name}"`,
+      icon: "trash",
+    });
+  },
 };
