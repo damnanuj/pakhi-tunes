@@ -8,6 +8,7 @@ import {
   DIALOG_OVERLAY_ANIMATION,
   DIALOG_OVERLAY_OPACITY,
 } from "src/components/dialogMotion";
+import { useDismissOnBack } from "src/hooks/useDismissOnBack";
 import {
   moderateScale,
   scale,
@@ -36,6 +37,8 @@ export default function ConfirmDialog({
   cancelLabel = "Cancel",
   onConfirm,
 }: ConfirmDialogProps) {
+  useDismissOnBack(open, () => onOpenChange(false));
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialog.Portal>

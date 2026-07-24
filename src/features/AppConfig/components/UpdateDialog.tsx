@@ -12,6 +12,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import MyText from "src/components/MyText";
+import { useDismissOnBack } from "src/hooks/useDismissOnBack";
 import {
   DIALOG_CONTENT_ANIMATION,
   DIALOG_ENTER_STYLE,
@@ -212,6 +213,8 @@ export default function UpdateDialog({
 
     return () => subscription.remove();
   }, [open, forceUpdate]);
+
+  useDismissOnBack(open && !forceUpdate, () => onOpenChange(false));
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (forceUpdate) return;

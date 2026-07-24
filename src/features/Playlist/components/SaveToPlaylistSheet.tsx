@@ -28,6 +28,7 @@ import {
 } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
 import type { ArtistSong } from "src/types/artistSongs.types";
+import { useDismissOnBack } from "src/hooks/useDismissOnBack";
 import type { PlaylistListItem } from "../types/playlist.types";
 import { useSaveToPlaylist } from "../hooks/useSaveToPlaylist";
 import SaveToPlaylistItem from "./SaveToPlaylistItem";
@@ -89,6 +90,8 @@ function SaveToPlaylistSheet({
       }
     });
   }, [backdropOpacity, finishClose, sheetHeight, translateY]);
+
+  useDismissOnBack(open, animateClose);
 
   useEffect(() => {
     if (!open) return;

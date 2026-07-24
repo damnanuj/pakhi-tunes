@@ -21,6 +21,7 @@ import {
   verticalScale,
 } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
+import { useDismissOnBack } from "src/hooks/useDismissOnBack";
 import type { SongOptionsMenuActions } from "../hooks/useSongOptionsActions";
 import SongOptionsMenuItem from "./SongOptionsMenuItem";
 
@@ -111,6 +112,8 @@ export default function SongOptionsMenu({
     },
     [backdropOpacity, finishClose, panelOpacity, panelScale]
   );
+
+  useDismissOnBack(open, () => animateClose());
 
   useEffect(() => {
     if (!open) return;

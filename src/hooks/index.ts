@@ -11,3 +11,4 @@ export {
   type UseScrollEndReachedOptions,
 } from "./useScrollEndReached";
 export { useConnectionErrorProps } from "./useConnectionErrorProps";
+export { useDismissOnBack } from "./useDismissOnBack";

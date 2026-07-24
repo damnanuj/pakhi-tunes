@@ -16,6 +16,7 @@ import {
   verticalScale,
 } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
+import { useDismissOnBack } from "src/hooks/useDismissOnBack";
 import type { StreamQuality } from "src/features/Player/constants/streamQualityOptions";
 import {
   DEFAULT_STREAM_QUALITY,
@@ -37,6 +38,8 @@ export default function StreamQualityDialog({
 }: StreamQualityDialogProps) {
   const [selectedQuality, setSelectedQuality] =
     useState<StreamQuality>(currentQuality);
+
+  useDismissOnBack(open, () => onOpenChange(false));
 
   useEffect(() => {
     if (open) {

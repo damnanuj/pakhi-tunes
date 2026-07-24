@@ -26,6 +26,7 @@ import {
   verticalScale,
 } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
+import { useDismissOnBack } from "src/hooks/useDismissOnBack";
 import {
   PLAYLIST_COVER_URLS,
 } from "../constants/playlistCovers";
@@ -48,6 +49,8 @@ export default function NewPlaylistDialog({
   const [title, setTitle] = useState("");
   const [coverUrl, setCoverUrl] = useState(DEFAULT_COVER_URL);
   const wasOpenRef = useRef(false);
+
+  useDismissOnBack(open, () => onOpenChange(false));
 
   useEffect(() => {
     if (open && !wasOpenRef.current) {

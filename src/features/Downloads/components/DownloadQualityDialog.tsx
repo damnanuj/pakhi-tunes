@@ -16,6 +16,7 @@ import {
   verticalScale,
 } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
+import { useDismissOnBack } from "src/hooks/useDismissOnBack";
 import type { DownloadQuality } from "../types/download.types";
 import { DOWNLOAD_QUALITY_OPTIONS } from "../types/download.types";
 
@@ -36,6 +37,8 @@ export default function DownloadQualityDialog({
 }: DownloadQualityDialogProps) {
   const [selectedQuality, setSelectedQuality] =
     useState<DownloadQuality>("160kbps");
+
+  useDismissOnBack(open, () => onOpenChange(false));
 
   const handleConfirm = useCallback(() => {
     onConfirm(selectedQuality);

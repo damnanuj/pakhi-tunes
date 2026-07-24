@@ -21,6 +21,7 @@ import {
   verticalScale,
 } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
+import { useDismissOnBack } from "src/hooks/useDismissOnBack";
 import SongOptionsMenuItem from "src/features/ArtistSongs/components/SongOptionsMenuItem";
 import type { MenuAnchor } from "src/features/ArtistSongs/components/SongOptionsMenu";
 import type { PlaylistSongSort } from "../types/playlist.types";
@@ -102,6 +103,8 @@ export default function PlaylistSortMenu({
     },
     [backdropOpacity, finishClose, panelOpacity, panelScale]
   );
+
+  useDismissOnBack(open, () => animateClose());
 
   useEffect(() => {
     if (!open) return;
