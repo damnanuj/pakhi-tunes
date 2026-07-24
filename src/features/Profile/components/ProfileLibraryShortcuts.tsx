@@ -1,4 +1,4 @@
-import { Download, Heart, History } from "@tamagui/lucide-icons";
+import { Download, Heart, History, ListMusic } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import { YStack } from "tamagui";
 import {
@@ -22,6 +22,7 @@ const SHORTCUTS: {
   { tab: "recent", label: "History", icon: History },
   { tab: "favorites", label: "Favourites", icon: Heart },
   { tab: "downloads", label: "Downloads", icon: Download },
+  { tab: "playlists", label: "Playlist", icon: ListMusic },
 ];
 
 export default function ProfileLibraryShortcuts() {

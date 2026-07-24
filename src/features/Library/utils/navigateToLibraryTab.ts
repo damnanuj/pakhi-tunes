@@ -3,7 +3,7 @@ import type { LibraryTabId } from "../components/LibraryTabs";
 
 export type ProfileLibraryTabId = Extract<
   LibraryTabId,
-  "recent" | "favorites" | "downloads"
+  "recent" | "favorites" | "downloads" | "playlists"
 >;
 
 const LIBRARY_TAB_IDS: LibraryTabId[] = [
