@@ -21,7 +21,7 @@
       "node": "20.19.4",
       "channel": "preview",
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://pakhi-tunes-backend.onrender.com",
+        "EXPO_PUBLIC_API_BASE_URL": "https://pakhi-tunes-backend.vercel.app",
         "EXPO_PUBLIC_SOCKET_URL": "https://pakhi-tunes-backend.onrender.com",
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "485929118807-2jff8qq7r1qp9164lp5ag9uuhkpgmuq0.apps.googleusercontent.com",
         "EXPO_PUBLIC_ANALYTICS_TRACKING_ENABLED": "true",
