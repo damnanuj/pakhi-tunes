@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import TrackPlayer from "react-native-track-player";
 import { appToast } from "src/components/toast/appToastHelpers";
 import { useAuth } from "src/features/auth/hooks/useAuth";
@@ -9,6 +9,25 @@ import {
 } from "../services/session.service";
 import { sessionSocketService } from "../services/sessionSocket.service";
 import { useNearbySessionStore } from "../store/nearbySessionStore";
+import type { SessionListener } from "../types/session.types";
+
+function applyListenersUpdate(payload: {
+  listenerCount?: number;
+  listeners?: SessionListener[];
+}) {
+  if (Array.isArray(payload.listeners)) {
+    useNearbySessionStore.getState().setRoomListeners(payload.listeners);
+    useNearbySessionStore
+      .getState()
+      .setListenerCount(payload.listeners.length);
+    return;
+  }
+  if (payload.listenerCount !== undefined) {
+    useNearbySessionStore
+      .getState()
+      .setListenerCount(Math.max(0, Number(payload.listenerCount)));
+  }
+}
 
 async function connectAndStartHost(sessionId: string) {
   const socket = sessionSocketService.connect();
@@ -26,11 +45,18 @@ async function connectAndStartHost(sessionId: string) {
   });
 
   socket.off("session:listenerCount");
+  socket.off("session:listeners");
   socket.on("session:listenerCount", (event: { listenerCount: number }) => {
     useNearbySessionStore
       .getState()
       .setListenerCount(event.listenerCount ?? 0);
   });
+  socket.on(
+    "session:listeners",
+    (event: { listenerCount?: number; listeners?: SessionListener[] }) => {
+      applyListenersUpdate(event);
+    }
+  );
 
   const result = await sessionSocketService.emitHostStart(sessionId);
   if (!result.ok) {
@@ -43,9 +69,6 @@ async function connectAndStartHost(sessionId: string) {
 
 export function usePrivateRoomHost() {
   const { isAuthenticated } = useAuth();
-  const activeTrack = usePlayerStore((s) => s.activeTrack);
-  const role = useNearbySessionStore((s) => s.role);
-  const roomCode = useNearbySessionStore((s) => s.roomCode);
 
   const stopRoom = useCallback(async () => {
     const sessionId = useNearbySessionStore.getState().activeSession?.id;
@@ -69,13 +92,6 @@ export function usePrivateRoomHost() {
     useNearbySessionStore.getState().resetSession();
   }, []);
 
-  // End private room when host clears playback (any path)
-  useEffect(() => {
-    if (role !== "host" || !roomCode) return;
-    if (activeTrack) return;
-    void stopRoom();
-  }, [activeTrack, role, roomCode, stopRoom]);
-
   const createRoom = useCallback(async () => {
     if (!isAuthenticated) {
       appToast.error("Sign in required to create a room");
@@ -89,31 +105,38 @@ export function usePrivateRoomHost() {
 
     const state = usePlayerStore.getState();
     const track = state.activeTrack;
-    if (!track) {
-      appToast.error("Play a song first to create a room");
-      return null;
-    }
 
     let positionMs = state.positionMillis;
-    try {
-      const progress = await TrackPlayer.getProgress();
-      positionMs = Math.round(progress.position * 1000);
-    } catch {
-      /* use store position */
+    if (track) {
+      try {
+        const progress = await TrackPlayer.getProgress();
+        positionMs = Math.round(progress.position * 1000);
+      } catch {
+        /* use store position */
+      }
     }
 
     try {
-      const session = await createPrivateRoom({
-        trackId: track.id,
-        trackTitle: track.title,
-        trackArtist: track.artist,
-        trackArtwork: track.artworkUrl,
-        trackUri: track.uri,
-        trackDuration:
-          track.durationSec > 0 ? track.durationSec * 1000 : positionMs,
-        playing: state.isPlaying,
-        positionMs,
-      });
+      const session = await createPrivateRoom(
+        track
+          ? {
+              trackId: track.id,
+              trackTitle: track.title,
+              trackArtist: track.artist,
+              trackArtwork: track.artworkUrl,
+              trackUri: track.uri,
+              trackDuration:
+                track.durationSec > 0
+                  ? track.durationSec * 1000
+                  : positionMs,
+              playing: state.isPlaying,
+              positionMs,
+            }
+          : {
+              playing: false,
+              positionMs: 0,
+            }
+      );
 
       useNearbySessionStore.getState().setActiveSession(session);
       useNearbySessionStore
@@ -121,6 +144,9 @@ export function usePrivateRoomHost() {
         .setRoomCode(session.roomCode ?? null);
       useNearbySessionStore.getState().setHostName(session.hostName);
       useNearbySessionStore.getState().setListenerCount(session.listenerCount);
+      useNearbySessionStore
+        .getState()
+        .setRoomListeners(session.listeners ?? []);
       useNearbySessionStore.getState().setRole("host");
 
       const started = await connectAndStartHost(session.id);

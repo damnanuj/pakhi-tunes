@@ -2,6 +2,12 @@ import type { ActiveTrack, RepeatMode } from "src/features/Player/types";
 
 export type SessionRole = "host" | "listener" | null;
 
+export type SessionListener = {
+  userId: string;
+  name: string;
+  avatar: string | null;
+};
+
 export type NearbySession = {
   id: string;
   hostId: string;
@@ -16,6 +22,7 @@ export type NearbySession = {
   playing: boolean;
   positionMs: number;
   listenerCount: number;
+  listeners?: SessionListener[];
   visibility?: "nearby" | "private";
   roomCode?: string | null;
   distanceMeters?: number;
@@ -38,14 +45,14 @@ export type UpsertSessionPayload = {
 };
 
 export type CreateRoomPayload = {
-  trackId: string;
-  trackTitle: string;
-  trackArtist: string;
-  trackArtwork: string;
-  trackUri: string;
-  trackDuration: number;
-  playing: boolean;
-  positionMs: number;
+  trackId?: string;
+  trackTitle?: string;
+  trackArtist?: string;
+  trackArtwork?: string;
+  trackUri?: string;
+  trackDuration?: number;
+  playing?: boolean;
+  positionMs?: number;
 };
 
 export type SessionTrackChangePayload = {
@@ -74,6 +81,13 @@ export type SessionPlaybackEventPayload = {
   sentAt?: number;
   repeatMode?: RepeatMode;
 };
+
+export function sessionHasPlayableTrack(session: {
+  trackId?: string | null;
+  trackUri?: string | null;
+}) {
+  return Boolean(session.trackId?.trim() && session.trackUri?.trim());
+}
 
 export function sessionToActiveTrack(session: NearbySession): ActiveTrack {
   return {

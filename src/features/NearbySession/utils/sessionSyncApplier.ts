@@ -114,6 +114,17 @@ export async function applyRemoteTrackChange(
 ) {
   await withRemoteSync(async () => {
     updateHostRepeatMode(payload.repeatMode);
+
+    // Host cleared the song — return listeners to waiting state
+    if (!payload.trackId?.trim() || !payload.trackUri?.trim()) {
+      updateHostPlaybackAnchor(0, false, payload.sentAt);
+      await TrackPlayer.reset();
+      usePlayerStore.getState().setActiveTrack(null);
+      usePlayerStore.getState().resetPlayback();
+      usePlayerStore.getState().setPlaybackLoading(false);
+      return;
+    }
+
     updateHostPlaybackAnchor(
       payload.positionMs,
       payload.playing,

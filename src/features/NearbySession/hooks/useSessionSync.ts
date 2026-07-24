@@ -6,7 +6,8 @@ import { usePlayback } from "src/features/Player/context/PlayerContext";
 import { usePlayerStore } from "src/features/Player/store/playerStore";
 import { sessionSocketService } from "../services/sessionSocket.service";
 import { useNearbySessionStore } from "../store/nearbySessionStore";
-import type { NearbySession } from "../types/session.types";
+import type { NearbySession, SessionListener } from "../types/session.types";
+import { sessionHasPlayableTrack } from "../types/session.types";
 import { leaveListenerSessionIfActive } from "../utils/leaveListenerSession";
 import {
   applyRemoteHeartbeat,
@@ -27,6 +28,29 @@ function patchActiveSessionMetadata(patch: Partial<NearbySession>) {
   useNearbySessionStore.getState().setNearbySessions(
     sessions.map((s) => (s.id === updated.id ? { ...s, ...patch } : s))
   );
+}
+
+function applyListenersUpdate(payload: {
+  listenerCount?: number;
+  listeners?: SessionListener[];
+}) {
+  if (Array.isArray(payload.listeners)) {
+    useNearbySessionStore.getState().setRoomListeners(payload.listeners);
+    useNearbySessionStore
+      .getState()
+      .setListenerCount(payload.listeners.length);
+    patchActiveSessionMetadata({
+      listenerCount: payload.listeners.length,
+      listeners: payload.listeners,
+    });
+    return;
+  }
+
+  if (payload.listenerCount !== undefined) {
+    const count = Math.max(0, Number(payload.listenerCount));
+    useNearbySessionStore.getState().setListenerCount(count);
+    patchActiveSessionMetadata({ listenerCount: count });
+  }
 }
 
 export function useSessionSync() {
@@ -54,17 +78,7 @@ export function useSessionSync() {
         return false;
       }
 
-      useNearbySessionStore.getState().setRole("listener");
-      useNearbySessionStore.getState().setActiveSession(session);
-      useNearbySessionStore.getState().setHostName(session.hostName);
-      useNearbySessionStore.getState().setIsConnected(true);
-
       const ack = result.session;
-      if (ack?.listenerCount !== undefined) {
-        useNearbySessionStore
-          .getState()
-          .setListenerCount(Math.max(0, Number(ack.listenerCount)));
-      }
       const liveSession: NearbySession = {
         ...session,
         positionMs:
@@ -73,23 +87,63 @@ export function useSessionSync() {
             : session.positionMs,
         playing:
           ack?.playing !== undefined ? Boolean(ack.playing) : session.playing,
+        trackId:
+          typeof ack?.trackId === "string" ? ack.trackId : session.trackId,
+        trackTitle:
+          typeof ack?.trackTitle === "string"
+            ? ack.trackTitle
+            : session.trackTitle,
+        trackArtist:
+          typeof ack?.trackArtist === "string"
+            ? ack.trackArtist
+            : session.trackArtist,
+        trackArtwork:
+          typeof ack?.trackArtwork === "string"
+            ? ack.trackArtwork
+            : session.trackArtwork,
+        trackUri:
+          typeof ack?.trackUri === "string" ? ack.trackUri : session.trackUri,
+        trackDuration:
+          ack?.trackDuration !== undefined
+            ? Number(ack.trackDuration)
+            : session.trackDuration,
+        listenerCount:
+          ack?.listenerCount !== undefined
+            ? Math.max(0, Number(ack.listenerCount))
+            : session.listenerCount,
+        listeners: Array.isArray(ack?.listeners)
+          ? (ack.listeners as SessionListener[])
+          : session.listeners,
         updatedAt:
           typeof ack?.updatedAt === "string"
             ? ack.updatedAt
             : session.updatedAt,
       };
-      const positionMs = extrapolateSessionPosition(liveSession);
 
-      await applyRemoteTrackChange({
-        trackId: liveSession.trackId,
-        trackTitle: liveSession.trackTitle,
-        trackArtist: liveSession.trackArtist,
-        trackArtwork: liveSession.trackArtwork,
-        trackUri: liveSession.trackUri,
-        trackDuration: liveSession.trackDuration,
-        positionMs,
-        playing: liveSession.playing,
-      });
+      useNearbySessionStore.getState().setRole("listener");
+      useNearbySessionStore.getState().setActiveSession(liveSession);
+      useNearbySessionStore.getState().setHostName(liveSession.hostName);
+      useNearbySessionStore.getState().setIsConnected(true);
+      useNearbySessionStore
+        .getState()
+        .setListenerCount(liveSession.listenerCount);
+      useNearbySessionStore
+        .getState()
+        .setRoomListeners(liveSession.listeners ?? []);
+
+      if (sessionHasPlayableTrack(liveSession)) {
+        const positionMs = extrapolateSessionPosition(liveSession);
+        await applyRemoteTrackChange({
+          trackId: liveSession.trackId,
+          trackTitle: liveSession.trackTitle,
+          trackArtist: liveSession.trackArtist,
+          trackArtwork: liveSession.trackArtwork,
+          trackUri: liveSession.trackUri,
+          trackDuration: liveSession.trackDuration,
+          positionMs,
+          playing: liveSession.playing,
+        });
+      }
 
       return true;
     },
@@ -164,23 +218,13 @@ export function useSessionSync() {
       void applyRemoteHeartbeat(payload);
     };
     const onListenerCount = (payload: { listenerCount: number }) => {
-      const count = payload.listenerCount ?? 0;
-      useNearbySessionStore.getState().setListenerCount(count);
-      const active = useNearbySessionStore.getState().activeSession;
-      if (active) {
-        useNearbySessionStore
-          .getState()
-          .setActiveSession({ ...active, listenerCount: count });
-      }
-      const sessionId = useNearbySessionStore.getState().activeSession?.id;
-      if (sessionId) {
-        const sessions = useNearbySessionStore.getState().nearbySessions;
-        useNearbySessionStore.getState().setNearbySessions(
-          sessions.map((s) =>
-            s.id === sessionId ? { ...s, listenerCount: count } : s
-          )
-        );
-      }
+      applyListenersUpdate(payload);
+    };
+    const onListeners = (payload: {
+      listenerCount?: number;
+      listeners?: SessionListener[];
+    }) => {
+      applyListenersUpdate(payload);
     };
     const onEnded = () => {
       appToast.info("The host ended this session");
@@ -194,6 +238,7 @@ export function useSessionSync() {
     sessionSocketService.on("session:seek", onSeek);
     sessionSocketService.on("session:heartbeat", onHeartbeat);
     sessionSocketService.on("session:listenerCount", onListenerCount);
+    sessionSocketService.on("session:listeners", onListeners);
     sessionSocketService.on("session:ended", onEnded);
 
     return () => {
@@ -203,6 +248,7 @@ export function useSessionSync() {
       sessionSocketService.off("session:seek", onSeek);
       sessionSocketService.off("session:heartbeat", onHeartbeat);
       sessionSocketService.off("session:listenerCount", onListenerCount);
+      sessionSocketService.off("session:listeners", onListeners);
       sessionSocketService.off("session:ended", onEnded);
     };
   }, [leaveSession, role, router]);

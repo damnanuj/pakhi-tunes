@@ -1,6 +1,11 @@
 import { create } from "zustand";
 import type { RepeatMode } from "src/features/Player/types";
-import type { ActiveSession, NearbySession, SessionRole } from "../types/session.types";
+import type {
+  ActiveSession,
+  NearbySession,
+  SessionListener,
+  SessionRole,
+} from "../types/session.types";
 
 export type HostPlaybackAnchor = {
   positionMs: number;
@@ -15,6 +20,7 @@ type NearbySessionState = {
   activeSession: ActiveSession | null;
   role: SessionRole;
   listenerCount: number;
+  roomListeners: SessionListener[];
   hostName: string | null;
   hostRepeatMode: RepeatMode;
   hostPlaybackAnchor: HostPlaybackAnchor | null;
@@ -28,6 +34,7 @@ type NearbySessionState = {
   setActiveSession: (session: ActiveSession | null) => void;
   setRole: (role: SessionRole) => void;
   setListenerCount: (count: number) => void;
+  setRoomListeners: (listeners: SessionListener[]) => void;
   setHostName: (name: string | null) => void;
   setHostRepeatMode: (mode: RepeatMode) => void;
   setHostPlaybackAnchor: (anchor: HostPlaybackAnchor | null) => void;
@@ -45,6 +52,7 @@ const initialState = {
   activeSession: null as ActiveSession | null,
   role: null as SessionRole,
   listenerCount: 0,
+  roomListeners: [] as SessionListener[],
   hostName: null as string | null,
   hostRepeatMode: "off" as RepeatMode,
   hostPlaybackAnchor: null as HostPlaybackAnchor | null,
@@ -62,6 +70,7 @@ export const useNearbySessionStore = create<NearbySessionState>((set) => ({
   setActiveSession: (activeSession) => set({ activeSession }),
   setRole: (role) => set({ role }),
   setListenerCount: (listenerCount) => set({ listenerCount }),
+  setRoomListeners: (roomListeners) => set({ roomListeners }),
   setHostName: (hostName) => set({ hostName }),
   setHostRepeatMode: (hostRepeatMode) => set({ hostRepeatMode }),
   setHostPlaybackAnchor: (hostPlaybackAnchor) => set({ hostPlaybackAnchor }),
@@ -75,6 +84,7 @@ export const useNearbySessionStore = create<NearbySessionState>((set) => ({
       activeSession: null,
       role: null,
       listenerCount: 0,
+      roomListeners: [],
       hostName: null,
       hostRepeatMode: "off",
       hostPlaybackAnchor: null,

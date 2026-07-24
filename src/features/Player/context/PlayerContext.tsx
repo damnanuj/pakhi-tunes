@@ -599,6 +599,34 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     usePlayerStore.getState().resetPlayback();
     usePlayerStore.getState().setPlaybackLoading(false);
     usePlayerStore.getState().clearQueue();
+
+    // Private host dismissed the song — keep room open, clear session track for lobby UI + listeners
+    if (isHostMode() && useNearbySessionStore.getState().roomCode) {
+      const active = useNearbySessionStore.getState().activeSession;
+      if (active) {
+        useNearbySessionStore.getState().setActiveSession({
+          ...active,
+          trackId: "",
+          trackTitle: "",
+          trackArtist: "",
+          trackArtwork: "",
+          trackUri: "",
+          trackDuration: 0,
+          playing: false,
+          positionMs: 0,
+        });
+      }
+      emitHostTrackChangeIfHosting({
+        trackId: "",
+        trackTitle: "",
+        trackArtist: "",
+        trackArtwork: "",
+        trackUri: "",
+        trackDuration: 0,
+        positionMs: 0,
+        playing: false,
+      });
+    }
   }, [resetNativePlayer]);
 
   useEffect(() => {

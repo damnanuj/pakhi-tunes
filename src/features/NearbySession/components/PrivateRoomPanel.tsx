@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { Pressable, ScrollView, Share } from "react-native";
-import { Copy, DoorOpen, Hash, Share2, Users } from "@tamagui/lucide-icons";
+import { useRouter } from "expo-router";
+import { Copy, DoorOpen, Hash, Music, Share2 } from "@tamagui/lucide-icons";
 import { Input, XStack, YStack } from "tamagui";
 import MyText from "src/components/MyText";
 import { appToast } from "src/components/toast/appToastHelpers";
@@ -12,8 +13,10 @@ import {
   verticalScale,
 } from "src/utils/functions/dimensions";
 import NearbySessionCard from "./NearbySessionCard";
+import RoomMembersList from "./RoomMembersList";
 import { useNearbySessionActions } from "../providers/NearbySessionProvider";
 import { useNearbySessionStore } from "../store/nearbySessionStore";
+import { sessionHasPlayableTrack } from "../types/session.types";
 
 type PrivateRoomPanelProps = {
   bottomPadding: number;
@@ -22,11 +25,14 @@ type PrivateRoomPanelProps = {
 export default function PrivateRoomPanel({
   bottomPadding,
 }: PrivateRoomPanelProps) {
+  const router = useRouter();
   const activeTrack = usePlayerStore((s) => s.activeTrack);
+  const isPlaying = usePlayerStore((s) => s.isPlaying);
   const role = useNearbySessionStore((s) => s.role);
   const roomCode = useNearbySessionStore((s) => s.roomCode);
   const activeSession = useNearbySessionStore((s) => s.activeSession);
   const listenerCount = useNearbySessionStore((s) => s.listenerCount);
+  const roomListeners = useNearbySessionStore((s) => s.roomListeners);
 
   const { createRoom, stopRoom, joinByCode, leaveSession } =
     useNearbySessionActions();
@@ -37,10 +43,30 @@ export default function PrivateRoomPanel({
   const [isEnding, setIsEnding] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
 
-  const isHostingPrivate =
-    role === "host" && Boolean(roomCode) && Boolean(activeTrack);
+  const isHostingPrivate = role === "host" && Boolean(roomCode);
   const isListeningPrivate =
     role === "listener" && activeSession?.visibility === "private";
+  const listenerHasSong = activeSession
+    ? sessionHasPlayableTrack(activeSession)
+    : false;
+
+  const hostDisplaySession =
+    isHostingPrivate && activeSession && activeTrack
+      ? {
+          ...activeSession,
+          trackId: activeTrack.id,
+          trackTitle: activeTrack.title,
+          trackArtist: activeTrack.artist,
+          trackArtwork: activeTrack.artworkUrl,
+          trackUri: activeTrack.uri,
+          trackDuration:
+            activeTrack.durationSec > 0
+              ? activeTrack.durationSec * 1000
+              : activeSession.trackDuration,
+          playing: isPlaying,
+          listenerCount,
+        }
+      : null;
 
   const handleCreateRoom = useCallback(async () => {
     setIsCreating(true);
@@ -102,6 +128,10 @@ export default function PrivateRoomPanel({
     }
   }, [roomCode]);
 
+  const handlePlayASong = useCallback(() => {
+    router.push("/(tabs)/home");
+  }, [router]);
+
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
@@ -118,10 +148,10 @@ export default function PrivateRoomPanel({
         color={themeColors.dark.textMuted}
         textAlign="center"
       >
-        Listen to the same song, in sync, with anyone — no matter the distance.
+        Create a room, share the code, then play any song together in sync.
       </MyText>
 
-      {isHostingPrivate && activeSession ? (
+      {isHostingPrivate ? (
         <YStack gap={verticalScale(16)}>
           <YStack
             items="center"
@@ -148,19 +178,6 @@ export default function PrivateRoomPanel({
             >
               {roomCode}
             </MyText>
-            <XStack items="center" gap={scale(6)}>
-              <Users
-                size={moderateScale(14)}
-                color={themeColors.dark.textMuted}
-              />
-              <MyText
-                fontSize={moderateScale(13)}
-                weight="600"
-                color={themeColors.dark.textMuted}
-              >
-                {listenerCount} listener{listenerCount === 1 ? "" : "s"}
-              </MyText>
-            </XStack>
 
             <XStack gap={scale(10)} mt={verticalScale(4)}>
               <Pressable
@@ -216,12 +233,60 @@ export default function PrivateRoomPanel({
             </XStack>
           </YStack>
 
-          <NearbySessionCard
-            session={{ ...activeSession, listenerCount }}
-            onJoin={() => undefined}
-            showAction={false}
-            listenerCountOverride={listenerCount}
-          />
+          <RoomMembersList listeners={roomListeners} />
+
+          {hostDisplaySession ? (
+            <NearbySessionCard
+              session={hostDisplaySession}
+              onJoin={() => undefined}
+              showAction={false}
+              listenerCountOverride={listenerCount}
+            />
+          ) : (
+            <YStack
+              gap={verticalScale(12)}
+              py={verticalScale(16)}
+              px={scale(16)}
+              rounded={moderateScale(18)}
+              bg={themeColors.dark.surfaceSecondary}
+              borderWidth={1}
+              borderColor={themeColors.dark.borderSecondary}
+            >
+              <MyText
+                fontSize={moderateScale(13)}
+                weight="500"
+                color={themeColors.dark.textMuted}
+                textAlign="center"
+              >
+                No song is playing yet. Pick something from Home to start the
+                session.
+              </MyText>
+              <Pressable
+                onPress={handlePlayASong}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: scale(8),
+                  paddingVertical: verticalScale(14),
+                  borderRadius: moderateScale(14),
+                  backgroundColor: themeColors.dark.accent,
+                }}
+              >
+                <Music
+                  size={moderateScale(16)}
+                  color={themeColors.dark.onAccent}
+                />
+                <MyText
+                  fontSize={moderateScale(14)}
+                  weight="700"
+                  color={themeColors.dark.onAccent}
+                >
+                  Play a song
+                </MyText>
+              </Pressable>
+            </YStack>
+          )}
 
           <Pressable
             onPress={() => void handleEndRoom()}
@@ -247,14 +312,66 @@ export default function PrivateRoomPanel({
 
       {isListeningPrivate && activeSession ? (
         <YStack gap={verticalScale(16)}>
-          <NearbySessionCard
-            session={activeSession}
-            onJoin={() => undefined}
-            onLeave={() => void handleLeave()}
-            isLeaving={isLeaving}
-            isActiveSession
-            listenerCountOverride={listenerCount}
-          />
+          {listenerHasSong ? (
+            <NearbySessionCard
+              session={activeSession}
+              onJoin={() => undefined}
+              onLeave={() => void handleLeave()}
+              isLeaving={isLeaving}
+              isActiveSession
+              listenerCountOverride={listenerCount}
+            />
+          ) : (
+            <YStack
+              gap={verticalScale(12)}
+              py={verticalScale(20)}
+              px={scale(16)}
+              rounded={moderateScale(18)}
+              bg={themeColors.dark.surfaceSecondary}
+              borderWidth={1}
+              borderColor={themeColors.dark.borderSecondary}
+              items="center"
+            >
+              <MyText
+                fontSize={moderateScale(15)}
+                weight="700"
+                color={themeColors.dark.onSurface}
+                textAlign="center"
+              >
+                Waiting for music
+              </MyText>
+              <MyText
+                fontSize={moderateScale(13)}
+                weight="500"
+                color={themeColors.dark.textMuted}
+                textAlign="center"
+              >
+                No song is being played. You’ll sync automatically when the host
+                starts one.
+              </MyText>
+              <Pressable
+                onPress={() => void handleLeave()}
+                disabled={isLeaving}
+                style={{
+                  marginTop: verticalScale(4),
+                  alignItems: "center",
+                  paddingHorizontal: scale(20),
+                  paddingVertical: verticalScale(12),
+                  borderRadius: moderateScale(14),
+                  backgroundColor: "#EF4444",
+                  opacity: isLeaving ? 0.6 : 1,
+                }}
+              >
+                <MyText
+                  fontSize={moderateScale(13)}
+                  weight="700"
+                  color={themeColors.dark.onAccent}
+                >
+                  {isLeaving ? "Leaving…" : "Exit room"}
+                </MyText>
+              </Pressable>
+            </YStack>
+          )}
         </YStack>
       ) : null}
 
@@ -287,19 +404,17 @@ export default function PrivateRoomPanel({
               weight="500"
               color={themeColors.dark.textMuted}
             >
-              {activeTrack
-                ? `Share a code so friends can listen to “${activeTrack.title}” with you.`
-                : "Play a song first, then create a room to share."}
+              Get a code to share. You can play a song after friends join.
             </MyText>
             <Pressable
               onPress={() => void handleCreateRoom()}
-              disabled={!activeTrack || isCreating}
+              disabled={isCreating}
               style={{
                 alignItems: "center",
                 paddingVertical: verticalScale(14),
                 borderRadius: moderateScale(14),
                 backgroundColor: themeColors.dark.accent,
-                opacity: !activeTrack || isCreating ? 0.5 : 1,
+                opacity: isCreating ? 0.5 : 1,
               }}
             >
               <MyText
