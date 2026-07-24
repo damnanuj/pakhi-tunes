@@ -6,7 +6,7 @@ import {
   moderateScale,
 } from "src/utils/functions/dimensions";
 import SkeletonPlaceholder from "src/components/SkeletonPlaceholder";
-import { SongListItemSkeleton } from "src/features/ArtistSongs/skeletons/ArtistSongsPageSkeleton";
+import SongListItemSkeleton from "src/features/ArtistSongs/skeletons/SongListItemSkeleton";
 
 const COVER_SIZE = moderateScale(110);
 const SKELETON_COUNT = 8;

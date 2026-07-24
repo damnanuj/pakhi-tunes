@@ -1,6 +1,6 @@
 import { FlatList } from "react-native";
 import { verticalScale } from "src/utils/functions/dimensions";
-import { SongListItemSkeleton } from "src/features/ArtistSongs/skeletons/ArtistSongsPageSkeleton";
+import SongListItemSkeleton from "src/features/ArtistSongs/skeletons/SongListItemSkeleton";
 
 const SKELETON_COUNT = 10;
 

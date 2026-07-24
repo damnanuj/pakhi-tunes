@@ -1,5 +1,5 @@
 import { FlatList } from "react-native";
-import { XStack, YStack } from "tamagui";
+import { YStack } from "tamagui";
 import {
   scale,
   verticalScale,
@@ -7,8 +7,8 @@ import {
 } from "src/utils/functions/dimensions";
 import SkeletonPlaceholder from "src/components/SkeletonPlaceholder";
 import themeColors from "src/utils/theme/colors";
+import SongListItemSkeleton from "./SongListItemSkeleton";
 
-const IMAGE_SIZE = moderateScale(56);
 const PROFILE_IMAGE_SIZE = moderateScale(100);
 const SKELETON_COUNT = 10;
 
@@ -38,42 +38,6 @@ function SkeletonArtistHeader() {
         style={{ marginTop: verticalScale(8) }}
       />
     </YStack>
-  );
-}
-
-const ICON_SIZE = moderateScale(20);
-
-export function SongListItemSkeleton() {
-  return (
-    <XStack
-      items="center"
-      gap={scale(12)}
-      py={verticalScale(12)}
-      px={scale(20)}
-    >
-      <SkeletonPlaceholder
-        width={IMAGE_SIZE}
-        height={IMAGE_SIZE}
-        borderRadius={moderateScale(8)}
-      />
-      <YStack flex={1} style={{ minWidth: 0 }} gap={verticalScale(8)} justify="center">
-        <SkeletonPlaceholder
-          width={scale(180)}
-          height={moderateScale(14)}
-          borderRadius={moderateScale(4)}
-        />
-        <SkeletonPlaceholder
-          width={scale(120)}
-          height={moderateScale(13)}
-          borderRadius={moderateScale(4)}
-        />
-      </YStack>
-      <SkeletonPlaceholder
-        width={ICON_SIZE}
-        height={ICON_SIZE}
-        borderRadius={moderateScale(4)}
-      />
-    </XStack>
   );
 }
 
