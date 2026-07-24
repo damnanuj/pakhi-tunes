@@ -44,9 +44,16 @@ const ARTWORK_RADIUS = moderateScale(8);
 interface SongListItemProps {
   song: ArtistSong;
   onRemoveFromHistory?: () => void;
+  onRemoveFromPlaylist?: () => void;
+  playlistName?: string;
 }
 
-function SongListItem({ song, onRemoveFromHistory }: SongListItemProps) {
+function SongListItem({
+  song,
+  onRemoveFromHistory,
+  onRemoveFromPlaylist,
+  playlistName,
+}: SongListItemProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<MenuAnchor | null>(null);
   const [saveSheetOpen, setSaveSheetOpen] = useState(false);
@@ -124,6 +131,8 @@ function SongListItem({ song, onRemoveFromHistory }: SongListItemProps) {
   const songOptions = useSongOptionsActions(song, menuOpen, {
     onRemoveFromHistory,
     onSaveToPlaylist: () => setSaveSheetOpen(true),
+    onRemoveFromPlaylist,
+    playlistName,
   });
   const { isDownloaded, isDownloading, progress } = useDownload(song.id);
 
@@ -317,6 +326,8 @@ function songListItemPropsAreEqual(
   if (a.name !== b.name) return false;
   if (a.image !== b.image) return false;
   if (prev.onRemoveFromHistory !== next.onRemoveFromHistory) return false;
+  if (prev.onRemoveFromPlaylist !== next.onRemoveFromPlaylist) return false;
+  if (prev.playlistName !== next.playlistName) return false;
   const aArtists = a.artists.primary.map((artist) => artist.name).join(",");
   const bArtists = b.artists.primary.map((artist) => artist.name).join(",");
   return aArtists === bArtists;

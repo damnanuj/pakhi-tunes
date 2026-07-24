@@ -42,6 +42,7 @@ export default function PlaylistsGrid() {
 
   const {
     playlists,
+    isPending,
     isLoading,
     isError,
     isFetching,
@@ -112,7 +113,10 @@ export default function PlaylistsGrid() {
     );
   }
 
-  if (isLoading) {
+  const showInitialSkeleton =
+    isPending || isLoading || (isFetching && playlists.length === 0);
+
+  if (showInitialSkeleton) {
     return (
       <View style={styles.flex}>
         <LibraryGridSkeleton contentBottomPadding={scrollBottomPadding} />

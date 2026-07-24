@@ -51,6 +51,10 @@ export type SongOptionsMenuActions = {
     label: string;
     onPress: () => void;
   };
+  removeFromPlaylist?: {
+    label: string;
+    onPress: () => void;
+  };
   saveToPlaylist: {
     label: string;
     onPress: () => void;
@@ -74,6 +78,8 @@ export function useSongOptionsActions(
   options?: {
     onRemoveFromHistory?: () => void;
     onSaveToPlaylist?: () => void;
+    onRemoveFromPlaylist?: () => void;
+    playlistName?: string;
   }
 ): SongOptionsMenuActions {
   const { isAuthenticated } = useAuth();
@@ -197,6 +203,10 @@ export function useSongOptionsActions(
     options?.onRemoveFromHistory?.();
   }, [options]);
 
+  const handleRemoveFromPlaylist = useCallback(() => {
+    options?.onRemoveFromPlaylist?.();
+  }, [options]);
+
   const handleAddToQueuePress = useCallback(() => {
     addSongToQueue(song);
     appToast.addedToQueue(songTitle);
@@ -271,6 +281,14 @@ export function useSongOptionsActions(
           removeFromHistory: {
             label: "Remove from history",
             onPress: handleRemoveFromHistory,
+          },
+        }
+      : {}),
+    ...(options?.onRemoveFromPlaylist && options.playlistName
+      ? {
+          removeFromPlaylist: {
+            label: `Remove from ${options.playlistName}`,
+            onPress: handleRemoveFromPlaylist,
           },
         }
       : {}),

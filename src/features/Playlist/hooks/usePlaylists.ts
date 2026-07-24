@@ -16,6 +16,7 @@ export function usePlaylists() {
 
   return {
     playlists: infiniteQuery.items,
+    isPending: infiniteQuery.isPending,
     isLoading: infiniteQuery.isLoading,
     isError: infiniteQuery.isError,
     error: infiniteQuery.error,

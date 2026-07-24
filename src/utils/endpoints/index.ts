@@ -36,6 +36,8 @@ export const endpoints = {
     removeSong: (id: string, songId: string) =>
       `/playlists/${encodeURIComponent(id)}/songs/${encodeURIComponent(songId)}`,
     addSongBulk: "/playlists/add-song",
+    containing: (songId: string) =>
+      `/playlists/containing/${encodeURIComponent(songId)}`,
   },
   sessions: {
     create: "/sessions",

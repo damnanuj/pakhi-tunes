@@ -92,6 +92,14 @@ export interface RemoveSongFromPlaylistResponse {
   isSuccess: boolean;
 }
 
+export interface PlaylistsContainingSongResponse {
+  data: {
+    playlistIds: string[];
+  };
+  error: Record<string, unknown>;
+  isSuccess: boolean;
+}
+
 export type PlaylistsParams = PaginationParams;
 
 export function artistSongToPlaylistPayload(

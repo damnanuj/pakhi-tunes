@@ -8,6 +8,7 @@ import type {
   Playlist,
   PlaylistResponse,
   PlaylistSongPayload,
+  PlaylistsContainingSongResponse,
   PlaylistsParams,
   PlaylistsResponse,
   RemoveSongFromPlaylistResponse,
@@ -88,4 +89,13 @@ export async function addSongToPlaylists(payload: AddSongToPlaylistsPayload) {
     payload
   );
   return data.data;
+}
+
+export async function getPlaylistsContainingSong(
+  songId: string
+): Promise<string[]> {
+  const { data } = await apiClient.get<PlaylistsContainingSongResponse>(
+    endpoints.playlists.containing(songId)
+  );
+  return data.data.playlistIds;
 }

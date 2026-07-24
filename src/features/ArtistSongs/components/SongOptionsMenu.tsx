@@ -74,7 +74,8 @@ export default function SongOptionsMenu({
     (actions.playNext ? 1 : 0) +
     (actions.addToQueue ? 1 : 0) +
     (actions.removeFromQueue ? 1 : 0) +
-    (actions.removeFromHistory ? 1 : 0);
+    (actions.removeFromHistory ? 1 : 0) +
+    (actions.removeFromPlaylist ? 1 : 0);
   const menuHeight = MENU_ITEM_HEIGHT * menuItemCount + MENU_PADDING_V * 2;
   const menuTop = anchor ? getMenuTop(anchor, menuHeight, windowHeight) : 0;
   const menuMaxWidth = windowWidth - SCREEN_EDGE_PADDING * 2;
@@ -166,6 +167,11 @@ export default function SongOptionsMenu({
     animateClose(actions.saveToPlaylist.onPress);
   }, [actions.saveToPlaylist, animateClose]);
 
+  const handleRemoveFromPlaylistPress = useCallback(() => {
+    if (!actions.removeFromPlaylist) return;
+    animateClose(actions.removeFromPlaylist.onPress);
+  }, [actions.removeFromPlaylist, animateClose]);
+
   const iconSize = moderateScale(20);
   const iconColor = themeColors.dark.onSurface;
   const accentColor = themeColors.dark.accent;
@@ -235,6 +241,13 @@ export default function SongOptionsMenu({
               label={actions.saveToPlaylist.label}
               onPress={handleSaveToPlaylistPress}
             />
+            {actions.removeFromPlaylist ? (
+              <SongOptionsMenuItem
+                icon={<ListX size={iconSize} color="#f87171" />}
+                label={actions.removeFromPlaylist.label}
+                onPress={handleRemoveFromPlaylistPress}
+              />
+            ) : null}
             {actions.playNext ? (
               <SongOptionsMenuItem
                 icon={<ListStart size={iconSize} color={iconColor} />}

@@ -1,12 +1,14 @@
 import { useCallback, useMemo } from "react";
 import { FlatList, type ListRenderItem, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { YStack } from "tamagui";
 import { ListMusic } from "@tamagui/lucide-icons";
 import themeColors from "src/utils/theme/colors";
 import ConnectionErrorState from "src/components/ConnectionErrorState";
 import ScreenHeader from "src/components/ScreenHeader";
 import MyText from "src/components/MyText";
+import { appToast } from "src/components/toast/appToastHelpers";
 import { useNetwork } from "src/contexts/NetworkContext";
 import {
   useConnectionErrorProps,
@@ -14,10 +16,10 @@ import {
   useScrollBottomInset,
 } from "src/hooks";
 import SongListItem from "src/features/ArtistSongs/components/SongListItem";
-import ArtistSongsPageSkeleton from "src/features/ArtistSongs/skeletons/ArtistSongsPageSkeleton";
 import { getSongListKey } from "src/features/ArtistSongs/utils/songListKeys";
 import { QueueProvider } from "src/features/Player/context/QueueContext";
 import type { ArtistSong } from "src/types/artistSongs.types";
+import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
 import {
   moderateScale,
   scale,
@@ -26,21 +28,33 @@ import {
 import { usePlaylistDetail } from "../hooks/usePlaylistDetail";
 import { playlistSongToQueueStub } from "../utils/playlistSongToQueueStub";
 import PlaylistDetailHeader from "../components/PlaylistDetailHeader";
+import PlaylistDetailSkeleton from "../skeletons/PlaylistDetailSkeleton";
 import { getPlaylistCoverUrl } from "../constants/playlistCovers";
+import { removeSongFromPlaylist } from "../services/playlist.service";
+import {
+  PLAYLISTS_QUERY_KEY,
+  getPlaylistDetailQueryKey,
+} from "../queries/playlistQuery";
 
 export default function PlaylistDetailPage() {
   const { id, name: nameParam } = useLocalSearchParams<{
     id: string;
     name?: string;
   }>();
+  const queryClient = useQueryClient();
   const { isOffline } = useNetwork();
   const scrollBottomPadding = useScrollBottomInset({
     includeTabBar: true,
     extra: 0,
   });
 
-  const { data: playlist, isLoading, isError, isFetching, refetch } =
-    usePlaylistDetail(id);
+  const {
+    data: playlist,
+    isPending,
+    isError,
+    isFetching,
+    refetch,
+  } = usePlaylistDetail(id);
 
   const { refreshControl } = useRefreshable({
     onRefresh: async () => {
@@ -70,9 +84,31 @@ export default function PlaylistDetailPage() {
     [id, headerTitle]
   );
 
+  const handleRemoveFromPlaylist = useCallback(
+    async (song: ArtistSong) => {
+      if (!id) return;
+      const title = decodeHtmlEntities(song.name);
+      await removeSongFromPlaylist(id, song.id);
+      void queryClient.invalidateQueries({
+        queryKey: getPlaylistDetailQueryKey(id),
+      });
+      void queryClient.invalidateQueries({ queryKey: PLAYLISTS_QUERY_KEY });
+      appToast.removedFromPlaylist(title);
+    },
+    [id, queryClient]
+  );
+
   const renderItem: ListRenderItem<ArtistSong> = useCallback(
-    ({ item }) => <SongListItem song={item} />,
-    []
+    ({ item }) => (
+      <SongListItem
+        song={item}
+        playlistName={headerTitle}
+        onRemoveFromPlaylist={() => {
+          void handleRemoveFromPlaylist(item);
+        }}
+      />
+    ),
+    [handleRemoveFromPlaylist, headerTitle]
   );
 
   const keyExtractor = useCallback(
@@ -80,11 +116,13 @@ export default function PlaylistDetailPage() {
     []
   );
 
-  if (isLoading) {
+  // isPending covers first load; also show while fetching with no data yet
+  // (React Query v5: isLoading = isPending && isFetching can miss disabled→enabled)
+  if (isPending || (isFetching && !playlist)) {
     return (
       <YStack flex={1} bg={themeColors.dark.background}>
         <ScreenHeader showBack title={headerTitle} />
-        <ArtistSongsPageSkeleton />
+        <PlaylistDetailSkeleton />
       </YStack>
     );
   }

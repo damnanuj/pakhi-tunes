@@ -15,6 +15,8 @@ interface PlaylistDetailHeaderProps {
   songCount: number;
 }
 
+const COVER_SIZE = moderateScale(140);
+
 function PlaylistDetailHeader({
   name,
   coverUrl,
@@ -30,9 +32,9 @@ function PlaylistDetailHeader({
     >
       <View
         style={{
-          width: moderateScale(180),
-          height: moderateScale(180),
-          borderRadius: moderateScale(16),
+          width: COVER_SIZE,
+          height: COVER_SIZE,
+          borderRadius: moderateScale(14),
           overflow: "hidden",
           backgroundColor: themeColors.dark.surfaceSecondary,
         }}

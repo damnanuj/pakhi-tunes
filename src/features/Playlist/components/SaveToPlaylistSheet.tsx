@@ -58,7 +58,7 @@ function SaveToPlaylistSheet({
   const { height: windowHeight } = useWindowDimensions();
   const sheetHeight = windowHeight * SHEET_HEIGHT_RATIO;
 
-  const save = useSaveToPlaylist(song);
+  const save = useSaveToPlaylist(song, open);
 
   useEffect(() => {
     if (!open) {
