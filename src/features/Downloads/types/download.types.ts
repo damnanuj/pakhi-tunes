@@ -25,9 +25,8 @@ export type DownloadProgress = {
 export const DOWNLOAD_QUALITY_OPTIONS: {
   quality: DownloadQuality;
   label: string;
-  subtitle: string;
 }[] = [
-  { quality: "96kbps", label: "Low", subtitle: "~1 MB/min" },
-  { quality: "160kbps", label: "Medium", subtitle: "~1.2 MB/min" },
-  { quality: "320kbps", label: "High", subtitle: "~2.5 MB/min" },
+  { quality: "96kbps", label: "Low" },
+  { quality: "160kbps", label: "Medium" },
+  { quality: "320kbps", label: "High" },
 ];

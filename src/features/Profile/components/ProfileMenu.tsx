@@ -2,6 +2,7 @@ import { LogOut } from "@tamagui/lucide-icons";
 import { YStack } from "tamagui";
 import { verticalScale } from "src/utils/functions/dimensions";
 import ProfileMenuItem from "./ProfileMenuItem";
+import ProfileStreamQualityItem from "./ProfileStreamQualityItem";
 import DiscoverabilityToggle from "src/features/NearbySession/components/DiscoverabilityToggle";
 
 type ProfileMenuProps = {
@@ -17,6 +18,7 @@ export default function ProfileMenu({
 }: ProfileMenuProps) {
   return (
     <YStack gap={verticalScale(12)} mt={verticalScale(24)}>
+      <ProfileStreamQualityItem />
       <DiscoverabilityToggle />
       {isAuthenticated ? (
         <ProfileMenuItem

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Pressable } from "react-native";
 import { Dialog, Button, YStack, XStack } from "tamagui";
 import { Check } from "@tamagui/lucide-icons";
@@ -16,32 +16,38 @@ import {
   verticalScale,
 } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
-import type { DownloadQuality } from "../types/download.types";
-import { DOWNLOAD_QUALITY_OPTIONS } from "../types/download.types";
+import type { StreamQuality } from "src/features/Player/constants/streamQualityOptions";
+import {
+  DEFAULT_STREAM_QUALITY,
+  STREAM_QUALITY_OPTIONS,
+} from "src/features/Player/constants/streamQualityOptions";
 
-interface DownloadQualityDialogProps {
+interface StreamQualityDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (quality: DownloadQuality) => void;
-  isSubmitting?: boolean;
-  confirmDisabled?: boolean;
+  currentQuality: StreamQuality;
+  onConfirm: (quality: StreamQuality) => void;
 }
 
-export default function DownloadQualityDialog({
+export default function StreamQualityDialog({
   open,
   onOpenChange,
+  currentQuality,
   onConfirm,
-  isSubmitting = false,
-  confirmDisabled = false,
-}: DownloadQualityDialogProps) {
+}: StreamQualityDialogProps) {
   const [selectedQuality, setSelectedQuality] =
-    useState<DownloadQuality>("160kbps");
+    useState<StreamQuality>(currentQuality);
+
+  useEffect(() => {
+    if (open) {
+      setSelectedQuality(currentQuality || DEFAULT_STREAM_QUALITY);
+    }
+  }, [open, currentQuality]);
 
   const handleConfirm = useCallback(() => {
     onConfirm(selectedQuality);
-  }, [onConfirm, selectedQuality]);
-
-  const downloadDisabled = isSubmitting || confirmDisabled;
+    onOpenChange(false);
+  }, [onConfirm, onOpenChange, selectedQuality]);
 
   return (
     <Dialog modal open={open} onOpenChange={onOpenChange}>
@@ -80,7 +86,7 @@ export default function DownloadQualityDialog({
                 weight="700"
                 color={themeColors.dark.onSurface}
               >
-                Download song
+                Audio quality
               </MyText>
             </Dialog.Title>
             <Dialog.Description
@@ -95,13 +101,13 @@ export default function DownloadQualityDialog({
                 weight="400"
                 color={themeColors.dark.textMuted}
               >
-                Choose audio quality for offline listening
+                Used for streaming. Applies to new plays.
               </MyText>
             </Dialog.Description>
           </YStack>
 
           <YStack gap={verticalScale(10)}>
-            {DOWNLOAD_QUALITY_OPTIONS.map((option) => {
+            {STREAM_QUALITY_OPTIONS.map((option) => {
               const isSelected = selectedQuality === option.quality;
               return (
                 <Pressable
@@ -167,12 +173,7 @@ export default function DownloadQualityDialog({
 
           <XStack gap={scale(12)}>
             <Dialog.Close asChild displayWhenAdapted={false}>
-              <Button
-                flex={1}
-                bg={themeColors.dark.surfaceSecondary}
-                size="$4"
-                disabled={isSubmitting}
-              >
+              <Button flex={1} bg={themeColors.dark.surfaceSecondary} size="$4">
                 <MyText color={themeColors.dark.onSurface}>Cancel</MyText>
               </Button>
             </Dialog.Close>
@@ -180,12 +181,10 @@ export default function DownloadQualityDialog({
               flex={1}
               bg={themeColors.dark.accent}
               size="$4"
-              disabled={downloadDisabled}
               onPress={handleConfirm}
-              icon={isSubmitting ? undefined : Check}
             >
-              <MyText color={themeColors.dark.onAccent}>
-                {isSubmitting ? "Starting…" : "Download"}
+              <MyText color={themeColors.dark.onAccent} weight="700">
+                Done
               </MyText>
             </Button>
           </XStack>

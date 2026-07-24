@@ -1,11 +1,15 @@
-/** Try 320 → 160 → 96 only */
-const QUALITY_ORDER = ["320kbps", "160kbps", "96kbps"] as const;
+import { getStreamQualityFallbackOrder } from "../constants/streamQualityOptions";
+import { useStreamQualityStore } from "../store/streamQualityStore";
 
 export function getPreferredStreamUrl(
   downloadUrl: { quality: string; url: string }[] | undefined
 ): string | null {
   if (!downloadUrl?.length) return null;
-  for (const q of QUALITY_ORDER) {
+
+  const preferred = useStreamQualityStore.getState().quality;
+  const order = getStreamQualityFallbackOrder(preferred);
+
+  for (const q of order) {
     const hit = downloadUrl.find((d) => d.quality === q);
     if (hit?.url) return hit.url;
   }
