@@ -32,6 +32,8 @@ export const endpoints = {
     create: "/sessions",
     nearby: "/sessions/nearby",
     me: "/sessions/me",
+    createRoom: "/sessions/room",
+    byCode: (code: string) => `/sessions/room/${encodeURIComponent(code)}`,
     item: (id: string) => `/sessions/${encodeURIComponent(id)}`,
     position: (id: string) =>
       `/sessions/${encodeURIComponent(id)}/position`,

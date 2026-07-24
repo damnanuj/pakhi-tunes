@@ -16,6 +16,7 @@ import NewAlbumsSection from "../components/NewAlbumsSection";
 import NewSongsSection from "../components/NewSongsSection";
 import TopArtistsSection from "../components/TopArtistsSection";
 import NearbyListeningCard from "../components/NearbyListeningCard";
+import ListenTogetherCard from "../components/ListenTogetherCard";
 import {
   HOME_QUERY_KEYS,
   useHomePageQueries,
@@ -28,6 +29,9 @@ function HomeSections() {
     <>
       <View style={{ marginBottom: SECTION_GAP }}>
         <NearbyListeningCard />
+      </View>
+      <View style={{ marginBottom: SECTION_GAP }}>
+        <ListenTogetherCard />
       </View>
       <View style={{ marginBottom: SECTION_GAP }}>
         <FeaturedCards />

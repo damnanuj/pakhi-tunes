@@ -21,6 +21,7 @@ export function useHostSession() {
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const positionMillis = usePlayerStore((s) => s.positionMillis);
   const role = useNearbySessionStore((s) => s.role);
+  const roomCode = useNearbySessionStore((s) => s.roomCode);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stopHosting = useCallback(async () => {
@@ -43,6 +44,8 @@ export function useHostSession() {
   const ensureHostSession = useCallback(async () => {
     if (!isAuthenticated || !user?.discoverable || !activeTrack) return;
     if (useNearbySessionStore.getState().role === "listener") return;
+    // Private rooms take priority — do not auto-convert to nearby
+    if (useNearbySessionStore.getState().roomCode) return;
 
     const coords = await getCurrentCoordinates();
     if (!coords) return;
@@ -60,6 +63,7 @@ export function useHostSession() {
       useNearbySessionStore.getState().setActiveSession(session);
       useNearbySessionStore.getState().setRole("host");
       useNearbySessionStore.getState().setListenerCount(session.listenerCount);
+      useNearbySessionStore.getState().setRoomCode(null);
 
       const socket = sessionSocketService.connect();
       if (!socket) return;
@@ -87,8 +91,11 @@ export function useHostSession() {
   }, [activeTrack, isAuthenticated, isPlaying, positionMillis, user?.discoverable]);
 
   useEffect(() => {
+    // Private room hosts are managed by usePrivateRoomHost
+    if (roomCode) return;
+
     if (!isAuthenticated || !user?.discoverable || !activeTrack) {
-      if (role === "host") {
+      if (role === "host" && !useNearbySessionStore.getState().roomCode) {
         void stopHosting();
       }
       return;
@@ -100,6 +107,7 @@ export function useHostSession() {
     ensureHostSession,
     isAuthenticated,
     role,
+    roomCode,
     stopHosting,
     user?.discoverable,
   ]);
@@ -157,7 +165,10 @@ export function useHostSession() {
 
     heartbeatRef.current = setInterval(() => {
       void (async () => {
-        const coords = await getCurrentCoordinates();
+        const isPrivateRoom = Boolean(
+          useNearbySessionStore.getState().roomCode
+        );
+        const coords = isPrivateRoom ? null : await getCurrentCoordinates();
         const state = usePlayerStore.getState();
         if (!state.activeTrack) return;
 
@@ -172,18 +183,21 @@ export function useHostSession() {
         };
         sessionSocketService.emitHostHeartbeat(payload);
         const sessionId = useNearbySessionStore.getState().activeSession?.id;
-        if (sessionId && coords) {
-          try {
-            await patchSessionPosition(sessionId, {
-              positionMs: payload.positionMs,
-              playing: payload.playing,
-              latitude: coords.latitude,
-              longitude: coords.longitude,
-              trackId: payload.trackId,
-            });
-          } catch {
-            /* ignore */
-          }
+        if (!sessionId) return;
+        try {
+          await patchSessionPosition(sessionId, {
+            positionMs: payload.positionMs,
+            playing: payload.playing,
+            ...(coords
+              ? {
+                  latitude: coords.latitude,
+                  longitude: coords.longitude,
+                }
+              : {}),
+            trackId: payload.trackId,
+          });
+        } catch {
+          /* ignore */
         }
       })();
     }, HEARTBEAT_INTERVAL_MS);

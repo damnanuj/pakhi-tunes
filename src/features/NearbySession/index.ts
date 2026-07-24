@@ -3,6 +3,7 @@ export { useNearbySessionStore, isListenerMode, isHostMode } from "./store/nearb
 export { useNearbyDiscovery } from "./hooks/useNearbyDiscovery";
 export { useSessionSync } from "./hooks/useSessionSync";
 export { useHostSession } from "./hooks/useHostSession";
+export { usePrivateRoomHost } from "./hooks/usePrivateRoomHost";
 export { updateDiscoverable } from "./services/session.service";
 export {
   requestLocationPermission,

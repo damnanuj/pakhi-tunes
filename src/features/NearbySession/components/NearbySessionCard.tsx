@@ -28,6 +28,8 @@ type NearbySessionCardProps = {
   isLeaving?: boolean;
   isActiveSession?: boolean;
   listenerCountOverride?: number;
+  showAction?: boolean;
+  leaveLabel?: string;
 };
 
 function formatDistance(meters?: number) {
@@ -83,6 +85,8 @@ export default function NearbySessionCard({
   isLeaving = false,
   isActiveSession = false,
   listenerCountOverride,
+  showAction = true,
+  leaveLabel = "Leave",
 }: NearbySessionCardProps) {
   const isLeaveMode = isActiveSession;
   const isBusy = isJoining || isLeaving;
@@ -240,6 +244,7 @@ export default function NearbySessionCard({
               </MyText>
             </XStack>
 
+            {showAction ? (
             <Pressable
               onPress={() => (isLeaveMode ? onLeave?.() : onJoin(session))}
               disabled={isBusy}
@@ -282,7 +287,7 @@ export default function NearbySessionCard({
                       weight="700"
                       color={themeColors.dark.onAccent}
                     >
-                      Leave
+                      {leaveLabel}
                     </MyText>
                   </>
                 )
@@ -310,6 +315,7 @@ export default function NearbySessionCard({
                 </>
               )}
             </Pressable>
+            ) : null}
           </XStack>
         </YStack>
       </XStack>

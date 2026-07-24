@@ -21,6 +21,7 @@ type NearbySessionState = {
   isConnected: boolean;
   isApplyingRemoteSync: boolean;
   locationPermission: "unknown" | "granted" | "denied";
+  roomCode: string | null;
   setNearbySessions: (sessions: NearbySession[]) => void;
   setIsScanning: (scanning: boolean) => void;
   setScanRadiusMeters: (radius: number) => void;
@@ -33,6 +34,7 @@ type NearbySessionState = {
   setIsConnected: (connected: boolean) => void;
   setIsApplyingRemoteSync: (applying: boolean) => void;
   setLocationPermission: (status: NearbySessionState["locationPermission"]) => void;
+  setRoomCode: (code: string | null) => void;
   resetSession: () => void;
 };
 
@@ -49,6 +51,7 @@ const initialState = {
   isConnected: false,
   isApplyingRemoteSync: false,
   locationPermission: "unknown" as const,
+  roomCode: null as string | null,
 };
 
 export const useNearbySessionStore = create<NearbySessionState>((set) => ({
@@ -66,6 +69,7 @@ export const useNearbySessionStore = create<NearbySessionState>((set) => ({
   setIsApplyingRemoteSync: (isApplyingRemoteSync) =>
     set({ isApplyingRemoteSync }),
   setLocationPermission: (locationPermission) => set({ locationPermission }),
+  setRoomCode: (roomCode) => set({ roomCode }),
   resetSession: () =>
     set({
       activeSession: null,
@@ -76,6 +80,7 @@ export const useNearbySessionStore = create<NearbySessionState>((set) => ({
       hostPlaybackAnchor: null,
       isApplyingRemoteSync: false,
       isConnected: false,
+      roomCode: null,
     }),
 }));
 

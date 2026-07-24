@@ -16,6 +16,8 @@ export type NearbySession = {
   playing: boolean;
   positionMs: number;
   listenerCount: number;
+  visibility?: "nearby" | "private";
+  roomCode?: string | null;
   distanceMeters?: number;
   updatedAt?: string;
 };
@@ -33,6 +35,17 @@ export type UpsertSessionPayload = {
   positionMs: number;
   latitude: number;
   longitude: number;
+};
+
+export type CreateRoomPayload = {
+  trackId: string;
+  trackTitle: string;
+  trackArtist: string;
+  trackArtwork: string;
+  trackUri: string;
+  trackDuration: number;
+  playing: boolean;
+  positionMs: number;
 };
 
 export type SessionTrackChangePayload = {

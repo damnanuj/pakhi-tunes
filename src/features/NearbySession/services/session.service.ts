@@ -3,6 +3,7 @@ import { endpoints } from "src/utils/endpoints";
 import type { AuthUser } from "src/features/auth/types/auth.types";
 import type {
   ActiveSession,
+  CreateRoomPayload,
   NearbySession,
   UpsertSessionPayload,
 } from "../types/session.types";
@@ -34,6 +35,20 @@ export async function upsertHostSession(payload: UpsertSessionPayload) {
   const { data } = await apiClient.post<
     ApiEnvelope<{ session: ActiveSession }>
   >(endpoints.sessions.create, payload);
+  return data.data.session;
+}
+
+export async function createPrivateRoom(payload: CreateRoomPayload) {
+  const { data } = await apiClient.post<
+    ApiEnvelope<{ session: ActiveSession }>
+  >(endpoints.sessions.createRoom, payload);
+  return data.data.session;
+}
+
+export async function fetchSessionByCode(code: string) {
+  const { data } = await apiClient.get<
+    ApiEnvelope<{ session: ActiveSession }>
+  >(endpoints.sessions.byCode(code));
   return data.data.session;
 }
 
