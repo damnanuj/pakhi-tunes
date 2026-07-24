@@ -182,7 +182,6 @@ export default function DownloadQualityDialog({
               size="$4"
               disabled={downloadDisabled}
               onPress={handleConfirm}
-              icon={isSubmitting ? undefined : Check}
             >
               <MyText color={themeColors.dark.onAccent}>
                 {isSubmitting ? "Starting…" : "Download"}
