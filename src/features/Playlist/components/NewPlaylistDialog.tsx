@@ -90,17 +90,21 @@ export default function NewPlaylistDialog({
           width="90%"
           maxW={scale(360)}
         >
-          <YStack gap={verticalScale(8)}>
-            <Dialog.Title>
-              <MyText
-                fontSize={moderateScale(18)}
-                weight="700"
-                color={themeColors.dark.onSurface}
-              >
-                New Playlist
-              </MyText>
-            </Dialog.Title>
-          </YStack>
+          <Dialog.Title
+            p={0}
+            m={0}
+            fontSize={moderateScale(18)}
+            lineHeight={moderateScale(18)}
+          >
+            <MyText
+              fontSize={moderateScale(18)}
+              lineHeight={moderateScale(18)}
+              weight="700"
+              color={themeColors.dark.onSurface}
+            >
+              New Playlist
+            </MyText>
+          </Dialog.Title>
 
           <YStack gap={verticalScale(8)}>
             <MyText
