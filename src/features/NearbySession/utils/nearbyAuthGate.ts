@@ -3,7 +3,6 @@ import type { Router } from "expo-router";
 import { appToast } from "src/components/toast/appToastHelpers";
 
 export const NEARBY_HOME_REDIRECT = "/(tabs)/home/nearby";
-export const LISTEN_TOGETHER_HOME_REDIRECT = "/(tabs)/home/listen-together";
 export const NEARBY_PROFILE_REDIRECT = "/(tabs)/profile";
 
 export function redirectToSignInForNearby(

@@ -159,7 +159,7 @@ export default function NearbyListeningCard() {
                 color={themeColors.dark.onSurface}
                 numberOfLines={1}
               >
-                Nearby sessions
+                Listen Together
               </MyText>
               <MyText
                 fontSize={moderateScale(12)}
@@ -167,7 +167,7 @@ export default function NearbyListeningCard() {
                 color={themeColors.dark.textMuted}
                 numberOfLines={1}
               >
-                Tap to scan live listeners
+                Nearby sessions or join with a room code
               </MyText>
             </YStack>
 
@@ -182,7 +182,7 @@ export default function NearbyListeningCard() {
               }}
             >
               <MyText fontSize={moderateScale(11)} weight="700" color={accent}>
-                Scan
+                Open
               </MyText>
             </View>
           </XStack>
