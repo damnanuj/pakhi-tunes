@@ -63,4 +63,10 @@ export const endpoints = {
   listening: {
     report: "/listening/report",
   },
+  devices: {
+    register: "/devices/register",
+    unlink: "/devices/unlink",
+    item: (installationId: string) =>
+      `/devices/${encodeURIComponent(installationId)}`,
+  },
 } as const;

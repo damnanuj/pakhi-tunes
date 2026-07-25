@@ -1,4 +1,10 @@
-import auth from "@react-native-firebase/auth";
+import {
+  GoogleAuthProvider,
+  getAuth,
+  getIdToken,
+  signInWithCredential,
+  signOut,
+} from "@react-native-firebase/auth";
 import {
   GoogleSignin,
   isErrorWithCode,
@@ -79,8 +85,9 @@ async function resetGoogleSignInSession(): Promise<void> {
   }
 
   try {
-    if (auth().currentUser) {
-      await auth().signOut();
+    const firebaseAuth = getAuth();
+    if (firebaseAuth.currentUser) {
+      await signOut(firebaseAuth);
     }
   } catch {
     // Firebase session cleanup is best-effort before a fresh sign-in.
@@ -108,9 +115,10 @@ export async function signInWithGoogle(): Promise<GoogleAuthResult> {
       throw new Error("Google sign-in did not return an ID token.");
     }
 
-    const credential = auth.GoogleAuthProvider.credential(idToken, accessToken);
-    const userCredential = await auth().signInWithCredential(credential);
-    const firebaseIdToken = await userCredential.user.getIdToken(true);
+    const firebaseAuth = getAuth();
+    const credential = GoogleAuthProvider.credential(idToken, accessToken);
+    const userCredential = await signInWithCredential(firebaseAuth, credential);
+    const firebaseIdToken = await getIdToken(userCredential.user, true);
 
     const authResponse = await apiClient.post<AuthResponse>(endpoints.auth.google, {
       idToken: firebaseIdToken,

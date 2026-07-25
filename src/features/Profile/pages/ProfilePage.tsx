@@ -43,8 +43,16 @@ export default function ProfilePage() {
     setShowLogoutConfirm(true);
   };
 
-  const handleLogoutConfirm = () => {
+  const handleLogoutConfirm = async () => {
     const displayName = user?.name ?? "Guest";
+    try {
+      const { unlinkDeviceUser } = await import(
+        "src/features/notifications/services/deviceRegistration"
+      );
+      await unlinkDeviceUser();
+    } catch {
+      // Non-blocking — device stays registered for broadcasts either way
+    }
     logout();
     void queryClient.removeQueries({ queryKey: FAVORITES_QUERY_KEY });
     void queryClient.removeQueries({ queryKey: HISTORY_QUERY_KEY });

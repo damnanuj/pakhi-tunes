@@ -35,6 +35,7 @@ import GuestListeningGuard from "src/features/guest/providers/GuestListeningGuar
 import AuthProvider from "src/features/auth/providers/AuthProvider";
 import GuestProvider from "src/features/guest/providers/GuestProvider";
 import PresenceProvider from "src/features/presence/providers/PresenceProvider";
+import NotificationProvider from "src/features/notifications/providers/NotificationProvider";
 import FavoritesSyncProvider from "src/features/favorites/providers/FavoritesSyncProvider";
 import HistorySyncProvider from "src/features/history/providers/HistorySyncProvider";
 import { NearbySessionProvider } from "src/features/NearbySession";
@@ -118,19 +119,21 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
                     <AuthProvider>
                       <GuestProvider>
                         <GuestListeningGuard>
-                          <PresenceProvider>
-                            <FavoritesSyncProvider>
-                              <HistorySyncProvider>
-                                <NearbySessionProvider>
-                                  {children}
-                                  <MiniPlayerRootLayer />
-                                  <AppToast />
-                                  <GuestLimitDialog />
-                                  <GuestListeningLimitDialog />
-                                </NearbySessionProvider>
-                              </HistorySyncProvider>
-                            </FavoritesSyncProvider>
-                          </PresenceProvider>
+                          <NotificationProvider>
+                            <PresenceProvider>
+                              <FavoritesSyncProvider>
+                                <HistorySyncProvider>
+                                  <NearbySessionProvider>
+                                    {children}
+                                    <MiniPlayerRootLayer />
+                                    <AppToast />
+                                    <GuestLimitDialog />
+                                    <GuestListeningLimitDialog />
+                                  </NearbySessionProvider>
+                                </HistorySyncProvider>
+                              </FavoritesSyncProvider>
+                            </PresenceProvider>
+                          </NotificationProvider>
                         </GuestListeningGuard>
                       </GuestProvider>
                     </AuthProvider>
