@@ -1,4 +1,5 @@
-import { Image, Pressable } from "react-native";
+import { memo, useCallback } from "react";
+import { Image, Pressable, type ImageStyle, type ViewStyle } from "react-native";
 import { ListMusic } from "@tamagui/lucide-icons";
 import { XStack, YStack } from "tamagui";
 import MyText from "src/components/MyText";
@@ -17,10 +18,143 @@ type RoomQueueListProps = {
   onPlayItem?: (item: SessionQueueTrack) => void;
 };
 
-export default function RoomQueueList({
-  queue,
+const artworkStyle: ImageStyle = {
+  width: moderateScale(40),
+  height: moderateScale(40),
+  borderRadius: moderateScale(8),
+};
+
+const pressOpacityStyle = ({ pressed }: { pressed: boolean }): ViewStyle => ({
+  opacity: pressed ? 0.75 : 1,
+});
+
+type RoomQueueRowProps = {
+  item: SessionQueueTrack;
+  index: number;
+  onPlayItem?: (item: SessionQueueTrack) => void;
+};
+
+const RoomQueueRow = memo(function RoomQueueRow({
+  item,
+  index,
   onPlayItem,
-}: RoomQueueListProps) {
+}: RoomQueueRowProps) {
+  const isNext = index === 0;
+  const title = decodeHtmlEntities(item.title);
+  const artist = decodeHtmlEntities(item.artist);
+  const addedBy = item.addedBy?.name?.trim() || "Listener";
+
+  const handlePress = useCallback(() => {
+    onPlayItem?.(item);
+  }, [item, onPlayItem]);
+
+  const row = (
+    <XStack
+      items="center"
+      gap={scale(10)}
+      py={verticalScale(8)}
+      px={scale(8)}
+      rounded={moderateScale(12)}
+      bg={isNext ? themeColors.dark.surface : "transparent"}
+      borderWidth={isNext ? 1 : 0}
+      borderColor={isNext ? themeColors.dark.accent : "transparent"}
+    >
+      {item.artworkUrl ? (
+        <Image
+          source={{ uri: item.artworkUrl }}
+          style={artworkStyle}
+          resizeMode="cover"
+        />
+      ) : (
+        <YStack
+          width={moderateScale(40)}
+          height={moderateScale(40)}
+          rounded={moderateScale(8)}
+          bg={themeColors.dark.surface}
+          items="center"
+          justify="center"
+        >
+          <ListMusic
+            size={moderateScale(16)}
+            color={themeColors.dark.textMuted}
+          />
+        </YStack>
+      )}
+
+      <YStack flex={1} gap={verticalScale(2)}>
+        <XStack items="center" gap={scale(6)}>
+          <MyText
+            fontSize={moderateScale(13)}
+            weight="700"
+            color={themeColors.dark.onSurface}
+            numberOfLines={1}
+            style={{ flexShrink: 1 }}
+          >
+            {title}
+          </MyText>
+          {isNext ? (
+            <MyText
+              fontSize={moderateScale(10)}
+              weight="700"
+              color={themeColors.dark.accent}
+            >
+              Next
+            </MyText>
+          ) : null}
+        </XStack>
+        <MyText
+          fontSize={moderateScale(11)}
+          weight="500"
+          color={themeColors.dark.textMuted}
+          numberOfLines={1}
+        >
+          {artist}
+        </MyText>
+        <MyText
+          fontSize={moderateScale(10)}
+          weight="500"
+          color={themeColors.dark.textMuted}
+          numberOfLines={1}
+        >
+          Added by {addedBy}
+        </MyText>
+      </YStack>
+
+      {!isNext ? (
+        <MyText
+          fontSize={moderateScale(12)}
+          weight="700"
+          color={themeColors.dark.textMuted}
+        >
+          {index + 1}
+        </MyText>
+      ) : null}
+    </XStack>
+  );
+
+  if (!onPlayItem) {
+    return row;
+  }
+
+  return (
+    <Pressable onPress={handlePress} style={pressOpacityStyle}>
+      {row}
+    </Pressable>
+  );
+}, (prev, next) => {
+  return (
+    prev.index === next.index &&
+    prev.onPlayItem === next.onPlayItem &&
+    prev.item.queueItemId === next.item.queueItemId &&
+    prev.item.songId === next.item.songId &&
+    prev.item.title === next.item.title &&
+    prev.item.artist === next.item.artist &&
+    prev.item.artworkUrl === next.item.artworkUrl &&
+    prev.item.addedBy?.name === next.item.addedBy?.name
+  );
+});
+
+function RoomQueueList({ queue, onPlayItem }: RoomQueueListProps) {
   const canPlayNow = Boolean(onPlayItem);
 
   return (
@@ -75,123 +209,18 @@ export default function RoomQueueList({
               Tap a song to play it now
             </MyText>
           ) : null}
-          {queue.map((item, index) => {
-            const isNext = index === 0;
-            const title = decodeHtmlEntities(item.title);
-            const artist = decodeHtmlEntities(item.artist);
-            const addedBy = item.addedBy?.name?.trim() || "Listener";
-
-            const row = (
-              <XStack
-                items="center"
-                gap={scale(10)}
-                py={verticalScale(8)}
-                px={scale(8)}
-                rounded={moderateScale(12)}
-                bg={isNext ? themeColors.dark.surface : "transparent"}
-                borderWidth={isNext ? 1 : 0}
-                borderColor={
-                  isNext ? themeColors.dark.accent : "transparent"
-                }
-              >
-                {item.artworkUrl ? (
-                  <Image
-                    source={{ uri: item.artworkUrl }}
-                    style={{
-                      width: moderateScale(40),
-                      height: moderateScale(40),
-                      borderRadius: moderateScale(8),
-                    }}
-                  />
-                ) : (
-                  <YStack
-                    width={moderateScale(40)}
-                    height={moderateScale(40)}
-                    rounded={moderateScale(8)}
-                    bg={themeColors.dark.surface}
-                    items="center"
-                    justify="center"
-                  >
-                    <ListMusic
-                      size={moderateScale(16)}
-                      color={themeColors.dark.textMuted}
-                    />
-                  </YStack>
-                )}
-
-                <YStack flex={1} gap={verticalScale(2)}>
-                  <XStack items="center" gap={scale(6)}>
-                    <MyText
-                      fontSize={moderateScale(13)}
-                      weight="700"
-                      color={themeColors.dark.onSurface}
-                      numberOfLines={1}
-                      style={{ flexShrink: 1 }}
-                    >
-                      {title}
-                    </MyText>
-                    {isNext ? (
-                      <MyText
-                        fontSize={moderateScale(10)}
-                        weight="700"
-                        color={themeColors.dark.accent}
-                      >
-                        Next
-                      </MyText>
-                    ) : null}
-                  </XStack>
-                  <MyText
-                    fontSize={moderateScale(11)}
-                    weight="500"
-                    color={themeColors.dark.textMuted}
-                    numberOfLines={1}
-                  >
-                    {artist}
-                  </MyText>
-                  <MyText
-                    fontSize={moderateScale(10)}
-                    weight="500"
-                    color={themeColors.dark.textMuted}
-                    numberOfLines={1}
-                  >
-                    Added by {addedBy}
-                  </MyText>
-                </YStack>
-
-                {!isNext ? (
-                  <MyText
-                    fontSize={moderateScale(12)}
-                    weight="700"
-                    color={themeColors.dark.textMuted}
-                  >
-                    {index + 1}
-                  </MyText>
-                ) : null}
-              </XStack>
-            );
-
-            if (!onPlayItem) {
-              return (
-                <YStack key={item.queueItemId || `${item.songId}-${index}`}>
-                  {row}
-                </YStack>
-              );
-            }
-
-            return (
-              <Pressable
-                key={item.queueItemId || `${item.songId}-${index}`}
-                onPress={() => onPlayItem(item)}
-                style={({ pressed }) => ({
-                  opacity: pressed ? 0.75 : 1,
-                })}
-              >
-                {row}
-              </Pressable>
-            );
-          })}
+          {queue.map((item, index) => (
+            <RoomQueueRow
+              key={item.queueItemId || `${item.songId}-${index}`}
+              item={item}
+              index={index}
+              onPlayItem={onPlayItem}
+            />
+          ))}
         </YStack>
       )}
     </YStack>
   );
 }
+
+export default memo(RoomQueueList);

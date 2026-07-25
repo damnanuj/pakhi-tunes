@@ -33,11 +33,13 @@ function patchActiveSessionPlayback(patch: {
 export function useHostSession() {
   const { isAuthenticated, user } = useAuth();
   const activeTrack = usePlayerStore((s) => s.activeTrack);
-  const isPlaying = usePlayerStore((s) => s.isPlaying);
-  const positionMillis = usePlayerStore((s) => s.positionMillis);
   const role = useNearbySessionStore((s) => s.role);
   const roomCode = useNearbySessionStore((s) => s.roomCode);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const onConnectRef = useRef<(() => void) | null>(null);
+  const onListenerCountRef = useRef<
+    ((event: { listenerCount: number }) => void) | null
+  >(null);
 
   const stopHosting = useCallback(async () => {
     if (heartbeatRef.current) {
@@ -65,36 +67,48 @@ export function useHostSession() {
     const coords = await getCurrentCoordinates();
     if (!coords) return;
 
+    const player = usePlayerStore.getState();
     const payload = activeTrackToSessionPayload(
       activeTrack,
-      isPlaying,
-      positionMillis,
+      player.isPlaying,
+      player.positionMillis,
       coords.latitude,
       coords.longitude
     );
 
     try {
       const session = await upsertHostSession(payload);
-      useNearbySessionStore.getState().setActiveSession(session);
-      useNearbySessionStore.getState().setRole("host");
-      useNearbySessionStore.getState().setListenerCount(session.listenerCount);
-      useNearbySessionStore.getState().setRoomCode(null);
+      useNearbySessionStore.setState({
+        activeSession: session,
+        role: "host",
+        listenerCount: session.listenerCount,
+        roomCode: null,
+      });
 
       const socket = sessionSocketService.connect();
       if (!socket) return;
 
-      socket.off("connect");
-      socket.on("connect", () => {
+      if (onConnectRef.current) {
+        socket.off("connect", onConnectRef.current);
+      }
+      if (onListenerCountRef.current) {
+        socket.off("session:listenerCount", onListenerCountRef.current);
+      }
+
+      const onConnect = () => {
         useNearbySessionStore.getState().setIsConnected(true);
         void sessionSocketService.emitHostStart(session.id);
-      });
-
-      socket.off("session:listenerCount");
-      socket.on("session:listenerCount", (event: { listenerCount: number }) => {
+      };
+      const onListenerCount = (event: { listenerCount: number }) => {
         useNearbySessionStore
           .getState()
           .setListenerCount(event.listenerCount ?? 0);
-      });
+      };
+
+      onConnectRef.current = onConnect;
+      onListenerCountRef.current = onListenerCount;
+      socket.on("connect", onConnect);
+      socket.on("session:listenerCount", onListenerCount);
 
       if (socket.connected) {
         useNearbySessionStore.getState().setIsConnected(true);
@@ -103,7 +117,7 @@ export function useHostSession() {
     } catch {
       /* ignore hosting errors */
     }
-  }, [activeTrack, isAuthenticated, isPlaying, positionMillis, user?.discoverable]);
+  }, [activeTrack, isAuthenticated, user?.discoverable]);
 
   useEffect(() => {
     // Private room hosts are managed by usePrivateRoomHost

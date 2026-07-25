@@ -7,6 +7,7 @@ import {
   artistSongToSessionQueuePayload,
   sessionHasPlayableTrack,
 } from "../types/session.types";
+import { syncRoomQueue } from "./syncRoomQueue";
 
 /**
  * When the user is a private-room listener, request room Play Next instead of
@@ -38,10 +39,7 @@ export async function requestRoomPlayNextIfListener(
   }
 
   if (Array.isArray(result.queue)) {
-    state.setRoomQueue(result.queue);
-    if (state.activeSession) {
-      state.setActiveSession({ ...state.activeSession, queue: result.queue });
-    }
+    syncRoomQueue(result.queue);
   }
 
   appToast.info(`Added "${title}" to room queue`);

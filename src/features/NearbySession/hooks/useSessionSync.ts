@@ -12,6 +12,8 @@ import type {
   SessionQueueTrack,
 } from "../types/session.types";
 import { sessionHasPlayableTrack } from "../types/session.types";
+import { applyListenersUpdate } from "../utils/applyListenersUpdate";
+import { connectSessionSocketReady } from "../utils/connectSessionSocketReady";
 import { leaveListenerSessionIfActive } from "../utils/leaveListenerSession";
 import {
   applyRemoteHeartbeat,
@@ -34,47 +36,15 @@ function patchActiveSessionMetadata(patch: Partial<NearbySession>) {
   );
 }
 
-function applyListenersUpdate(payload: {
-  listenerCount?: number;
-  listeners?: SessionListener[];
-}) {
-  if (Array.isArray(payload.listeners)) {
-    useNearbySessionStore.getState().setRoomListeners(payload.listeners);
-    useNearbySessionStore
-      .getState()
-      .setListenerCount(payload.listeners.length);
-    patchActiveSessionMetadata({
-      listenerCount: payload.listeners.length,
-      listeners: payload.listeners,
-    });
-    return;
-  }
-
-  if (payload.listenerCount !== undefined) {
-    const count = Math.max(0, Number(payload.listenerCount));
-    useNearbySessionStore.getState().setListenerCount(count);
-    patchActiveSessionMetadata({ listenerCount: count });
-  }
-}
-
 export function useSessionSync() {
   const router = useRouter();
   const joinSession = useCallback(
     async (session: NearbySession) => {
-      const socket = sessionSocketService.connect();
+      const socket = await connectSessionSocketReady();
       if (!socket) {
         appToast.error("Sign in required to join a session");
         return false;
       }
-
-      await new Promise<void>((resolve) => {
-        if (socket.connected) {
-          resolve();
-          return;
-        }
-        socket.once("connect", () => resolve());
-        setTimeout(resolve, 5000);
-      });
 
       const result = await sessionSocketService.joinAsListener(session.id);
       if (!result.ok) {
@@ -127,19 +97,15 @@ export function useSessionSync() {
             : session.updatedAt,
       };
 
-      useNearbySessionStore.getState().setRole("listener");
-      useNearbySessionStore.getState().setActiveSession(liveSession);
-      useNearbySessionStore.getState().setHostName(liveSession.hostName);
-      useNearbySessionStore.getState().setIsConnected(true);
-      useNearbySessionStore
-        .getState()
-        .setListenerCount(liveSession.listenerCount);
-      useNearbySessionStore
-        .getState()
-        .setRoomListeners(liveSession.listeners ?? []);
-      useNearbySessionStore
-        .getState()
-        .setRoomQueue(liveSession.queue ?? []);
+      useNearbySessionStore.setState({
+        role: "listener",
+        activeSession: liveSession,
+        hostName: liveSession.hostName,
+        isConnected: true,
+        listenerCount: liveSession.listenerCount,
+        roomListeners: liveSession.listeners ?? [],
+        roomQueue: liveSession.queue ?? [],
+      });
 
       if (sessionHasPlayableTrack(liveSession)) {
         const positionMs = extrapolateSessionPosition(liveSession);

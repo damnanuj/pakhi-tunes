@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import TrackPlayer from "react-native-track-player";
 import { appToast } from "src/components/toast/appToastHelpers";
 import { useAuth } from "src/features/auth/hooks/useAuth";
@@ -10,53 +10,29 @@ import {
 import { sessionSocketService } from "../services/sessionSocket.service";
 import { useNearbySessionStore } from "../store/nearbySessionStore";
 import type { SessionListener } from "../types/session.types";
+import { applyListenersUpdate } from "../utils/applyListenersUpdate";
+import { connectSessionSocketReady } from "../utils/connectSessionSocketReady";
+import { syncRoomQueue } from "../utils/syncRoomQueue";
 
-function applyListenersUpdate(payload: {
-  listenerCount?: number;
-  listeners?: SessionListener[];
-}) {
-  if (Array.isArray(payload.listeners)) {
-    useNearbySessionStore.getState().setRoomListeners(payload.listeners);
-    useNearbySessionStore
-      .getState()
-      .setListenerCount(payload.listeners.length);
-    return;
+async function connectAndStartHost(
+  sessionId: string,
+  handlers: {
+    onListenerCount: (event: { listenerCount: number }) => void;
+    onListeners: (event: {
+      listenerCount?: number;
+      listeners?: SessionListener[];
+    }) => void;
   }
-  if (payload.listenerCount !== undefined) {
-    useNearbySessionStore
-      .getState()
-      .setListenerCount(Math.max(0, Number(payload.listenerCount)));
-  }
-}
-
-async function connectAndStartHost(sessionId: string) {
-  const socket = sessionSocketService.connect();
+) {
+  const socket = await connectSessionSocketReady();
   if (!socket) {
     return false;
   }
 
-  await new Promise<void>((resolve) => {
-    if (socket.connected) {
-      resolve();
-      return;
-    }
-    socket.once("connect", () => resolve());
-    setTimeout(resolve, 5000);
-  });
-
-  socket.off("session:listenerCount");
-  socket.off("session:listeners");
-  socket.on("session:listenerCount", (event: { listenerCount: number }) => {
-    useNearbySessionStore
-      .getState()
-      .setListenerCount(event.listenerCount ?? 0);
-  });
-  socket.on(
-    "session:listeners",
-    (event: { listenerCount?: number; listeners?: SessionListener[] }) => {
-      applyListenersUpdate(event);
-    }
-  );
+  socket.off("session:listenerCount", handlers.onListenerCount);
+  socket.off("session:listeners", handlers.onListeners);
+  socket.on("session:listenerCount", handlers.onListenerCount);
+  socket.on("session:listeners", handlers.onListeners);
 
   const result = await sessionSocketService.emitHostStart(sessionId);
   if (!result.ok) {
@@ -64,7 +40,7 @@ async function connectAndStartHost(sessionId: string) {
   }
 
   if (Array.isArray(result.queue)) {
-    useNearbySessionStore.getState().setRoomQueue(result.queue);
+    syncRoomQueue(result.queue);
   }
 
   useNearbySessionStore.getState().setIsConnected(true);
@@ -73,6 +49,14 @@ async function connectAndStartHost(sessionId: string) {
 
 export function usePrivateRoomHost() {
   const { isAuthenticated } = useAuth();
+  const onListenerCountRef = useRef((event: { listenerCount: number }) => {
+    applyListenersUpdate(event);
+  });
+  const onListenersRef = useRef(
+    (event: { listenerCount?: number; listeners?: SessionListener[] }) => {
+      applyListenersUpdate(event);
+    }
+  );
 
   const stopRoom = useCallback(async () => {
     const sessionId = useNearbySessionStore.getState().activeSession?.id;
@@ -142,21 +126,20 @@ export function usePrivateRoomHost() {
             }
       );
 
-      useNearbySessionStore.getState().setActiveSession(session);
-      useNearbySessionStore
-        .getState()
-        .setRoomCode(session.roomCode ?? null);
-      useNearbySessionStore.getState().setHostName(session.hostName);
-      useNearbySessionStore.getState().setListenerCount(session.listenerCount);
-      useNearbySessionStore
-        .getState()
-        .setRoomListeners(session.listeners ?? []);
-      useNearbySessionStore
-        .getState()
-        .setRoomQueue(session.queue ?? []);
-      useNearbySessionStore.getState().setRole("host");
+      useNearbySessionStore.setState({
+        activeSession: session,
+        roomCode: session.roomCode ?? null,
+        hostName: session.hostName,
+        listenerCount: session.listenerCount,
+        roomListeners: session.listeners ?? [],
+        roomQueue: session.queue ?? [],
+        role: "host",
+      });
 
-      const started = await connectAndStartHost(session.id);
+      const started = await connectAndStartHost(session.id, {
+        onListenerCount: onListenerCountRef.current,
+        onListeners: onListenersRef.current,
+      });
       if (!started) {
         appToast.error("Could not start room sync");
         return session;

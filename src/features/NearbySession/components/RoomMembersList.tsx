@@ -1,4 +1,5 @@
-import { Image } from "react-native";
+import { memo } from "react";
+import { Image, type ImageStyle } from "react-native";
 import { Users } from "@tamagui/lucide-icons";
 import { XStack, YStack } from "tamagui";
 import MyText from "src/components/MyText";
@@ -15,7 +16,65 @@ type RoomMembersListProps = {
   emptyLabel?: string;
 };
 
-export default function RoomMembersList({
+const avatarStyle: ImageStyle = {
+  width: moderateScale(32),
+  height: moderateScale(32),
+  borderRadius: moderateScale(16),
+};
+
+const RoomMemberRow = memo(function RoomMemberRow({
+  listener,
+}: {
+  listener: SessionListener;
+}) {
+  return (
+    <XStack items="center" gap={scale(10)}>
+      {listener.avatar ? (
+        <Image
+          source={{ uri: listener.avatar }}
+          style={avatarStyle}
+          resizeMode="cover"
+        />
+      ) : (
+        <YStack
+          width={moderateScale(32)}
+          height={moderateScale(32)}
+          rounded={moderateScale(16)}
+          bg={themeColors.dark.surface}
+          borderWidth={1}
+          borderColor={themeColors.dark.borderSecondary}
+          items="center"
+          justify="center"
+        >
+          <MyText
+            fontSize={moderateScale(12)}
+            weight="700"
+            color={themeColors.dark.accent}
+          >
+            {(listener.name || "?").charAt(0).toUpperCase()}
+          </MyText>
+        </YStack>
+      )}
+      <MyText
+        fontSize={moderateScale(13)}
+        weight="600"
+        color={themeColors.dark.onSurface}
+        numberOfLines={1}
+        style={{ flex: 1 }}
+      >
+        {listener.name}
+      </MyText>
+    </XStack>
+  );
+}, (prev, next) => {
+  return (
+    prev.listener.userId === next.listener.userId &&
+    prev.listener.name === next.listener.name &&
+    prev.listener.avatar === next.listener.avatar
+  );
+});
+
+function RoomMembersList({
   listeners,
   emptyLabel = "No one has joined yet",
 }: RoomMembersListProps) {
@@ -63,53 +122,12 @@ export default function RoomMembersList({
       ) : (
         <YStack gap={verticalScale(8)}>
           {listeners.map((listener) => (
-            <XStack
-              key={listener.userId}
-              items="center"
-              gap={scale(10)}
-            >
-              {listener.avatar ? (
-                <Image
-                  source={{ uri: listener.avatar }}
-                  style={{
-                    width: moderateScale(32),
-                    height: moderateScale(32),
-                    borderRadius: moderateScale(16),
-                  }}
-                />
-              ) : (
-                <YStack
-                  width={moderateScale(32)}
-                  height={moderateScale(32)}
-                  rounded={moderateScale(16)}
-                  bg={themeColors.dark.surface}
-                  borderWidth={1}
-                  borderColor={themeColors.dark.borderSecondary}
-                  items="center"
-                  justify="center"
-                >
-                  <MyText
-                    fontSize={moderateScale(12)}
-                    weight="700"
-                    color={themeColors.dark.accent}
-                  >
-                    {(listener.name || "?").charAt(0).toUpperCase()}
-                  </MyText>
-                </YStack>
-              )}
-              <MyText
-                fontSize={moderateScale(13)}
-                weight="600"
-                color={themeColors.dark.onSurface}
-                numberOfLines={1}
-                style={{ flex: 1 }}
-              >
-                {listener.name}
-              </MyText>
-            </XStack>
+            <RoomMemberRow key={listener.userId} listener={listener} />
           ))}
         </YStack>
       )}
     </YStack>
   );
 }
+
+export default memo(RoomMembersList);

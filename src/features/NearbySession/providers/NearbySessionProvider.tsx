@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from "react";
 import { AppState, type AppStateStatus } from "react-native";
 import { ENV } from "src/utils/constants/env";
 import { appToast } from "src/components/toast/appToastHelpers";
@@ -85,10 +85,13 @@ export function NearbySessionProvider({ children }: { children: ReactNode }) {
     return () => sub.remove();
   }, []);
 
+  const value = useMemo(
+    () => ({ joinSession, leaveSession, createRoom, stopRoom, joinByCode }),
+    [joinSession, leaveSession, createRoom, stopRoom, joinByCode]
+  );
+
   return (
-    <NearbySessionContext.Provider
-      value={{ joinSession, leaveSession, createRoom, stopRoom, joinByCode }}
-    >
+    <NearbySessionContext.Provider value={value}>
       {children}
     </NearbySessionContext.Provider>
   );

@@ -5,21 +5,18 @@ import { sessionSocketService } from "../services/sessionSocket.service";
 import { useNearbySessionStore } from "../store/nearbySessionStore";
 import type { SessionQueueTrack } from "../types/session.types";
 import { sessionQueueTrackToArtistSong } from "../types/session.types";
-
-function applyRoomQueue(queue: SessionQueueTrack[]) {
-  const store = useNearbySessionStore.getState();
-  store.setRoomQueue(queue);
-  const active = store.activeSession;
-  if (active) {
-    store.setActiveSession({ ...active, queue });
-  }
-}
+import {
+  isRoomAdvanceInFlight,
+  isStaleConsumedQueueEcho,
+} from "../utils/roomAdvanceLock";
+import { syncRoomQueue } from "../utils/syncRoomQueue";
 
 /** Insert room queue head into host local play-next slot (queue mutation only). */
 export function ensureHostRoomPlayNext(
   queue: SessionQueueTrack[],
   lastAppliedQueueItemId?: { current: string | null }
 ) {
+  if (isRoomAdvanceInFlight()) return;
   if (useNearbySessionStore.getState().role !== "host") return;
   if (queue.length === 0) {
     if (lastAppliedQueueItemId) lastAppliedQueueItemId.current = null;
@@ -72,7 +69,10 @@ export function useRoomQueueSync() {
 
     const onQueueUpdated = (payload: { queue?: SessionQueueTrack[] }) => {
       const queue = Array.isArray(payload?.queue) ? payload.queue : [];
-      applyRoomQueue(queue);
+      if (isStaleConsumedQueueEcho(queue)) {
+        return;
+      }
+      syncRoomQueue(queue);
       if (useNearbySessionStore.getState().role === "host") {
         ensureHostRoomPlayNext(queue, lastAppliedQueueItemIdRef);
       }

@@ -4,6 +4,10 @@ import {
   type SessionQueueTrack,
 } from "../types/session.types";
 import type { ArtistSong } from "src/types/artistSongs.types";
+import {
+  markRoomQueueHeadConsumed,
+} from "./roomAdvanceLock";
+import { syncRoomQueue } from "./syncRoomQueue";
 
 export function isPrivateRoomHost() {
   const state = useNearbySessionStore.getState();
@@ -34,11 +38,8 @@ export function consumePrivateRoomHostNext(): ArtistSong | null {
   if (queue.length === 0) return null;
 
   const [head, ...rest] = queue;
-  store.setRoomQueue(rest);
-  const active = store.activeSession;
-  if (active) {
-    store.setActiveSession({ ...active, queue: rest });
-  }
+  markRoomQueueHeadConsumed(head.queueItemId, rest.length);
+  syncRoomQueue(rest);
 
   return sessionQueueTrackToArtistSong(head);
 }

@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   type ReactNode,
 } from "react";
@@ -46,6 +47,10 @@ import {
   consumePrivateRoomHostNext,
   getPrivateRoomHostNextSong,
 } from "src/features/NearbySession/utils/privateRoomHostQueue";
+import {
+  isRoomAdvanceInFlight,
+  setRoomAdvanceInFlight,
+} from "src/features/NearbySession/utils/roomAdvanceLock";
 import { requestRoomPlayNextIfListener } from "src/features/NearbySession/utils/requestRoomPlayNextIfListener";
 import {
   isPositionSyncSuspended,
@@ -104,8 +109,6 @@ const PLAYER_CAPABILITIES = [
 let onTrackEndedCallback: (() => void) | null = null;
 let trackEndedHandledForId: string | null = null;
 let playerSetupPromise: Promise<void> | null = null;
-/** Prevents nested room-next advances while a loadAndPlayTrack is in flight. */
-let privateRoomAdvanceInFlight = false;
 
 function repeatModeToRntp(repeatMode: "off" | "one" | "all"): RepeatMode {
   return repeatMode === "one" ? RepeatMode.Track : RepeatMode.Off;
@@ -411,10 +414,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   );
 
   const playPrivateRoomHostNext = useCallback(async () => {
-    if (privateRoomAdvanceInFlight) return true;
+    if (isRoomAdvanceInFlight()) return false;
     if (!getPrivateRoomHostNextSong()) return false;
 
-    privateRoomAdvanceInFlight = true;
+    setRoomAdvanceInFlight(true);
     try {
       // Dequeue locally first so re-entrant track-end cannot replay the same head.
       const roomNext = consumePrivateRoomHostNext();
@@ -445,7 +448,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       await loadAndPlayTrack(roomNext);
       return true;
     } finally {
-      privateRoomAdvanceInFlight = false;
+      setRoomAdvanceInFlight(false);
     }
   }, [loadAndPlayTrack, playQueueAtIndex]);
 
@@ -739,20 +742,36 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     };
   }, [resetNativePlayer]);
 
-  const value: PlayerContextValue = {
-    playSong,
-    playSongNow,
-    playActiveTrack,
-    playSongFromQueue,
-    playQueueAtIndex,
-    togglePlayPause,
-    seekToMillis,
-    skipToNext,
-    skipToPrevious,
-    toggleShuffle,
-    cycleRepeatMode,
-    stopPlaybackAndClear,
-  };
+  const value = useMemo<PlayerContextValue>(
+    () => ({
+      playSong,
+      playSongNow,
+      playActiveTrack,
+      playSongFromQueue,
+      playQueueAtIndex,
+      togglePlayPause,
+      seekToMillis,
+      skipToNext,
+      skipToPrevious,
+      toggleShuffle,
+      cycleRepeatMode,
+      stopPlaybackAndClear,
+    }),
+    [
+      playSong,
+      playSongNow,
+      playActiveTrack,
+      playSongFromQueue,
+      playQueueAtIndex,
+      togglePlayPause,
+      seekToMillis,
+      skipToNext,
+      skipToPrevious,
+      toggleShuffle,
+      cycleRepeatMode,
+      stopPlaybackAndClear,
+    ]
+  );
 
   return (
     <PlayerContext.Provider value={value}>

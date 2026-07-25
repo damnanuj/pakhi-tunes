@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, Share } from "react-native";
 import { useRouter } from "expo-router";
 import { Copy, DoorOpen, Hash, Music, Share2 } from "@tamagui/lucide-icons";
@@ -24,6 +24,7 @@ import {
   sessionQueueTrackToArtistSong,
   type SessionQueueTrack,
 } from "../types/session.types";
+import { syncRoomQueue } from "../utils/syncRoomQueue";
 
 type PrivateRoomPanelProps = {
   bottomPadding: number;
@@ -60,23 +61,38 @@ export default function PrivateRoomPanel({
     ? sessionHasPlayableTrack(activeSession)
     : false;
 
-  const hostDisplaySession =
-    isHostingPrivate && activeSession && activeTrack
-      ? {
-          ...activeSession,
-          trackId: activeTrack.id,
-          trackTitle: activeTrack.title,
-          trackArtist: activeTrack.artist,
-          trackArtwork: activeTrack.artworkUrl,
-          trackUri: activeTrack.uri,
-          trackDuration:
-            activeTrack.durationSec > 0
-              ? activeTrack.durationSec * 1000
-              : activeSession.trackDuration,
-          playing: isPlaying,
-          listenerCount,
-        }
-      : null;
+  const hostDisplaySession = useMemo(() => {
+    if (!isHostingPrivate || !activeSession || !activeTrack) return null;
+    return {
+      ...activeSession,
+      trackId: activeTrack.id,
+      trackTitle: activeTrack.title,
+      trackArtist: activeTrack.artist,
+      trackArtwork: activeTrack.artworkUrl,
+      trackUri: activeTrack.uri,
+      trackDuration:
+        activeTrack.durationSec > 0
+          ? activeTrack.durationSec * 1000
+          : activeSession.trackDuration,
+      playing: isPlaying,
+      listenerCount,
+    };
+  }, [
+    activeSession,
+    activeTrack,
+    isHostingPrivate,
+    isPlaying,
+    listenerCount,
+  ]);
+
+  const contentContainerStyle = useMemo(
+    () => ({
+      paddingHorizontal: scale(20),
+      paddingBottom: bottomPadding,
+      gap: verticalScale(20),
+    }),
+    [bottomPadding]
+  );
 
   const handleCreateRoom = useCallback(async () => {
     setIsCreating(true);
@@ -157,13 +173,7 @@ export default function PrivateRoomPanel({
         }
 
         if (Array.isArray(result.queue)) {
-          useNearbySessionStore.getState().setRoomQueue(result.queue);
-          const active = useNearbySessionStore.getState().activeSession;
-          if (active) {
-            useNearbySessionStore
-              .getState()
-              .setActiveSession({ ...active, queue: result.queue });
-          }
+          syncRoomQueue(result.queue);
         }
 
         await playSongNow(sessionQueueTrackToArtistSong(result.item));
@@ -178,11 +188,7 @@ export default function PrivateRoomPanel({
     <ScrollView
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{
-        paddingHorizontal: scale(20),
-        paddingBottom: bottomPadding,
-        gap: verticalScale(20),
-      }}
+      contentContainerStyle={contentContainerStyle}
     >
       <MyText
         fontSize={scale(14)}
@@ -332,11 +338,7 @@ export default function PrivateRoomPanel({
 
           <RoomQueueList
             queue={roomQueue}
-            onPlayItem={
-              isHostingPrivate
-                ? (item) => void handlePlayQueueItem(item)
-                : undefined
-            }
+            onPlayItem={isHostingPrivate ? handlePlayQueueItem : undefined}
           />
 
           <Pressable
