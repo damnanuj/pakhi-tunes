@@ -7,6 +7,7 @@ import MyText from "src/components/MyText";
 import { appToast } from "src/components/toast/appToastHelpers";
 import { usePlayback } from "src/features/Player/context/PlayerContext";
 import { usePlayerStore } from "src/features/Player/store/playerStore";
+import { useRefreshable } from "src/hooks";
 import themeColors from "src/utils/theme/colors";
 import {
   moderateScale,
@@ -24,6 +25,7 @@ import {
   sessionQueueTrackToArtistSong,
   type SessionQueueTrack,
 } from "../types/session.types";
+import { refreshPrivateRoomState } from "../utils/refreshPrivateRoomState";
 import { syncRoomQueue } from "../utils/syncRoomQueue";
 
 type PrivateRoomPanelProps = {
@@ -93,6 +95,17 @@ export default function PrivateRoomPanel({
     }),
     [bottomPadding]
   );
+
+  const refreshRoom = useCallback(async () => {
+    if (!isHostingPrivate && !isListeningPrivate) return;
+    try {
+      await refreshPrivateRoomState();
+    } catch {
+      appToast.error("Could not refresh room");
+    }
+  }, [isHostingPrivate, isListeningPrivate]);
+
+  const { refreshControl } = useRefreshable({ onRefresh: refreshRoom });
 
   const handleCreateRoom = useCallback(async () => {
     setIsCreating(true);
@@ -189,6 +202,7 @@ export default function PrivateRoomPanel({
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={contentContainerStyle}
+      refreshControl={refreshControl}
     >
       <MyText
         fontSize={scale(14)}

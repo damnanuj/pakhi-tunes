@@ -35,18 +35,17 @@ export function clearLastConsumedRoomQueueMeta() {
 
 /**
  * True when an incoming queueUpdated still shows the head we already consumed
- * and length matches the pre-consume size (stale echo).
+ * and the length matches the pre-consume size (pure stale echo).
+ * Length growth (e.g. listener added behind the consumed head) is not stale.
  */
 export function isStaleConsumedQueueEcho(
   queue: { queueItemId: string }[]
 ): boolean {
   if (!lastConsumedQueueItemId) return false;
   const headId = queue[0]?.queueItemId;
+
   if (headId !== lastConsumedQueueItemId) {
-    if (
-      lastConsumedQueueItemId &&
-      !queue.some((item) => item.queueItemId === lastConsumedQueueItemId)
-    ) {
+    if (!queue.some((item) => item.queueItemId === lastConsumedQueueItemId)) {
       clearLastConsumedRoomQueueMeta();
     }
     return false;
@@ -57,6 +56,7 @@ export function isStaleConsumedQueueEcho(
       ? expectedQueueLengthAfterConsume + 1
       : null;
 
+  // Only drop when this looks like the exact pre-consume snapshot echoed back.
   if (
     expectedPreConsumeLength !== null &&
     queue.length === expectedPreConsumeLength
@@ -64,6 +64,5 @@ export function isStaleConsumedQueueEcho(
     return true;
   }
 
-  // Same consumed head still present — treat as stale regardless of length drift.
-  return true;
+  return false;
 }

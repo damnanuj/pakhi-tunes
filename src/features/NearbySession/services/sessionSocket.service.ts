@@ -4,6 +4,7 @@ import { getAuthToken } from "src/features/auth/store/authStore";
 import type { RepeatMode } from "src/features/Player/types";
 import type {
   SessionHeartbeatPayload,
+  SessionListener,
   SessionQueueAddPayload,
   SessionQueueTrack,
   SessionTrackChangePayload,
@@ -15,12 +16,27 @@ type AckResponse = {
   session?: unknown;
   queue?: SessionQueueTrack[];
   item?: SessionQueueTrack | null;
+  listeners?: SessionListener[];
+  listenerCount?: number;
 };
+
+// Socket.io payloads are untyped at the wire; callers narrow in their handlers.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SocketHandler = (...args: any[]) => void;
 
 const QUEUE_ADD_TIMEOUT_MS = 8_000;
 
 class SessionSocketService {
   private socket: Socket | null = null;
+  private readonly handlers = new Map<string, Set<SocketHandler>>();
+
+  private applyHandlersToSocket(socket: Socket) {
+    for (const [event, set] of this.handlers) {
+      for (const handler of set) {
+        socket.on(event, handler);
+      }
+    }
+  }
 
   connect() {
     const token = getAuthToken();
@@ -42,6 +58,7 @@ class SessionSocketService {
       reconnectionDelayMax: 5000,
     });
 
+    this.applyHandlersToSocket(this.socket);
     return this.socket;
   }
 
@@ -54,15 +71,28 @@ class SessionSocketService {
     this.socket = null;
   }
 
-  // Socket.io payloads are untyped at the wire; callers narrow in their handlers.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  on(event: string, handler: (...args: any[]) => void) {
+  on(event: string, handler: SocketHandler) {
+    let set = this.handlers.get(event);
+    if (!set) {
+      set = new Set();
+      this.handlers.set(event, set);
+    }
+    set.add(handler);
     this.socket?.on(event, handler);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  off(event: string, handler?: (...args: any[]) => void) {
-    this.socket?.off(event, handler);
+  off(event: string, handler?: SocketHandler) {
+    if (handler) {
+      this.handlers.get(event)?.delete(handler);
+      if (this.handlers.get(event)?.size === 0) {
+        this.handlers.delete(event);
+      }
+      this.socket?.off(event, handler);
+      return;
+    }
+
+    this.handlers.delete(event);
+    this.socket?.off(event);
   }
 
   emitHostStart(sessionId: string) {
@@ -70,6 +100,8 @@ class SessionSocketService {
       ok: boolean;
       error?: string;
       queue?: SessionQueueTrack[];
+      listeners?: SessionListener[];
+      listenerCount?: number;
     }>((resolve) => {
       if (!this.socket?.connected) {
         resolve({ ok: false, error: "Socket not connected" });
@@ -80,6 +112,11 @@ class SessionSocketService {
           ok: Boolean(ack?.ok),
           error: ack?.error,
           queue: Array.isArray(ack?.queue) ? ack.queue : undefined,
+          listeners: Array.isArray(ack?.listeners) ? ack.listeners : undefined,
+          listenerCount:
+            ack?.listenerCount !== undefined
+              ? Math.max(0, Number(ack.listenerCount))
+              : undefined,
         });
       });
     });

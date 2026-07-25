@@ -10,13 +10,14 @@ import {
 import { sessionSocketService } from "../services/sessionSocket.service";
 import { useNearbySessionStore } from "../store/nearbySessionStore";
 import type { SessionListener } from "../types/session.types";
+import { applyHostStartAck } from "../utils/applyHostStartAck";
 import { applyListenersUpdate } from "../utils/applyListenersUpdate";
 import { connectSessionSocketReady } from "../utils/connectSessionSocketReady";
-import { syncRoomQueue } from "../utils/syncRoomQueue";
 
 async function connectAndStartHost(
   sessionId: string,
   handlers: {
+    onConnect: () => void;
     onListenerCount: (event: { listenerCount: number }) => void;
     onListeners: (event: {
       listenerCount?: number;
@@ -29,20 +30,19 @@ async function connectAndStartHost(
     return false;
   }
 
-  socket.off("session:listenerCount", handlers.onListenerCount);
-  socket.off("session:listeners", handlers.onListeners);
-  socket.on("session:listenerCount", handlers.onListenerCount);
-  socket.on("session:listeners", handlers.onListeners);
+  sessionSocketService.off("connect", handlers.onConnect);
+  sessionSocketService.off("session:listenerCount", handlers.onListenerCount);
+  sessionSocketService.off("session:listeners", handlers.onListeners);
+  sessionSocketService.on("connect", handlers.onConnect);
+  sessionSocketService.on("session:listenerCount", handlers.onListenerCount);
+  sessionSocketService.on("session:listeners", handlers.onListeners);
 
   const result = await sessionSocketService.emitHostStart(sessionId);
   if (!result.ok) {
     return false;
   }
 
-  if (Array.isArray(result.queue)) {
-    syncRoomQueue(result.queue);
-  }
-
+  applyHostStartAck(result);
   useNearbySessionStore.getState().setIsConnected(true);
   return true;
 }
@@ -57,6 +57,20 @@ export function usePrivateRoomHost() {
       applyListenersUpdate(event);
     }
   );
+  const onConnectRef = useRef(() => {
+    const state = useNearbySessionStore.getState();
+    const isPrivateHost =
+      state.role === "host" && Boolean(state.roomCode);
+    const sessionId = state.activeSession?.id;
+    if (!isPrivateHost || !sessionId) return;
+
+    void (async () => {
+      const result = await sessionSocketService.emitHostStart(sessionId);
+      if (!result.ok) return;
+      applyHostStartAck(result);
+      useNearbySessionStore.getState().setIsConnected(true);
+    })();
+  });
 
   const stopRoom = useCallback(async () => {
     const sessionId = useNearbySessionStore.getState().activeSession?.id;
@@ -137,6 +151,7 @@ export function usePrivateRoomHost() {
       });
 
       const started = await connectAndStartHost(session.id, {
+        onConnect: onConnectRef.current,
         onListenerCount: onListenerCountRef.current,
         onListeners: onListenersRef.current,
       });

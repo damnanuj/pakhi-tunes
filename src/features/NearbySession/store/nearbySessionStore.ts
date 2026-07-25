@@ -7,6 +7,7 @@ import type {
   SessionQueueTrack,
   SessionRole,
 } from "../types/session.types";
+import { clearLastConsumedRoomQueueMeta } from "../utils/roomAdvanceLock";
 
 export type HostPlaybackAnchor = {
   positionMs: number;
@@ -84,7 +85,8 @@ export const useNearbySessionStore = create<NearbySessionState>((set) => ({
     set({ isApplyingRemoteSync }),
   setLocationPermission: (locationPermission) => set({ locationPermission }),
   setRoomCode: (roomCode) => set({ roomCode }),
-  resetSession: () =>
+  resetSession: () => {
+    clearLastConsumedRoomQueueMeta();
     set({
       activeSession: null,
       role: null,
@@ -97,7 +99,8 @@ export const useNearbySessionStore = create<NearbySessionState>((set) => ({
       isApplyingRemoteSync: false,
       isConnected: false,
       roomCode: null,
-    }),
+    });
+  },
 }));
 
 export function isListenerMode() {

@@ -6,6 +6,7 @@ import { useNearbySessionStore } from "../store/nearbySessionStore";
 import type { SessionQueueTrack } from "../types/session.types";
 import { sessionQueueTrackToArtistSong } from "../types/session.types";
 import {
+  getLastConsumedRoomQueueMeta,
   isRoomAdvanceInFlight,
   isStaleConsumedQueueEcho,
 } from "../utils/roomAdvanceLock";
@@ -59,6 +60,7 @@ export function ensureHostRoomPlayNext(
 
 export function useRoomQueueSync() {
   const role = useNearbySessionStore((s) => s.role);
+  const isConnected = useNearbySessionStore((s) => s.isConnected);
   const lastAppliedQueueItemIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -66,11 +68,18 @@ export function useRoomQueueSync() {
       lastAppliedQueueItemIdRef.current = null;
       return;
     }
+    // Wait until the socket exists — createRoom sets role before connect.
+    if (!isConnected) return;
 
     const onQueueUpdated = (payload: { queue?: SessionQueueTrack[] }) => {
-      const queue = Array.isArray(payload?.queue) ? payload.queue : [];
+      let queue = Array.isArray(payload?.queue) ? payload.queue : [];
       if (isStaleConsumedQueueEcho(queue)) {
         return;
+      }
+      // Server may still show a head we already consumed while new items were pushed.
+      const { queueItemId: consumedId } = getLastConsumedRoomQueueMeta();
+      if (consumedId && queue[0]?.queueItemId === consumedId) {
+        queue = queue.slice(1);
       }
       syncRoomQueue(queue);
       if (useNearbySessionStore.getState().role === "host") {
@@ -82,7 +91,7 @@ export function useRoomQueueSync() {
     return () => {
       sessionSocketService.off("session:queueUpdated", onQueueUpdated);
     };
-  }, [role]);
+  }, [role, isConnected]);
 
   // One-shot sync when becoming host with an existing snapshot (no activeTrackId loop).
   useEffect(() => {
