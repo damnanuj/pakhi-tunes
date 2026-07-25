@@ -42,6 +42,10 @@ import {
   useNearbySessionStore,
 } from "src/features/NearbySession/store/nearbySessionStore";
 import { leaveListenerSessionIfActive } from "src/features/NearbySession/utils/leaveListenerSession";
+import {
+  consumePrivateRoomHostNext,
+  getPrivateRoomHostNextSong,
+} from "src/features/NearbySession/utils/privateRoomHostQueue";
 import { requestRoomPlayNextIfListener } from "src/features/NearbySession/utils/requestRoomPlayNextIfListener";
 import {
   isPositionSyncSuspended,
@@ -61,6 +65,8 @@ import {
 
 type PlayerContextValue = {
   playSong: (song: ArtistSong) => Promise<void>;
+  /** Play a song now without clearing the local queue (e.g. host room-queue play-now). */
+  playSongNow: (song: ArtistSong) => Promise<void>;
   playActiveTrack: (track: ActiveTrack) => Promise<void>;
   playSongFromQueue: (
     songs: ArtistSong[],
@@ -78,7 +84,7 @@ type PlayerContextValue = {
   stopPlaybackAndClear: () => Promise<void>;
 };
 
-const PlayerContext = createContext<PlayerContextValue | null>(null);
+export const PlayerContext = createContext<PlayerContextValue | null>(null);
 
 const PREVIOUS_SONG_THRESHOLD_MS = 3000;
 
@@ -98,6 +104,8 @@ const PLAYER_CAPABILITIES = [
 let onTrackEndedCallback: (() => void) | null = null;
 let trackEndedHandledForId: string | null = null;
 let playerSetupPromise: Promise<void> | null = null;
+/** Prevents nested room-next advances while a loadAndPlayTrack is in flight. */
+let privateRoomAdvanceInFlight = false;
 
 function repeatModeToRntp(repeatMode: "off" | "one" | "all"): RepeatMode {
   return repeatMode === "one" ? RepeatMode.Track : RepeatMode.Off;
@@ -349,6 +357,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     await loadAndPlayTrack(song);
   }, [loadAndPlayTrack]);
 
+  const playSongNow = useCallback(
+    async (song: ArtistSong) => {
+      if (await requestRoomPlayNextIfListener(song)) {
+        return;
+      }
+      await loadAndPlayTrack(song);
+    },
+    [loadAndPlayTrack]
+  );
+
   const playActiveTrack = useCallback(
     async (track: ActiveTrack) => {
       usePlayerStore.getState().clearQueue();
@@ -392,6 +410,45 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     [loadAndPlayTrack]
   );
 
+  const playPrivateRoomHostNext = useCallback(async () => {
+    if (privateRoomAdvanceInFlight) return true;
+    if (!getPrivateRoomHostNextSong()) return false;
+
+    privateRoomAdvanceInFlight = true;
+    try {
+      // Dequeue locally first so re-entrant track-end cannot replay the same head.
+      const roomNext = consumePrivateRoomHostNext();
+      if (!roomNext) return false;
+
+      const state = usePlayerStore.getState();
+      const nextIdx = state.queueIndex + 1;
+      if (
+        hasQueue(state) &&
+        nextIdx < state.queue.length &&
+        state.queue[nextIdx]?.id === roomNext.id
+      ) {
+        await playQueueAtIndex(nextIdx);
+        return true;
+      }
+
+      usePlayerStore.getState().forcePlaySongNext(roomNext);
+      const updated = usePlayerStore.getState();
+      const insertedAt = updated.queueIndex + 1;
+      if (
+        insertedAt < updated.queue.length &&
+        updated.queue[insertedAt]?.id === roomNext.id
+      ) {
+        await playQueueAtIndex(insertedAt);
+        return true;
+      }
+
+      await loadAndPlayTrack(roomNext);
+      return true;
+    } finally {
+      privateRoomAdvanceInFlight = false;
+    }
+  }, [loadAndPlayTrack, playQueueAtIndex]);
+
   const seekToMillis = useCallback(async (millis: number) => {
     if (isListenerMode()) return;
 
@@ -424,6 +481,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const skipToNext = useCallback(async () => {
     if (isListenerMode()) return;
 
+    if (await playPrivateRoomHostNext()) {
+      return;
+    }
+
     const state = usePlayerStore.getState();
     if (!hasQueue(state)) return;
 
@@ -437,7 +498,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (repeatMode === "all") {
       await playQueueAtIndex(0);
     }
-  }, [playQueueAtIndex]);
+  }, [playPrivateRoomHostNext, playQueueAtIndex]);
 
   const skipToPrevious = useCallback(async () => {
     if (isListenerMode()) return;
@@ -463,48 +524,51 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [playQueueAtIndex, seekToMillis]);
 
   const handleTrackEnded = useCallback(async () => {
-    try {
-      await stopTracking();
+    await stopTracking();
 
-      const state = usePlayerStore.getState();
-      const { repeatMode } = state;
+    const state = usePlayerStore.getState();
+    const { repeatMode } = state;
 
-      if (repeatMode === "one") {
-        try {
-          await TrackPlayer.seekTo(0);
-          await TrackPlayer.play();
-          usePlayerStore.getState().setPlayback({
-            positionMillis: 0,
-            isPlaying: true,
-          });
-          if (isHostMode()) {
-            emitHostSeekIfHosting(0, repeatMode);
-            emitHostPlayIfHosting(0, repeatMode);
-          }
-        } catch {
-          /* ignore */
+    if (repeatMode === "one") {
+      try {
+        await TrackPlayer.seekTo(0);
+        await TrackPlayer.play();
+        usePlayerStore.getState().setPlayback({
+          positionMillis: 0,
+          isPlaying: true,
+        });
+        if (isHostMode()) {
+          emitHostSeekIfHosting(0, repeatMode);
+          emitHostPlayIfHosting(0, repeatMode);
         }
-        return;
+      } catch {
+        /* ignore */
       }
-
-      if (!hasQueue(state)) {
-        void endPresenceIfBackgroundAndNotPlaying();
-        return;
-      }
-
-      if (hasNext(state)) {
-        if (state.queueIndex < state.queue.length - 1) {
-          await playQueueAtIndex(state.queueIndex + 1);
-        } else if (state.repeatMode === "all") {
-          await playQueueAtIndex(0);
-        }
-      } else {
-        void endPresenceIfBackgroundAndNotPlaying();
-      }
-    } finally {
-      trackEndedHandledForId = null;
+      return;
     }
-  }, [playQueueAtIndex]);
+
+    if (await playPrivateRoomHostNext()) {
+      return;
+    }
+
+    if (!hasQueue(state)) {
+      void endPresenceIfBackgroundAndNotPlaying();
+      return;
+    }
+
+    if (hasNext(state)) {
+      if (state.queueIndex < state.queue.length - 1) {
+        await playQueueAtIndex(state.queueIndex + 1);
+      } else if (state.repeatMode === "all") {
+        await playQueueAtIndex(0);
+      }
+    } else {
+      void endPresenceIfBackgroundAndNotPlaying();
+    }
+    // Do not clear trackEndedHandledForId here — PlayerEventBridge clears it
+    // when the next track reaches Ready/Playing. Clearing immediately allowed
+    // nested QueueEnded events during loadAndPlayTrack to re-enter in a loop.
+  }, [playPrivateRoomHostNext, playQueueAtIndex]);
 
   useEffect(() => {
     onTrackEndedCallback = () => {
@@ -677,6 +741,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const value: PlayerContextValue = {
     playSong,
+    playSongNow,
     playActiveTrack,
     playSongFromQueue,
     playQueueAtIndex,

@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef } from "react";
+import { memo, useCallback, useContext, useEffect, useMemo, useRef } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -20,7 +20,7 @@ import {
 } from "src/utils/functions/dimensions";
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
-import { usePlayback } from "../context/PlayerContext";
+import { PlayerContext } from "../context/PlayerContext";
 import { usePlayerStore } from "../store/playerStore";
 import { useNearbySessionStore } from "src/features/NearbySession/store/nearbySessionStore";
 import { useNearbySessionActions } from "src/features/NearbySession/providers/NearbySessionProvider";
@@ -46,7 +46,9 @@ function MiniPlayer() {
   const pathname = usePathname();
   const router = useRouter();
   const segments = useSegments();
-  const { togglePlayPause, stopPlaybackAndClear } = usePlayback();
+  const playback = useContext(PlayerContext);
+  const togglePlayPause = playback?.togglePlayPause;
+  const stopPlaybackAndClear = playback?.stopPlaybackAndClear;
   const { leaveSession } = useNearbySessionActions();
 
   const handleLeave = useCallback(async () => {
@@ -62,7 +64,7 @@ function MiniPlayer() {
       return;
     }
     // Private host: clear playback only — room stays open until End Room
-    await stopPlaybackAndClear();
+    await stopPlaybackAndClear?.();
   }, [handleLeave, stopPlaybackAndClear]);
 
   const dismissSwipeRef = useRef(handleDismissSwipe);
@@ -191,7 +193,7 @@ function MiniPlayer() {
     return MINI_PLAYER_MARGIN_BOTTOM;
   }, [segments]);
 
-  if (!activeTrack || !shouldShowMiniPlayer(pathname)) return null;
+  if (!playback || !activeTrack || !shouldShowMiniPlayer(pathname)) return null;
 
   return (
     <View
@@ -311,7 +313,7 @@ function MiniPlayer() {
             progress={isPlaybackLoading ? 0 : progress}
             onPress={() => {
               if (isPlaybackLoading) return;
-              void togglePlayPause();
+              void togglePlayPause?.();
             }}
           >
             {isPlaybackLoading ? (

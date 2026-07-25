@@ -14,6 +14,7 @@ type AckResponse = {
   error?: string;
   session?: unknown;
   queue?: SessionQueueTrack[];
+  item?: SessionQueueTrack | null;
 };
 
 const QUEUE_ADD_TIMEOUT_MS = 8_000;
@@ -165,6 +166,43 @@ class SessionSocketService {
             ok: Boolean(ack?.ok),
             error: ack?.error,
             queue: Array.isArray(ack?.queue) ? ack.queue : undefined,
+          });
+        }
+      );
+    });
+  }
+
+  playRoomQueueItemNow(queueItemId: string) {
+    return new Promise<{
+      ok: boolean;
+      error?: string;
+      queue?: SessionQueueTrack[];
+      item?: SessionQueueTrack | null;
+    }>((resolve) => {
+      if (!this.socket?.connected) {
+        resolve({ ok: false, error: "Socket not connected" });
+        return;
+      }
+
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        resolve({ ok: false, error: "Request timed out" });
+      }, QUEUE_ADD_TIMEOUT_MS);
+
+      this.socket.emit(
+        "host:queuePlayNow",
+        { queueItemId },
+        (ack: AckResponse) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          resolve({
+            ok: Boolean(ack?.ok),
+            error: ack?.error,
+            queue: Array.isArray(ack?.queue) ? ack.queue : undefined,
+            item: ack?.item ?? null,
           });
         }
       );

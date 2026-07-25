@@ -15,32 +15,67 @@ function applyRoomQueue(queue: SessionQueueTrack[]) {
   }
 }
 
-function syncHostPlayNext(queue: SessionQueueTrack[]) {
+/** Insert room queue head into host local play-next slot (queue mutation only). */
+export function ensureHostRoomPlayNext(
+  queue: SessionQueueTrack[],
+  lastAppliedQueueItemId?: { current: string | null }
+) {
   if (useNearbySessionStore.getState().role !== "host") return;
-  if (queue.length === 0) return;
-
-  const nextItem = queue[0];
-  const player = usePlayerStore.getState();
-  if (player.activeTrack?.id === nextItem.songId) return;
-  if (isSongImmediatelyNext(player.queue, player.queueIndex, nextItem.songId)) {
+  if (queue.length === 0) {
+    if (lastAppliedQueueItemId) lastAppliedQueueItemId.current = null;
     return;
   }
 
-  player.playSongNext(sessionQueueTrackToArtistSong(nextItem));
+  const nextItem = queue[0];
+  if (
+    lastAppliedQueueItemId &&
+    lastAppliedQueueItemId.current === nextItem.queueItemId
+  ) {
+    const player = usePlayerStore.getState();
+    if (
+      isSongImmediatelyNext(player.queue, player.queueIndex, nextItem.songId)
+    ) {
+      return;
+    }
+  }
+
+  const player = usePlayerStore.getState();
+  if (player.activeTrack?.id === nextItem.songId) {
+    if (lastAppliedQueueItemId) {
+      lastAppliedQueueItemId.current = nextItem.queueItemId;
+    }
+    return;
+  }
+
+  if (isSongImmediatelyNext(player.queue, player.queueIndex, nextItem.songId)) {
+    if (lastAppliedQueueItemId) {
+      lastAppliedQueueItemId.current = nextItem.queueItemId;
+    }
+    return;
+  }
+
+  player.forcePlaySongNext(sessionQueueTrackToArtistSong(nextItem));
+  if (lastAppliedQueueItemId) {
+    lastAppliedQueueItemId.current = nextItem.queueItemId;
+  }
 }
 
 export function useRoomQueueSync() {
   const role = useNearbySessionStore((s) => s.role);
-  const roomQueue = useNearbySessionStore((s) => s.roomQueue);
-  const activeTrackId = usePlayerStore((s) => s.activeTrack?.id);
-  const lastAppliedKeyRef = useRef<string | null>(null);
+  const lastAppliedQueueItemIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (role !== "host" && role !== "listener") return;
+    if (role !== "host" && role !== "listener") {
+      lastAppliedQueueItemIdRef.current = null;
+      return;
+    }
 
     const onQueueUpdated = (payload: { queue?: SessionQueueTrack[] }) => {
       const queue = Array.isArray(payload?.queue) ? payload.queue : [];
       applyRoomQueue(queue);
+      if (useNearbySessionStore.getState().role === "host") {
+        ensureHostRoomPlayNext(queue, lastAppliedQueueItemIdRef);
+      }
     };
 
     sessionSocketService.on("session:queueUpdated", onQueueUpdated);
@@ -49,20 +84,13 @@ export function useRoomQueueSync() {
     };
   }, [role]);
 
+  // One-shot sync when becoming host with an existing snapshot (no activeTrackId loop).
   useEffect(() => {
     if (role !== "host") {
-      lastAppliedKeyRef.current = null;
+      lastAppliedQueueItemIdRef.current = null;
       return;
     }
-    if (roomQueue.length === 0) {
-      lastAppliedKeyRef.current = null;
-      return;
-    }
-
-    const next = roomQueue[0];
-    const key = `${next.queueItemId}:${next.songId}:${activeTrackId ?? ""}`;
-    if (lastAppliedKeyRef.current === key) return;
-    lastAppliedKeyRef.current = key;
-    syncHostPlayNext(roomQueue);
-  }, [role, roomQueue, activeTrackId]);
+    const queue = useNearbySessionStore.getState().roomQueue;
+    ensureHostRoomPlayNext(queue, lastAppliedQueueItemIdRef);
+  }, [role]);
 }

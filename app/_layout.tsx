@@ -87,26 +87,16 @@ export default function RootLayout() {
   useEasUpdates();
 
   useEffect(() => {
-    // console.log("Fonts loaded?", fontsLoaded);
     if (fontsLoaded) {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);
 
-  useEffect(() => {
-    if (fontsLoaded) {
-      // Hide the splash screen after the fonts have loaded (or an error was returned) and the UI is ready.
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded]);
-
-  if (!fontsLoaded) {
-    return null;
-  }
-
+  // Always mount Providers (including PlayerProvider). Returning null while fonts
+  // load can let Expo Router render tab layouts/MiniPlayer without context.
   return (
     <Providers>
-      <RootLayoutNav />
+      {fontsLoaded ? <RootLayoutNav /> : null}
     </Providers>
   );
 }

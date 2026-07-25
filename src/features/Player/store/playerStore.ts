@@ -2,7 +2,6 @@ import { create } from "zustand";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import type { ActiveTrack, QueueSource, RepeatMode } from "../types";
 import {
-  canBootstrapQueue,
   collapsedQueueState,
   findSongIndex,
   hasQueue,
@@ -52,6 +51,8 @@ type PlayerActions = {
   appendQueueSongs: (newSongs: ArtistSong[]) => void;
   addSongToQueue: (song: ArtistSong) => void;
   playSongNext: (song: ArtistSong) => void;
+  /** Always inserts at the immediate-next slot; bootstraps from active song/track if needed. */
+  forcePlaySongNext: (song: ArtistSong) => void;
   removeSongFromQueue: (songId: string) => void;
 };
 
@@ -70,21 +71,115 @@ const initialQueue = {
   repeatMode: "off" as RepeatMode,
 };
 
+function artistSongFromActiveTrack(track: ActiveTrack): ArtistSong {
+  const artistName = track.artist || "Unknown";
+  const artist = {
+    id: "",
+    name: artistName,
+    role: "artist" as const,
+    image: [] as { quality: string; url: string }[],
+    type: "artist" as const,
+    url: "",
+  };
+  return {
+    id: track.id,
+    encrypted_id: track.encryptedId ?? "",
+    name: track.title,
+    type: "song",
+    year: "",
+    releaseDate: "",
+    duration: track.durationSec || 0,
+    label: track.label ?? "",
+    explicitContent: false,
+    playCount: 0,
+    language: "",
+    hasLyrics: false,
+    lyricsId: null,
+    lyrics: null,
+    url: "",
+    copyright: "",
+    album: { id: "", name: track.albumName ?? "", url: "" },
+    artists: {
+      primary: [artist],
+      featured: [],
+      all: [artist],
+    },
+    image: track.artworkUrl
+      ? [{ quality: "150x150", url: track.artworkUrl }]
+      : [],
+    downloadUrl: track.uri
+      ? [{ quality: "unknown", url: track.uri }]
+      : [],
+  };
+}
+
 function bootstrapQueueFromActiveSong(
   get: () => PlayerState & PlayerActions,
   set: (partial: Partial<PlayerState>) => void
 ): boolean {
   const state = get();
-  if (!canBootstrapQueue(state) || !state.activeArtistSong) return false;
+  const song =
+    state.activeArtistSong ??
+    (state.activeTrack ? artistSongFromActiveTrack(state.activeTrack) : null);
+  if (!song) return false;
 
-  const song = state.activeArtistSong;
   set({
     queue: [song],
     originalQueue: [song],
     queueIndex: 0,
     queueSource: SEARCH_QUEUE_SOURCE,
+    ...(state.activeArtistSong ? {} : { activeArtistSong: song }),
   });
   return true;
+}
+
+function insertSongAsPlayNext(
+  get: () => PlayerState & PlayerActions,
+  set: (partial: Partial<PlayerState>) => void,
+  song: ArtistSong
+): void {
+  const state = get();
+  // hasQueue requires length > 1; single-track / empty hosts need bootstrap first.
+  if (
+    !state.queueSource ||
+    state.queue.length === 0 ||
+    state.queueIndex < 0 ||
+    !hasQueue(state)
+  ) {
+    if (!bootstrapQueueFromActiveSong(get, set)) return;
+  }
+
+  const nextState = get();
+  if (
+    !nextState.queueSource ||
+    nextState.queue.length === 0 ||
+    nextState.queueIndex < 0
+  ) {
+    return;
+  }
+  if (nextState.activeTrack?.id === song.id) return;
+
+  let queue = [...nextState.queue];
+  let queueIndex = nextState.queueIndex;
+  const existingIdx = findSongIndex(queue, song.id);
+
+  if (existingIdx >= 0) {
+    queue.splice(existingIdx, 1);
+    if (existingIdx < queueIndex) {
+      queueIndex -= 1;
+    }
+  }
+
+  const insertAt = queueIndex + 1;
+  queue.splice(insertAt, 0, song);
+
+  set({
+    queue,
+    queueIndex,
+    originalQueue: nextState.shuffleEnabled
+      ? nextState.originalQueue
+      : [...queue],
+  });
 }
 
 export const usePlayerStore = create<PlayerState & PlayerActions>((set, get) => ({
@@ -178,42 +273,10 @@ export const usePlayerStore = create<PlayerState & PlayerActions>((set, get) => 
     });
   },
   playSongNext: (song) => {
-    const state = get();
-    if (!hasQueue(state)) {
-      if (!bootstrapQueueFromActiveSong(get, set)) return;
-    }
-
-    const nextState = get();
-    if (
-      !nextState.queueSource ||
-      nextState.queue.length === 0 ||
-      nextState.queueIndex < 0
-    ) {
-      return;
-    }
-    if (nextState.activeTrack?.id === song.id) return;
-
-    let queue = [...nextState.queue];
-    let queueIndex = nextState.queueIndex;
-    const existingIdx = findSongIndex(queue, song.id);
-
-    if (existingIdx >= 0) {
-      queue.splice(existingIdx, 1);
-      if (existingIdx < queueIndex) {
-        queueIndex -= 1;
-      }
-    }
-
-    const insertAt = queueIndex + 1;
-    queue.splice(insertAt, 0, song);
-
-    set({
-      queue,
-      queueIndex,
-      originalQueue: nextState.shuffleEnabled
-        ? nextState.originalQueue
-        : [...queue],
-    });
+    insertSongAsPlayNext(get, set, song);
+  },
+  forcePlaySongNext: (song) => {
+    insertSongAsPlayNext(get, set, song);
   },
   removeSongFromQueue: (songId) => {
     const state = get();

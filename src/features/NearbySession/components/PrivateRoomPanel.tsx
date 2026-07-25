@@ -5,6 +5,7 @@ import { Copy, DoorOpen, Hash, Music, Share2 } from "@tamagui/lucide-icons";
 import { Input, XStack, YStack } from "tamagui";
 import MyText from "src/components/MyText";
 import { appToast } from "src/components/toast/appToastHelpers";
+import { usePlayback } from "src/features/Player/context/PlayerContext";
 import { usePlayerStore } from "src/features/Player/store/playerStore";
 import themeColors from "src/utils/theme/colors";
 import {
@@ -16,8 +17,13 @@ import NearbySessionCard from "./NearbySessionCard";
 import RoomMembersList from "./RoomMembersList";
 import RoomQueueList from "./RoomQueueList";
 import { useNearbySessionActions } from "../providers/NearbySessionProvider";
+import { sessionSocketService } from "../services/sessionSocket.service";
 import { useNearbySessionStore } from "../store/nearbySessionStore";
-import { sessionHasPlayableTrack } from "../types/session.types";
+import {
+  sessionHasPlayableTrack,
+  sessionQueueTrackToArtistSong,
+  type SessionQueueTrack,
+} from "../types/session.types";
 
 type PrivateRoomPanelProps = {
   bottomPadding: number;
@@ -38,12 +44,14 @@ export default function PrivateRoomPanel({
 
   const { createRoom, stopRoom, joinByCode, leaveSession } =
     useNearbySessionActions();
+  const { playSongNow } = usePlayback();
 
   const [codeInput, setCodeInput] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
+  const [isPlayingQueueItem, setIsPlayingQueueItem] = useState(false);
 
   const isHostingPrivate = role === "host" && Boolean(roomCode);
   const isListeningPrivate =
@@ -133,6 +141,38 @@ export default function PrivateRoomPanel({
   const handlePlayASong = useCallback(() => {
     router.push("/(tabs)/home");
   }, [router]);
+
+  const handlePlayQueueItem = useCallback(
+    async (item: SessionQueueTrack) => {
+      if (!isHostingPrivate || isPlayingQueueItem) return;
+
+      setIsPlayingQueueItem(true);
+      try {
+        const result = await sessionSocketService.playRoomQueueItemNow(
+          item.queueItemId
+        );
+        if (!result.ok || !result.item) {
+          appToast.error(result.error ?? "Could not play song");
+          return;
+        }
+
+        if (Array.isArray(result.queue)) {
+          useNearbySessionStore.getState().setRoomQueue(result.queue);
+          const active = useNearbySessionStore.getState().activeSession;
+          if (active) {
+            useNearbySessionStore
+              .getState()
+              .setActiveSession({ ...active, queue: result.queue });
+          }
+        }
+
+        await playSongNow(sessionQueueTrackToArtistSong(result.item));
+      } finally {
+        setIsPlayingQueueItem(false);
+      }
+    },
+    [isHostingPrivate, isPlayingQueueItem, playSongNow]
+  );
 
   return (
     <ScrollView
@@ -290,7 +330,14 @@ export default function PrivateRoomPanel({
             </YStack>
           )}
 
-          <RoomQueueList queue={roomQueue} />
+          <RoomQueueList
+            queue={roomQueue}
+            onPlayItem={
+              isHostingPrivate
+                ? (item) => void handlePlayQueueItem(item)
+                : undefined
+            }
+          />
 
           <Pressable
             onPress={() => void handleEndRoom()}

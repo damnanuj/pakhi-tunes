@@ -1,4 +1,4 @@
-import { Image } from "react-native";
+import { Image, Pressable } from "react-native";
 import { ListMusic } from "@tamagui/lucide-icons";
 import { XStack, YStack } from "tamagui";
 import MyText from "src/components/MyText";
@@ -13,9 +13,16 @@ import type { SessionQueueTrack } from "../types/session.types";
 
 type RoomQueueListProps = {
   queue: SessionQueueTrack[];
+  /** When set, rows are pressable (host play-now). */
+  onPlayItem?: (item: SessionQueueTrack) => void;
 };
 
-export default function RoomQueueList({ queue }: RoomQueueListProps) {
+export default function RoomQueueList({
+  queue,
+  onPlayItem,
+}: RoomQueueListProps) {
+  const canPlayNow = Boolean(onPlayItem);
+
   return (
     <YStack
       gap={verticalScale(10)}
@@ -59,25 +66,29 @@ export default function RoomQueueList({ queue }: RoomQueueListProps) {
         </MyText>
       ) : (
         <YStack gap={verticalScale(8)}>
+          {canPlayNow ? (
+            <MyText
+              fontSize={moderateScale(11)}
+              weight="500"
+              color={themeColors.dark.textMuted}
+            >
+              Tap a song to play it now
+            </MyText>
+          ) : null}
           {queue.map((item, index) => {
             const isNext = index === 0;
             const title = decodeHtmlEntities(item.title);
             const artist = decodeHtmlEntities(item.artist);
             const addedBy = item.addedBy?.name?.trim() || "Listener";
 
-            return (
+            const row = (
               <XStack
-                key={item.queueItemId || `${item.songId}-${index}`}
                 items="center"
                 gap={scale(10)}
                 py={verticalScale(8)}
                 px={scale(8)}
                 rounded={moderateScale(12)}
-                bg={
-                  isNext
-                    ? themeColors.dark.surface
-                    : "transparent"
-                }
+                bg={isNext ? themeColors.dark.surface : "transparent"}
                 borderWidth={isNext ? 1 : 0}
                 borderColor={
                   isNext ? themeColors.dark.accent : "transparent"
@@ -157,6 +168,26 @@ export default function RoomQueueList({ queue }: RoomQueueListProps) {
                   </MyText>
                 ) : null}
               </XStack>
+            );
+
+            if (!onPlayItem) {
+              return (
+                <YStack key={item.queueItemId || `${item.songId}-${index}`}>
+                  {row}
+                </YStack>
+              );
+            }
+
+            return (
+              <Pressable
+                key={item.queueItemId || `${item.songId}-${index}`}
+                onPress={() => onPlayItem(item)}
+                style={({ pressed }) => ({
+                  opacity: pressed ? 0.75 : 1,
+                })}
+              >
+                {row}
+              </Pressable>
             );
           })}
         </YStack>
