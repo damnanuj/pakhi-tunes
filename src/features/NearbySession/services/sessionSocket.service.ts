@@ -4,10 +4,19 @@ import { getAuthToken } from "src/features/auth/store/authStore";
 import type { RepeatMode } from "src/features/Player/types";
 import type {
   SessionHeartbeatPayload,
+  SessionQueueAddPayload,
+  SessionQueueTrack,
   SessionTrackChangePayload,
 } from "../types/session.types";
 
-type AckResponse = { ok: boolean; error?: string; session?: unknown };
+type AckResponse = {
+  ok: boolean;
+  error?: string;
+  session?: unknown;
+  queue?: SessionQueueTrack[];
+};
+
+const QUEUE_ADD_TIMEOUT_MS = 8_000;
 
 class SessionSocketService {
   private socket: Socket | null = null;
@@ -44,22 +53,33 @@ class SessionSocketService {
     this.socket = null;
   }
 
-  on(event: string, handler: (...args: unknown[]) => void) {
+  // Socket.io payloads are untyped at the wire; callers narrow in their handlers.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  on(event: string, handler: (...args: any[]) => void) {
     this.socket?.on(event, handler);
   }
 
-  off(event: string, handler?: (...args: unknown[]) => void) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  off(event: string, handler?: (...args: any[]) => void) {
     this.socket?.off(event, handler);
   }
 
   emitHostStart(sessionId: string) {
-    return new Promise<{ ok: boolean; error?: string }>((resolve) => {
+    return new Promise<{
+      ok: boolean;
+      error?: string;
+      queue?: SessionQueueTrack[];
+    }>((resolve) => {
       if (!this.socket?.connected) {
         resolve({ ok: false, error: "Socket not connected" });
         return;
       }
       this.socket.emit("host:start", { sessionId }, (ack: AckResponse) => {
-        resolve({ ok: Boolean(ack?.ok), error: ack?.error });
+        resolve({
+          ok: Boolean(ack?.ok),
+          error: ack?.error,
+          queue: Array.isArray(ack?.queue) ? ack.queue : undefined,
+        });
       });
     });
   }
@@ -114,6 +134,41 @@ class SessionSocketService {
 
   leaveAsListener() {
     this.socket?.emit("listener:leave");
+  }
+
+  addToRoomQueue(payload: SessionQueueAddPayload) {
+    return new Promise<{
+      ok: boolean;
+      error?: string;
+      queue?: SessionQueueTrack[];
+    }>((resolve) => {
+      if (!this.socket?.connected) {
+        resolve({ ok: false, error: "Socket not connected" });
+        return;
+      }
+
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        resolve({ ok: false, error: "Request timed out" });
+      }, QUEUE_ADD_TIMEOUT_MS);
+
+      this.socket.emit(
+        "listener:queueAdd",
+        payload,
+        (ack: AckResponse) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          resolve({
+            ok: Boolean(ack?.ok),
+            error: ack?.error,
+            queue: Array.isArray(ack?.queue) ? ack.queue : undefined,
+          });
+        }
+      );
+    });
   }
 }
 

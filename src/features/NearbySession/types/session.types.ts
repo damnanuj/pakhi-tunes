@@ -1,4 +1,5 @@
 import type { ActiveTrack, RepeatMode } from "src/features/Player/types";
+import type { ArtistSong, ArtistSongArtist } from "src/types/artistSongs.types";
 
 export type SessionRole = "host" | "listener" | null;
 
@@ -6,6 +7,37 @@ export type SessionListener = {
   userId: string;
   name: string;
   avatar: string | null;
+};
+
+export type SessionQueueAddedBy = {
+  userId: string;
+  name: string;
+  avatar: string | null;
+};
+
+export type SessionQueueTrack = {
+  queueItemId: string;
+  songId: string;
+  encryptedId: string;
+  title: string;
+  artist: string;
+  artworkUrl: string;
+  durationSec: number;
+  albumName: string;
+  downloadUrl: { quality: string; url: string }[];
+  addedBy: SessionQueueAddedBy;
+  addedAt: string;
+};
+
+export type SessionQueueAddPayload = {
+  songId: string;
+  encryptedId?: string;
+  title: string;
+  artist: string;
+  artworkUrl?: string;
+  durationSec?: number;
+  albumName?: string;
+  downloadUrl?: { quality: string; url: string }[];
 };
 
 export type NearbySession = {
@@ -23,6 +55,7 @@ export type NearbySession = {
   positionMs: number;
   listenerCount: number;
   listeners?: SessionListener[];
+  queue?: SessionQueueTrack[];
   visibility?: "nearby" | "private";
   roomCode?: string | null;
   distanceMeters?: number;
@@ -119,5 +152,70 @@ export function activeTrackToSessionPayload(
     positionMs,
     latitude,
     longitude,
+  };
+}
+
+function stubArtist(name: string): ArtistSongArtist {
+  return {
+    id: "",
+    name,
+    role: "artist",
+    image: [],
+    type: "artist",
+    url: "",
+  };
+}
+
+export function artistSongToSessionQueuePayload(
+  song: ArtistSong
+): SessionQueueAddPayload {
+  return {
+    songId: song.id,
+    encryptedId: song.encrypted_id ?? "",
+    title: song.name,
+    artist: song.artists.primary.map((a) => a.name).join(", "),
+    artworkUrl: song.image?.[0]?.url ?? "",
+    durationSec: Math.max(0, Number(song.duration) || 0),
+    albumName: song.album?.name ?? "",
+    downloadUrl: Array.isArray(song.downloadUrl)
+      ? song.downloadUrl.map((entry) => ({
+          quality: entry.quality,
+          url: entry.url,
+        }))
+      : [],
+  };
+}
+
+export function sessionQueueTrackToArtistSong(
+  item: SessionQueueTrack
+): ArtistSong {
+  const artist = stubArtist(item.artist);
+  return {
+    id: item.songId,
+    encrypted_id: item.encryptedId || "",
+    name: item.title,
+    type: "song",
+    year: "",
+    releaseDate: "",
+    duration: item.durationSec || 0,
+    label: "",
+    explicitContent: false,
+    playCount: 0,
+    language: "",
+    hasLyrics: false,
+    lyricsId: null,
+    lyrics: null,
+    url: "",
+    copyright: "",
+    album: { id: "", name: item.albumName || "", url: "" },
+    artists: {
+      primary: [artist],
+      featured: [],
+      all: [artist],
+    },
+    image: item.artworkUrl
+      ? [{ quality: "150x150", url: item.artworkUrl }]
+      : [],
+    downloadUrl: item.downloadUrl ?? [],
   };
 }

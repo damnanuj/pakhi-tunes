@@ -4,6 +4,7 @@ import type {
   ActiveSession,
   NearbySession,
   SessionListener,
+  SessionQueueTrack,
   SessionRole,
 } from "../types/session.types";
 
@@ -21,6 +22,7 @@ type NearbySessionState = {
   role: SessionRole;
   listenerCount: number;
   roomListeners: SessionListener[];
+  roomQueue: SessionQueueTrack[];
   hostName: string | null;
   hostRepeatMode: RepeatMode;
   hostPlaybackAnchor: HostPlaybackAnchor | null;
@@ -35,6 +37,7 @@ type NearbySessionState = {
   setRole: (role: SessionRole) => void;
   setListenerCount: (count: number) => void;
   setRoomListeners: (listeners: SessionListener[]) => void;
+  setRoomQueue: (queue: SessionQueueTrack[]) => void;
   setHostName: (name: string | null) => void;
   setHostRepeatMode: (mode: RepeatMode) => void;
   setHostPlaybackAnchor: (anchor: HostPlaybackAnchor | null) => void;
@@ -53,6 +56,7 @@ const initialState = {
   role: null as SessionRole,
   listenerCount: 0,
   roomListeners: [] as SessionListener[],
+  roomQueue: [] as SessionQueueTrack[],
   hostName: null as string | null,
   hostRepeatMode: "off" as RepeatMode,
   hostPlaybackAnchor: null as HostPlaybackAnchor | null,
@@ -71,6 +75,7 @@ export const useNearbySessionStore = create<NearbySessionState>((set) => ({
   setRole: (role) => set({ role }),
   setListenerCount: (listenerCount) => set({ listenerCount }),
   setRoomListeners: (roomListeners) => set({ roomListeners }),
+  setRoomQueue: (roomQueue) => set({ roomQueue }),
   setHostName: (hostName) => set({ hostName }),
   setHostRepeatMode: (hostRepeatMode) => set({ hostRepeatMode }),
   setHostPlaybackAnchor: (hostPlaybackAnchor) => set({ hostPlaybackAnchor }),
@@ -85,6 +90,7 @@ export const useNearbySessionStore = create<NearbySessionState>((set) => ({
       role: null,
       listenerCount: 0,
       roomListeners: [],
+      roomQueue: [],
       hostName: null,
       hostRepeatMode: "off",
       hostPlaybackAnchor: null,

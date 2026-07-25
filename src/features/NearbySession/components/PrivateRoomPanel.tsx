@@ -14,6 +14,7 @@ import {
 } from "src/utils/functions/dimensions";
 import NearbySessionCard from "./NearbySessionCard";
 import RoomMembersList from "./RoomMembersList";
+import RoomQueueList from "./RoomQueueList";
 import { useNearbySessionActions } from "../providers/NearbySessionProvider";
 import { useNearbySessionStore } from "../store/nearbySessionStore";
 import { sessionHasPlayableTrack } from "../types/session.types";
@@ -33,6 +34,7 @@ export default function PrivateRoomPanel({
   const activeSession = useNearbySessionStore((s) => s.activeSession);
   const listenerCount = useNearbySessionStore((s) => s.listenerCount);
   const roomListeners = useNearbySessionStore((s) => s.roomListeners);
+  const roomQueue = useNearbySessionStore((s) => s.roomQueue);
 
   const { createRoom, stopRoom, joinByCode, leaveSession } =
     useNearbySessionActions();
@@ -288,6 +290,8 @@ export default function PrivateRoomPanel({
             </YStack>
           )}
 
+          <RoomQueueList queue={roomQueue} />
+
           <Pressable
             onPress={() => void handleEndRoom()}
             disabled={isEnding}
@@ -313,14 +317,24 @@ export default function PrivateRoomPanel({
       {isListeningPrivate && activeSession ? (
         <YStack gap={verticalScale(16)}>
           {listenerHasSong ? (
-            <NearbySessionCard
-              session={activeSession}
-              onJoin={() => undefined}
-              onLeave={() => void handleLeave()}
-              isLeaving={isLeaving}
-              isActiveSession
-              listenerCountOverride={listenerCount}
-            />
+            <>
+              <NearbySessionCard
+                session={activeSession}
+                onJoin={() => undefined}
+                onLeave={() => void handleLeave()}
+                isLeaving={isLeaving}
+                isActiveSession
+                listenerCountOverride={listenerCount}
+              />
+              <MyText
+                fontSize={moderateScale(12)}
+                weight="500"
+                color={themeColors.dark.textMuted}
+                textAlign="center"
+              >
+                Tap any song to add it next without leaving the room.
+              </MyText>
+            </>
           ) : (
             <YStack
               gap={verticalScale(12)}
@@ -372,6 +386,8 @@ export default function PrivateRoomPanel({
               </Pressable>
             </YStack>
           )}
+
+          <RoomQueueList queue={roomQueue} />
         </YStack>
       ) : null}
 

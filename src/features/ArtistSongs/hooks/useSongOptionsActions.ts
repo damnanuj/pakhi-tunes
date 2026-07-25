@@ -7,6 +7,8 @@ import { useFavoriteStatus } from "src/features/favorites/hooks/useFavoriteStatu
 import { useLocalFavoriteSongIds } from "src/features/favorites/hooks/useLocalFavorites";
 import { useToggleFavorite } from "src/features/favorites/hooks/useToggleFavorite";
 import { artistSongToFavoritePayload } from "src/features/favorites/types/favorites.types";
+import { useNearbySessionStore } from "src/features/NearbySession/store/nearbySessionStore";
+import { requestRoomPlayNextIfListener } from "src/features/NearbySession/utils/requestRoomPlayNextIfListener";
 import { usePlayerStore } from "src/features/Player/store/playerStore";
 import { hasQueue, isSongInQueue, canBootstrapQueue, isSongImmediatelyNext } from "src/features/Player/utils/queueHelpers";
 import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
@@ -98,6 +100,17 @@ export function useSongOptionsActions(
   const addSongToQueue = usePlayerStore((s) => s.addSongToQueue);
   const playSongNext = usePlayerStore((s) => s.playSongNext);
   const removeSongFromQueue = usePlayerStore((s) => s.removeSongFromQueue);
+
+  const sessionRole = useNearbySessionStore((s) => s.role);
+  const sessionVisibility = useNearbySessionStore(
+    (s) => s.activeSession?.visibility
+  );
+  const isPrivateRoomListener =
+    sessionRole === "listener" && sessionVisibility === "private";
+  const roomQueue = useNearbySessionStore((s) => s.roomQueue);
+  const songAlreadyInRoomQueue = roomQueue.some(
+    (item) => item.songId === song.id
+  );
 
   const queueActive =
     hasQueue({ queue, queueIndex, queueSource, repeatMode: "off" }) ||
@@ -208,14 +221,22 @@ export function useSongOptionsActions(
   }, [options]);
 
   const handleAddToQueuePress = useCallback(() => {
+    if (isPrivateRoomListener) {
+      void requestRoomPlayNextIfListener(song);
+      return;
+    }
     addSongToQueue(song);
     appToast.addedToQueue(songTitle);
-  }, [addSongToQueue, song, songTitle]);
+  }, [addSongToQueue, isPrivateRoomListener, song, songTitle]);
 
   const handlePlayNextPress = useCallback(() => {
+    if (isPrivateRoomListener) {
+      void requestRoomPlayNextIfListener(song);
+      return;
+    }
     playSongNext(song);
     appToast.playingNext(songTitle);
-  }, [playSongNext, song, songTitle]);
+  }, [isPrivateRoomListener, playSongNext, song, songTitle]);
 
   const handleRemoveFromQueuePress = useCallback(() => {
     removeSongFromQueue(song.id);
@@ -230,11 +251,17 @@ export function useSongOptionsActions(
     options?.onSaveToPlaylist?.();
   }, [isAuthenticated, options]);
 
-  const showPlayNext =
-    queueActive && !isCurrentlyPlaying && !isImmediateNext;
-  const showAddToQueue = queueActive && !isCurrentlyPlaying && !songAlreadyInQueue;
+  const showPlayNext = isPrivateRoomListener
+    ? !isCurrentlyPlaying && !songAlreadyInRoomQueue
+    : queueActive && !isCurrentlyPlaying && !isImmediateNext;
+  const showAddToQueue = isPrivateRoomListener
+    ? !isCurrentlyPlaying && !songAlreadyInRoomQueue
+    : queueActive && !isCurrentlyPlaying && !songAlreadyInQueue;
   const showRemoveFromQueue =
-    queueActive && !isCurrentlyPlaying && songAlreadyInQueue;
+    !isPrivateRoomListener &&
+    queueActive &&
+    !isCurrentlyPlaying &&
+    songAlreadyInQueue;
 
   return {
     favorite: {

@@ -4,6 +4,7 @@ import { ENV } from "src/utils/constants/env";
 import { appToast } from "src/components/toast/appToastHelpers";
 import { useHostSession } from "../hooks/useHostSession";
 import { usePrivateRoomHost } from "../hooks/usePrivateRoomHost";
+import { useRoomQueueSync } from "../hooks/useRoomQueueSync";
 import { useSessionSync } from "../hooks/useSessionSync";
 import { fetchSessionByCode, stopHostSession } from "../services/session.service";
 import { sessionSocketService } from "../services/sessionSocket.service";
@@ -49,6 +50,7 @@ async function stopHostingIfNeeded() {
 
 export function NearbySessionProvider({ children }: { children: ReactNode }) {
   useHostSession();
+  useRoomQueueSync();
   const { joinSession, leaveSession } = useSessionSync();
   const { createRoom, stopRoom } = usePrivateRoomHost();
 

@@ -42,6 +42,7 @@ import {
   useNearbySessionStore,
 } from "src/features/NearbySession/store/nearbySessionStore";
 import { leaveListenerSessionIfActive } from "src/features/NearbySession/utils/leaveListenerSession";
+import { requestRoomPlayNextIfListener } from "src/features/NearbySession/utils/requestRoomPlayNextIfListener";
 import {
   isPositionSyncSuspended,
   resetPositionSyncSuspension,
@@ -340,13 +341,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     [loadAndPlayActiveTrack]
   );
 
-  const playSong = useCallback(
-    async (song: ArtistSong) => {
-      usePlayerStore.getState().clearQueue();
-      await loadAndPlayTrack(song);
-    },
-    [loadAndPlayTrack]
-  );
+  const playSong = useCallback(async (song: ArtistSong) => {
+    if (await requestRoomPlayNextIfListener(song)) {
+      return;
+    }
+    usePlayerStore.getState().clearQueue();
+    await loadAndPlayTrack(song);
+  }, [loadAndPlayTrack]);
 
   const playActiveTrack = useCallback(
     async (track: ActiveTrack) => {
@@ -359,6 +360,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const playSongFromQueue = useCallback(
     async (songs: ArtistSong[], startIndex: number, source: QueueSource) => {
       if (songs.length === 0 || startIndex < 0 || startIndex >= songs.length) {
+        return;
+      }
+
+      const tappedSong = songs[startIndex];
+      if (await requestRoomPlayNextIfListener(tappedSong)) {
         return;
       }
 

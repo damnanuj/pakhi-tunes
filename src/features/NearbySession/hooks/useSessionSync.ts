@@ -6,7 +6,11 @@ import { usePlayback } from "src/features/Player/context/PlayerContext";
 import { usePlayerStore } from "src/features/Player/store/playerStore";
 import { sessionSocketService } from "../services/sessionSocket.service";
 import { useNearbySessionStore } from "../store/nearbySessionStore";
-import type { NearbySession, SessionListener } from "../types/session.types";
+import type {
+  NearbySession,
+  SessionListener,
+  SessionQueueTrack,
+} from "../types/session.types";
 import { sessionHasPlayableTrack } from "../types/session.types";
 import { leaveListenerSessionIfActive } from "../utils/leaveListenerSession";
 import {
@@ -114,6 +118,9 @@ export function useSessionSync() {
         listeners: Array.isArray(ack?.listeners)
           ? (ack.listeners as SessionListener[])
           : session.listeners,
+        queue: Array.isArray(ack?.queue)
+          ? (ack.queue as SessionQueueTrack[])
+          : session.queue ?? [],
         updatedAt:
           typeof ack?.updatedAt === "string"
             ? ack.updatedAt
@@ -130,6 +137,9 @@ export function useSessionSync() {
       useNearbySessionStore
         .getState()
         .setRoomListeners(liveSession.listeners ?? []);
+      useNearbySessionStore
+        .getState()
+        .setRoomQueue(liveSession.queue ?? []);
 
       if (sessionHasPlayableTrack(liveSession)) {
         const positionMs = extrapolateSessionPosition(liveSession);

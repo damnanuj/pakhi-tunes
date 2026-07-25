@@ -63,6 +63,10 @@ async function connectAndStartHost(sessionId: string) {
     return false;
   }
 
+  if (Array.isArray(result.queue)) {
+    useNearbySessionStore.getState().setRoomQueue(result.queue);
+  }
+
   useNearbySessionStore.getState().setIsConnected(true);
   return true;
 }
@@ -147,6 +151,9 @@ export function usePrivateRoomHost() {
       useNearbySessionStore
         .getState()
         .setRoomListeners(session.listeners ?? []);
+      useNearbySessionStore
+        .getState()
+        .setRoomQueue(session.queue ?? []);
       useNearbySessionStore.getState().setRole("host");
 
       const started = await connectAndStartHost(session.id);
