@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
 import { YStack } from "tamagui";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import ScreenHeader from "src/components/ScreenHeader";
 import PillTabs, { type PillTabItem } from "src/components/PillTabs";
 import themeColors from "src/utils/theme/colors";
@@ -31,14 +31,21 @@ function resolveInitialTab(
   return "nearby";
 }
 
+function parseTabParam(tab: string | string[] | undefined): SessionTabId | null {
+  const value = Array.isArray(tab) ? tab[0] : tab;
+  return value === "nearby" || value === "room" ? value : null;
+}
+
 export default function NearbySessionsPage() {
   const router = useRouter();
+  const { tab } = useLocalSearchParams<{ tab?: string | string[] }>();
   const { isAuthenticated, isHydrated } = useAuth();
   const roomCode = useNearbySessionStore((s) => s.roomCode);
   const activeSession = useNearbySessionStore((s) => s.activeSession);
+  const requestedTab = parseTabParam(tab);
 
   const [activeTab, setActiveTab] = useState<SessionTabId>(() =>
-    resolveInitialTab(roomCode, activeSession?.visibility)
+    requestedTab ?? resolveInitialTab(roomCode, activeSession?.visibility)
   );
 
   const scrollBottomPadding = useScrollBottomInset({
@@ -52,10 +59,14 @@ export default function NearbySessionsPage() {
   }, [isAuthenticated, isHydrated, router]);
 
   useEffect(() => {
+    if (requestedTab) {
+      setActiveTab(requestedTab);
+      return;
+    }
     if (roomCode || activeSession?.visibility === "private") {
       setActiveTab("room");
     }
-  }, [activeSession?.visibility, roomCode]);
+  }, [activeSession?.visibility, requestedTab, roomCode]);
 
   const tabs = useMemo(() => SESSION_TABS, []);
 

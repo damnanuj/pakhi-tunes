@@ -28,6 +28,7 @@ import {
   Shuffle,
   SkipBack,
   SkipForward,
+  Users,
 } from "@tamagui/lucide-icons";
 import { XStack, YStack } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -51,6 +52,10 @@ import DownloadButton from "src/features/Downloads/components/DownloadButton";
 import ListenerCountBadge from "src/features/NearbySession/components/ListenerCountBadge";
 import { useNearbySessionActions } from "src/features/NearbySession/providers/NearbySessionProvider";
 import { useNearbySessionStore } from "src/features/NearbySession/store/nearbySessionStore";
+import {
+  openListenTogether,
+  resolveListenTogetherTab,
+} from "src/features/NearbySession/utils/openListenTogether";
 import {
   ghostControlStyle,
   playerRippleLight,
@@ -329,11 +334,21 @@ export default function FullPlayerPage() {
   const sessionRole = useNearbySessionStore((s) => s.role);
   const listenerCount = useNearbySessionStore((s) => s.listenerCount);
   const hostName = useNearbySessionStore((s) => s.hostName);
+  const roomCode = useNearbySessionStore((s) => s.roomCode);
+  const sessionVisibility = useNearbySessionStore(
+    (s) => s.activeSession?.visibility
+  );
   const hostRepeatMode = useNearbySessionStore((s) => s.hostRepeatMode);
   const hostAnchor = useNearbySessionStore((s) => s.hostPlaybackAnchor);
   const { leaveSession } = useNearbySessionActions();
   const isListener = sessionRole === "listener";
   const isHost = sessionRole === "host";
+  const listenTogetherTab = resolveListenTogetherTab(
+    roomCode,
+    sessionVisibility
+  );
+  const listenTogetherLabel =
+    listenTogetherTab === "room" ? "Room" : "Nearby";
   const displayRepeatMode = isListener ? hostRepeatMode : repeatMode;
   const displayIsPlaying = isListener
     ? (hostAnchor?.playing ?? isPlaying)
@@ -402,9 +417,19 @@ export default function FullPlayerPage() {
     router.back();
   }, [leaveSession, router]);
 
+  const handleOpenListenTogether = useCallback(() => {
+    openListenTogether(router);
+  }, [router]);
+
   const headerRightContent = useMemo(() => {
     if (isHost) {
-      return <ListenerCountBadge count={listenerCount} compact />;
+      return (
+        <ListenerCountBadge
+          count={listenerCount}
+          compact
+          onPress={handleOpenListenTogether}
+        />
+      );
     }
     if (isListener) {
       return (
@@ -420,7 +445,13 @@ export default function FullPlayerPage() {
       );
     }
     return null;
-  }, [handleLeave, isHost, isListener, listenerCount]);
+  }, [
+    handleLeave,
+    handleOpenListenTogether,
+    isHost,
+    isListener,
+    listenerCount,
+  ]);
 
   const onOpenUpNext = useCallback(() => {
     setIsUpNextOpen(true);
@@ -732,7 +763,36 @@ export default function FullPlayerPage() {
                 </XStack>
               </Pressable>
             ) : (
-              <View style={{ flex: 1 }} />
+              <Pressable
+                onPress={handleOpenListenTogether}
+                accessibilityRole="button"
+                accessibilityLabel={`Open Listen Together ${listenTogetherLabel} tab`}
+                android_ripple={playerRippleLight}
+                style={({ pressed }: PressableStateCallbackType) => ({
+                  flex: 1,
+                  minWidth: 0,
+                  opacity: pressed ? 0.85 : 1,
+                })}
+              >
+                <XStack gap={scale(10)} items="center" style={{ minWidth: 0 }}>
+                  <View style={ghostControlStyle(false)}>
+                    <Users
+                      size={moderateScale(20)}
+                      color={themeColors.dark.onSurface}
+                    />
+                  </View>
+                  <MyText
+                    fontSize={moderateScale(14)}
+                    weight="700"
+                    color={themeColors.dark.onSurface}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                    style={{ flex: 1, minWidth: 0 }}
+                  >
+                    {listenTogetherLabel}
+                  </MyText>
+                </XStack>
+              </Pressable>
             )}
 
             <XStack
