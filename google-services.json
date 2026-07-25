@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "485929118807-kl6fj6coabiebav7lmqoplm7iqrcs0d8.apps.googleusercontent.com",
+          "client_id": "485929118807-kolglnl8g39q41s1t0ucllq2vqdnva1k.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.damnanuj.pakhitunes",
-            "certificate_hash": "1ed0517b0a8094c0abae08e2fb5d735cf9b75bcf"
+            "certificate_hash": "f1d428d040ae0c0ffe9f1027fb3e29e60614929a"
           }
         },
         {
