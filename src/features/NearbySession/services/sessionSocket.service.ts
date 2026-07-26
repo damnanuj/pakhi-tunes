@@ -25,6 +25,7 @@ type AckResponse = {
 type SocketHandler = (...args: any[]) => void;
 
 const QUEUE_ADD_TIMEOUT_MS = 8_000;
+const HOST_STOP_TIMEOUT_MS = 4_000;
 
 class SessionSocketService {
   private socket: Socket | null = null;
@@ -143,7 +144,26 @@ class SessionSocketService {
   }
 
   emitHostStop() {
-    this.socket?.emit("host:stop");
+    return new Promise<{ ok: boolean; error?: string }>((resolve) => {
+      if (!this.socket?.connected) {
+        resolve({ ok: false, error: "Socket not connected" });
+        return;
+      }
+
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        resolve({ ok: false, error: "Request timed out" });
+      }, HOST_STOP_TIMEOUT_MS);
+
+      this.socket.emit("host:stop", {}, (ack: AckResponse) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve({ ok: Boolean(ack?.ok), error: ack?.error });
+      });
+    });
   }
 
   joinAsListener(sessionId: string) {

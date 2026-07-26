@@ -83,15 +83,13 @@ export function usePrivateRoomHost() {
       return;
     }
 
-    if (sessionId) {
-      sessionSocketService.emitHostStop();
-      try {
-        await stopHostSession(sessionId);
-      } catch {
-        /* ignore */
+    try {
+      if (sessionId) {
+        await endHostSession(sessionId);
       }
+    } finally {
+      useNearbySessionStore.getState().resetSession();
     }
-    useNearbySessionStore.getState().resetSession();
   }, []);
 
   const createRoom = useCallback(async () => {
