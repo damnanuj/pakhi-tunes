@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Constants from "expo-constants";
+import * as Updates from "expo-updates";
 import {
+  CalendarDays,
   ChevronRight,
   Github,
   Globe,
@@ -40,6 +42,20 @@ function getInstalledAppVersion(): string {
     Constants.nativeAppVersion ??
     "0.0.0"
   );
+}
+
+function formatUpdatedDate(date: Date): string {
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function getLastUpdatedLabel(): string {
+  // Prefer the EAS update publish time. In Metro / when updates are disabled,
+  // createdAt is null — fall back to today so the footer still shows a date.
+  return formatUpdatedDate(Updates.createdAt ?? new Date());
 }
 
 const QUOTE_ICON_SIZE = moderateScale(13);
@@ -176,6 +192,8 @@ function FooterLinkCard({
 
 export default function ProfileCreatorFooter() {
   const appVersion = getInstalledAppVersion();
+  const lastUpdatedLabel = getLastUpdatedLabel();
+  const versionAccessibilityLabel = `App version ${appVersion}, last updated at ${lastUpdatedLabel}`;
 
   return (
     <YStack
@@ -275,14 +293,30 @@ export default function ProfileCreatorFooter() {
       <View
         style={styles.versionChip}
         accessibilityRole="text"
-        accessibilityLabel={`App version ${appVersion}`}
+        accessibilityLabel={versionAccessibilityLabel}
       >
+        <View style={styles.versionBadge}>
+          <MyText
+            fontSize={moderateScale(11)}
+            weight="700"
+            color={themeColors.dark.onSurface}
+          >
+            {`v${appVersion}`}
+          </MyText>
+        </View>
+
+        <View style={styles.versionDivider} />
+
+        <CalendarDays
+          size={moderateScale(12)}
+          color={themeColors.dark.textMuted}
+        />
         <MyText
-          fontSize={moderateScale(11)}
-          weight="700"
-          color={themeColors.dark.onSurface}
+          fontSize={moderateScale(10)}
+          weight="500"
+          color={themeColors.dark.textMuted}
         >
-          {`v${appVersion}`}
+          {`Last updated ${lastUpdatedLabel}`}
         </MyText>
       </View>
     </YStack>
@@ -336,11 +370,26 @@ const styles = StyleSheet.create({
   },
   versionChip: {
     marginTop: verticalScale(6),
-    paddingHorizontal: scale(14),
-    paddingVertical: verticalScale(6),
+    flexDirection: "row",
+    alignItems: "center",
+    paddingLeft: scale(6),
+    paddingRight: scale(12),
+    paddingVertical: verticalScale(5),
     borderRadius: moderateScale(999),
     backgroundColor: themeColors.dark.surfaceSecondary,
     borderWidth: 1,
     borderColor: themeColors.dark.borderSecondary,
+    gap: scale(6),
+  },
+  versionBadge: {
+    paddingHorizontal: scale(9),
+    paddingVertical: verticalScale(3),
+    borderRadius: moderateScale(999),
+    backgroundColor: themeColors.dark.background,
+  },
+  versionDivider: {
+    width: 1,
+    height: verticalScale(14),
+    backgroundColor: themeColors.dark.borderSecondary,
   },
 });
