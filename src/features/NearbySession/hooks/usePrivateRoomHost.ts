@@ -3,16 +3,14 @@ import TrackPlayer from "react-native-track-player";
 import { appToast } from "src/components/toast/appToastHelpers";
 import { useAuth } from "src/features/auth/hooks/useAuth";
 import { usePlayerStore } from "src/features/Player/store/playerStore";
-import {
-  createPrivateRoom,
-  stopHostSession,
-} from "../services/session.service";
+import { createPrivateRoom } from "../services/session.service";
 import { sessionSocketService } from "../services/sessionSocket.service";
 import { useNearbySessionStore } from "../store/nearbySessionStore";
 import type { SessionListener } from "../types/session.types";
 import { applyHostStartAck } from "../utils/applyHostStartAck";
 import { applyListenersUpdate } from "../utils/applyListenersUpdate";
 import { connectSessionSocketReady } from "../utils/connectSessionSocketReady";
+import { endHostSession } from "../utils/endHostSession";
 
 async function connectAndStartHost(
   sessionId: string,
@@ -154,8 +152,13 @@ export function usePrivateRoomHost() {
         onListeners: onListenersRef.current,
       });
       if (!started) {
+        // Without a host socket the server never learns this socket owns the
+        // room, so ending it later would silently strand listeners. Roll back
+        // instead of handing back a half-live room.
         appToast.error("Could not start room sync");
-        return session;
+        await endHostSession(session.id);
+        useNearbySessionStore.getState().resetSession();
+        return null;
       }
 
       return session;

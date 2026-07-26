@@ -294,6 +294,43 @@ function IconControl({
   );
 }
 
+function PlayerPlaceholder({
+  title,
+  message,
+  rightContent,
+  showSpinner,
+}: {
+  title: string;
+  message: string;
+  rightContent?: ReactNode;
+  showSpinner: boolean;
+}) {
+  return (
+    <YStack flex={1} bg={themeColors.dark.background}>
+      <ScreenHeader
+        title={title}
+        showBack
+        backIcon="down"
+        showSettings={false}
+        rightContent={rightContent}
+      />
+      <YStack flex={1} items="center" justify="center" gap={verticalScale(14)}>
+        {showSpinner ? (
+          <ActivityIndicator color={themeColors.dark.accent} />
+        ) : null}
+        <MyText
+          fontSize={moderateScale(14)}
+          weight="600"
+          color={themeColors.dark.textMuted}
+          textAlign="center"
+        >
+          {message}
+        </MyText>
+      </YStack>
+    </YStack>
+  );
+}
+
 const playFabShadow: ViewStyle =
   Platform.OS === "ios"
     ? {
@@ -318,6 +355,7 @@ export default function FullPlayerPage() {
   } = usePlayback();
 
   const seekGenerationRef = useRef(0);
+  const hasExitedRef = useRef(false);
   const [isSeekInProgress, setIsSeekInProgress] = useState(false);
   const [isUpNextOpen, setIsUpNextOpen] = useState(false);
 
@@ -354,11 +392,26 @@ export default function FullPlayerPage() {
     ? (hostAnchor?.playing ?? isPlaying)
     : isPlaying;
 
+  // A listener whose host cleared the song stays in the room and waits for the
+  // next one, so only leave the screen when there is no session holding it open.
+  const isWaitingForHostTrack = isListener && Boolean(sessionVisibility);
+
   useEffect(() => {
-    if (!activeTrack) {
-      router.back();
+    if (activeTrack) {
+      hasExitedRef.current = false;
+      return;
     }
-  }, [activeTrack, router]);
+    if (isWaitingForHostTrack || hasExitedRef.current) return;
+
+    // This screen owns the exit: leave paths clear the track and let this run,
+    // so there is exactly one navigation no matter what cleared playback.
+    hasExitedRef.current = true;
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/(tabs)/home");
+    }
+  }, [activeTrack, isWaitingForHostTrack, router]);
 
   const progress = useMemo(() => {
     if (!durationMillis || durationMillis <= 0) return 0;
@@ -412,10 +465,11 @@ export default function FullPlayerPage() {
     cycleRepeatMode();
   }, [cycleRepeatMode]);
 
+  // Clearing the track triggers this screen's own exit effect; navigating here
+  // as well would pop twice.
   const handleLeave = useCallback(async () => {
     await leaveSession();
-    router.back();
-  }, [leaveSession, router]);
+  }, [leaveSession]);
 
   const handleOpenListenTogether = useCallback(() => {
     openListenTogether(router);
@@ -458,7 +512,18 @@ export default function FullPlayerPage() {
   }, []);
 
   if (!activeTrack) {
-    return null;
+    return (
+      <PlayerPlaceholder
+        title={isListener ? "Listening Together" : "Playing Now"}
+        message={
+          isWaitingForHostTrack
+            ? `Waiting for ${hostName ?? "the host"} to play a song`
+            : "Playback stopped"
+        }
+        rightContent={headerRightContent}
+        showSpinner={isWaitingForHostTrack}
+      />
+    );
   }
 
   const queueState = { queue, queueIndex, queueSource, repeatMode };

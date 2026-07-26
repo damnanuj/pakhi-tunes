@@ -1,9 +1,6 @@
 import { useCallback, useEffect } from "react";
-import { useRouter } from "expo-router";
 import { Event, useTrackPlayerEvents } from "react-native-track-player";
 import { appToast } from "src/components/toast/appToastHelpers";
-import { usePlayback } from "src/features/Player/context/PlayerContext";
-import { usePlayerStore } from "src/features/Player/store/playerStore";
 import { sessionSocketService } from "../services/sessionSocket.service";
 import { useNearbySessionStore } from "../store/nearbySessionStore";
 import type {
@@ -14,7 +11,8 @@ import type {
 import { sessionHasPlayableTrack } from "../types/session.types";
 import { applyListenersUpdate } from "../utils/applyListenersUpdate";
 import { connectSessionSocketReady } from "../utils/connectSessionSocketReady";
-import { leaveListenerSessionIfActive } from "../utils/leaveListenerSession";
+import { endListenerSession } from "../utils/endListenerSession";
+import { rejoinListenerSession } from "../utils/reconcileListenerSession";
 import {
   applyRemoteHeartbeat,
   applyRemotePause,
@@ -37,7 +35,6 @@ function patchActiveSessionMetadata(patch: Partial<NearbySession>) {
 }
 
 export function useSessionSync() {
-  const router = useRouter();
   const joinSession = useCallback(
     async (session: NearbySession) => {
       const socket = await connectSessionSocketReady();
@@ -126,18 +123,11 @@ export function useSessionSync() {
     []
   );
 
-  const { stopPlaybackAndClear } = usePlayback();
   const role = useNearbySessionStore((s) => s.role);
 
   const leaveSession = useCallback(async () => {
-    if (!leaveListenerSessionIfActive()) return;
-
-    usePlayerStore.getState().setActiveTrack(null);
-    usePlayerStore.getState().resetPlayback();
-    usePlayerStore.getState().setPlaybackLoading(false);
-
-    await stopPlaybackAndClear();
-  }, [stopPlaybackAndClear]);
+    await endListenerSession();
+  }, []);
 
   useTrackPlayerEvents([Event.PlaybackProgressUpdated], (event) => {
     if (event.type !== Event.PlaybackProgressUpdated) return;
@@ -202,12 +192,25 @@ export function useSessionSync() {
     }) => {
       applyListenersUpdate(payload);
     };
+    const onConnect = () => {
+      void rejoinListenerSession();
+    };
+    const onDisconnect = () => {
+      // Keep the session so a quick reconnect can resume it; onConnect
+      // re-joins the room or clears it if the room is gone.
+      useNearbySessionStore.getState().setIsConnected(false);
+    };
     const onEnded = () => {
-      appToast.info("The host ended this session");
-      void leaveSession();
-      router.back();
+      // No navigation here: this handler is mounted app-wide, so popping the
+      // stack could close whatever screen the listener happens to be on. The
+      // player screen leaves itself once the track clears.
+      void endListenerSession().then((left) => {
+        if (left) appToast.info("The host ended this session");
+      });
     };
 
+    sessionSocketService.on("connect", onConnect);
+    sessionSocketService.on("disconnect", onDisconnect);
     sessionSocketService.on("session:trackChange", onTrackChange);
     sessionSocketService.on("session:play", onPlay);
     sessionSocketService.on("session:pause", onPause);
@@ -218,6 +221,8 @@ export function useSessionSync() {
     sessionSocketService.on("session:ended", onEnded);
 
     return () => {
+      sessionSocketService.off("connect", onConnect);
+      sessionSocketService.off("disconnect", onDisconnect);
       sessionSocketService.off("session:trackChange", onTrackChange);
       sessionSocketService.off("session:play", onPlay);
       sessionSocketService.off("session:pause", onPause);
@@ -227,7 +232,7 @@ export function useSessionSync() {
       sessionSocketService.off("session:listeners", onListeners);
       sessionSocketService.off("session:ended", onEnded);
     };
-  }, [leaveSession, role, router]);
+  }, [role]);
 
   return { joinSession, leaveSession };
 }

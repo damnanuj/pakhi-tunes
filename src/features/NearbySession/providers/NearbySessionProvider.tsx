@@ -6,10 +6,11 @@ import { useHostSession } from "../hooks/useHostSession";
 import { usePrivateRoomHost } from "../hooks/usePrivateRoomHost";
 import { useRoomQueueSync } from "../hooks/useRoomQueueSync";
 import { useSessionSync } from "../hooks/useSessionSync";
-import { fetchSessionByCode, stopHostSession } from "../services/session.service";
-import { sessionSocketService } from "../services/sessionSocket.service";
+import { fetchSessionByCode } from "../services/session.service";
 import { useNearbySessionStore } from "../store/nearbySessionStore";
 import type { ActiveSession, NearbySession } from "../types/session.types";
+import { endHostSession } from "../utils/endHostSession";
+import { revalidateSessionOnForeground } from "../utils/revalidateSession";
 
 type NearbySessionContextValue = {
   joinSession: (session: NearbySession) => Promise<boolean>;
@@ -37,15 +38,13 @@ async function stopHostingIfNeeded() {
   if (state.role !== "host") return;
 
   const sessionId = state.activeSession?.id;
-  if (sessionId) {
-    sessionSocketService.emitHostStop();
-    try {
-      await stopHostSession(sessionId);
-    } catch {
-      /* ignore */
+  try {
+    if (sessionId) {
+      await endHostSession(sessionId);
     }
+  } finally {
+    useNearbySessionStore.getState().resetSession();
   }
-  useNearbySessionStore.getState().resetSession();
 }
 
 export function NearbySessionProvider({ children }: { children: ReactNode }) {
@@ -78,7 +77,11 @@ export function NearbySessionProvider({ children }: { children: ReactNode }) {
     warmupSocketServer();
 
     const onAppStateChange = (nextState: AppStateStatus) => {
-      if (nextState === "active") warmupSocketServer();
+      if (nextState !== "active") return;
+      warmupSocketServer();
+      // A suspended app can miss session:ended entirely, so confirm the room
+      // still exists instead of trusting the state we woke up with.
+      void revalidateSessionOnForeground();
     };
 
     const sub = AppState.addEventListener("change", onAppStateChange);

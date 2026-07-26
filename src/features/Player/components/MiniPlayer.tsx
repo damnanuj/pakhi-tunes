@@ -51,12 +51,11 @@ function MiniPlayer() {
   const stopPlaybackAndClear = playback?.stopPlaybackAndClear;
   const { leaveSession } = useNearbySessionActions();
 
+  // The player screen navigates itself once the track clears, so leaving from
+  // here only needs to tear down the session.
   const handleLeave = useCallback(async () => {
     await leaveSession();
-    if (pathname === "/player") {
-      router.back();
-    }
-  }, [leaveSession, pathname, router]);
+  }, [leaveSession]);
 
   const handleDismissSwipe = useCallback(async () => {
     if (useNearbySessionStore.getState().role === "listener") {

@@ -4,12 +4,12 @@ import { useAuth } from "src/features/auth/hooks/useAuth";
 import { usePlayerStore } from "src/features/Player/store/playerStore";
 import {
   patchSessionPosition,
-  stopHostSession,
   upsertHostSession,
 } from "../services/session.service";
 import { sessionSocketService } from "../services/sessionSocket.service";
 import { useNearbySessionStore } from "../store/nearbySessionStore";
 import { activeTrackToSessionPayload } from "../types/session.types";
+import { endHostSession } from "../utils/endHostSession";
 import { setSessionHostBridge } from "../utils/sessionHostBridge";
 import { getCurrentCoordinates } from "../utils/locationPermission";
 
@@ -47,15 +47,13 @@ export function useHostSession() {
       heartbeatRef.current = null;
     }
     const sessionId = useNearbySessionStore.getState().activeSession?.id;
-    if (sessionId) {
-      sessionSocketService.emitHostStop();
-      try {
-        await stopHostSession(sessionId);
-      } catch {
-        /* ignore */
+    try {
+      if (sessionId) {
+        await endHostSession(sessionId);
       }
+    } finally {
+      useNearbySessionStore.getState().resetSession();
     }
-    useNearbySessionStore.getState().resetSession();
   }, []);
 
   const ensureHostSession = useCallback(async () => {

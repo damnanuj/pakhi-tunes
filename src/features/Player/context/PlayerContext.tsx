@@ -42,6 +42,10 @@ import {
   isHostMode,
   useNearbySessionStore,
 } from "src/features/NearbySession/store/nearbySessionStore";
+import {
+  endListenerSession,
+  setListenerPlayerCleanup,
+} from "src/features/NearbySession/utils/endListenerSession";
 import { leaveListenerSessionIfActive } from "src/features/NearbySession/utils/leaveListenerSession";
 import {
   consumePrivateRoomHostNext,
@@ -584,7 +588,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const togglePlayPause = useCallback(async () => {
     if (isListenerMode()) {
-      leaveListenerSessionIfActive();
+      // Leaving mid-song must also stop the audio, otherwise the host's track
+      // keeps playing with no session behind it.
+      await endListenerSession();
+      return;
     }
 
     const activeTrack = usePlayerStore.getState().activeTrack;
@@ -701,6 +708,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       });
     }
   }, [resetNativePlayer]);
+
+  useEffect(() => {
+    setListenerPlayerCleanup(stopPlaybackAndClear);
+    return () => setListenerPlayerCleanup(null);
+  }, [stopPlaybackAndClear]);
 
   useEffect(() => {
     setPlaybackRemoteHandlers({

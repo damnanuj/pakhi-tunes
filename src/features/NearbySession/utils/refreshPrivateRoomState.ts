@@ -12,6 +12,11 @@ import type {
 import { applyHostStartAck } from "./applyHostStartAck";
 import { applyListenersUpdate } from "./applyListenersUpdate";
 import { connectSessionSocketReady } from "./connectSessionSocketReady";
+import {
+  abandonEndedListenerSession,
+  isMissingRoomHttpError,
+  isMissingSessionAckError,
+} from "./reconcileListenerSession";
 import { syncRoomQueue } from "./syncRoomQueue";
 
 function applyPrivateSessionSnapshot(session: NearbySession) {
@@ -87,7 +92,12 @@ export async function refreshPrivateRoomState(): Promise<void> {
 
   if (isPrivateHost) {
     const session = await fetchMySession();
-    if (!session || session.visibility !== "private") return;
+    if (!session) {
+      // The room is confirmed gone (ended elsewhere or expired server-side).
+      useNearbySessionStore.getState().resetSession();
+      return;
+    }
+    if (session.visibility !== "private") return;
 
     applyPrivateSessionSnapshot(session);
 
@@ -111,21 +121,29 @@ export async function refreshPrivateRoomState(): Promise<void> {
   if (code) {
     try {
       base = await fetchSessionByCode(code);
-    } catch {
-      /* keep current snapshot */
+    } catch (error) {
+      if (isMissingRoomHttpError(error)) {
+        await abandonEndedListenerSession();
+        return;
+      }
+      // Transient network failure — keep the current snapshot and try to rejoin.
     }
   }
 
   const socket = await connectSessionSocketReady();
   if (!socket) {
-    applyPrivateSessionSnapshot(base);
+    useNearbySessionStore.getState().setIsConnected(false);
     return;
   }
 
   const result = await sessionSocketService.joinAsListener(sessionId);
   if (!result.ok) {
-    applyPrivateSessionSnapshot(base);
-    useNearbySessionStore.getState().setIsConnected(true);
+    if (isMissingSessionAckError(result.error)) {
+      await abandonEndedListenerSession();
+      return;
+    }
+    // Never claim connected off a snapshot the server did not confirm.
+    useNearbySessionStore.getState().setIsConnected(false);
     return;
   }
 
