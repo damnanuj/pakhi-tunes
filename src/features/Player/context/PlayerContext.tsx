@@ -43,10 +43,10 @@ import {
   useNearbySessionStore,
 } from "src/features/NearbySession/store/nearbySessionStore";
 import {
-  endListenerSession,
   setListenerPlayerCleanup,
 } from "src/features/NearbySession/utils/endListenerSession";
 import { leaveListenerSessionIfActive } from "src/features/NearbySession/utils/leaveListenerSession";
+import { appToast } from "src/components/toast/appToastHelpers";
 import {
   consumePrivateRoomHostNext,
   getPrivateRoomHostNextSong,
@@ -588,9 +588,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const togglePlayPause = useCallback(async () => {
     if (isListenerMode()) {
-      // Leaving mid-song must also stop the audio, otherwise the host's track
-      // keeps playing with no session behind it.
-      await endListenerSession();
+      // Host owns playback. Leaving the room is only via the Leave button.
+      appToast.info("Only the host controls playback");
       return;
     }
 

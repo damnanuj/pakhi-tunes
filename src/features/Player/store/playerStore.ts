@@ -53,6 +53,8 @@ type PlayerActions = {
   playSongNext: (song: ArtistSong) => void;
   /** Always inserts at the immediate-next slot; bootstraps from active song/track if needed. */
   forcePlaySongNext: (song: ArtistSong) => void;
+  /** Replace local up-next (after current) with these songs — used by room queue mirror. */
+  replaceUpcomingWithSongs: (songs: ArtistSong[]) => void;
   removeSongFromQueue: (songId: string) => void;
 };
 
@@ -160,7 +162,16 @@ function insertSongAsPlayNext(
   if (nextState.activeTrack?.id === song.id) return;
 
   let queue = [...nextState.queue];
+  // Always derive index from the currently playing track so play-next lands
+  // after "now", never in the already-played ("previous") section.
   let queueIndex = nextState.queueIndex;
+  if (nextState.activeTrack?.id) {
+    const activeIdx = findSongIndex(queue, nextState.activeTrack.id);
+    if (activeIdx >= 0) {
+      queueIndex = activeIdx;
+    }
+  }
+
   const existingIdx = findSongIndex(queue, song.id);
 
   if (existingIdx >= 0) {
@@ -179,6 +190,60 @@ function insertSongAsPlayNext(
     originalQueue: nextState.shuffleEnabled
       ? nextState.originalQueue
       : [...queue],
+  });
+}
+
+/**
+ * Replace everything after the current track with `songs` (room up-next mirror).
+ * Keeps history + current; never inserts room songs into "previous".
+ */
+function applyUpcomingSongsReplacement(
+  get: () => PlayerState & PlayerActions,
+  set: (partial: Partial<PlayerState>) => void,
+  songs: ArtistSong[]
+): void {
+  const state = get();
+  if (
+    !state.queueSource ||
+    state.queue.length === 0 ||
+    state.queueIndex < 0 ||
+    !hasQueue(state)
+  ) {
+    if (!bootstrapQueueFromActiveSong(get, set)) return;
+  }
+
+  const next = get();
+  if (
+    !next.queueSource ||
+    next.queue.length === 0 ||
+    next.queueIndex < 0
+  ) {
+    return;
+  }
+
+  let queueIndex = next.queueIndex;
+  if (next.activeTrack?.id) {
+    const activeIdx = findSongIndex(next.queue, next.activeTrack.id);
+    if (activeIdx >= 0) {
+      queueIndex = activeIdx;
+    }
+  }
+
+  const kept = next.queue.slice(0, queueIndex + 1);
+  const keptIds = new Set(kept.map((s) => s.id));
+  const seen = new Set<string>();
+  const upcoming: ArtistSong[] = [];
+  for (const song of songs) {
+    if (!song?.id || keptIds.has(song.id) || seen.has(song.id)) continue;
+    seen.add(song.id);
+    upcoming.push(song);
+  }
+
+  const queue = [...kept, ...upcoming];
+  set({
+    queue,
+    queueIndex,
+    originalQueue: next.shuffleEnabled ? next.originalQueue : [...queue],
   });
 }
 
@@ -277,6 +342,9 @@ export const usePlayerStore = create<PlayerState & PlayerActions>((set, get) => 
   },
   forcePlaySongNext: (song) => {
     insertSongAsPlayNext(get, set, song);
+  },
+  replaceUpcomingWithSongs: (songs) => {
+    applyUpcomingSongsReplacement(get, set, songs);
   },
   removeSongFromQueue: (songId) => {
     const state = get();

@@ -17,6 +17,7 @@ import {
 import NearbySessionCard from "./NearbySessionCard";
 import RoomMembersList from "./RoomMembersList";
 import RoomQueueList from "./RoomQueueList";
+import HostReconnectingBanner from "./HostReconnectingBanner";
 import { useNearbySessionActions } from "../providers/NearbySessionProvider";
 import { sessionSocketService } from "../services/sessionSocket.service";
 import { useNearbySessionStore } from "../store/nearbySessionStore";
@@ -379,6 +380,7 @@ export default function PrivateRoomPanel({
 
       {isListeningPrivate && activeSession ? (
         <YStack gap={verticalScale(16)}>
+          <HostReconnectingBanner />
           {listenerHasSong ? (
             <>
               <NearbySessionCard

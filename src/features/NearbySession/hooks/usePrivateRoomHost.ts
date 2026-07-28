@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import TrackPlayer from "react-native-track-player";
 import { appToast } from "src/components/toast/appToastHelpers";
 import { useAuth } from "src/features/auth/hooks/useAuth";
@@ -42,11 +42,15 @@ async function connectAndStartHost(
 
   applyHostStartAck(result);
   useNearbySessionStore.getState().setIsConnected(true);
+  useNearbySessionStore.getState().setIsHostConnected(true);
   return true;
 }
 
 export function usePrivateRoomHost() {
   const { isAuthenticated } = useAuth();
+  const role = useNearbySessionStore((s) => s.role);
+  const roomCode = useNearbySessionStore((s) => s.roomCode);
+
   const onListenerCountRef = useRef((event: { listenerCount: number }) => {
     applyListenersUpdate(event);
   });
@@ -67,8 +71,29 @@ export function usePrivateRoomHost() {
       if (!result.ok) return;
       applyHostStartAck(result);
       useNearbySessionStore.getState().setIsConnected(true);
+      useNearbySessionStore.getState().setIsHostConnected(true);
     })();
   });
+
+  // Keep host reconnect handlers registered for the life of a private room
+  // (including after cold-start rehydrate via refreshPrivateRoomState).
+  useEffect(() => {
+    const isPrivateHost = role === "host" && Boolean(roomCode);
+    if (!isPrivateHost) return;
+
+    const onConnect = onConnectRef.current;
+    const onListenerCount = onListenerCountRef.current;
+    const onListeners = onListenersRef.current;
+    sessionSocketService.on("connect", onConnect);
+    sessionSocketService.on("session:listenerCount", onListenerCount);
+    sessionSocketService.on("session:listeners", onListeners);
+
+    return () => {
+      sessionSocketService.off("connect", onConnect);
+      sessionSocketService.off("session:listenerCount", onListenerCount);
+      sessionSocketService.off("session:listeners", onListeners);
+    };
+  }, [role, roomCode]);
 
   const stopRoom = useCallback(async () => {
     const sessionId = useNearbySessionStore.getState().activeSession?.id;
@@ -144,6 +169,7 @@ export function usePrivateRoomHost() {
         roomListeners: session.listeners ?? [],
         roomQueue: session.queue ?? [],
         role: "host",
+        isHostConnected: true,
       });
 
       const started = await connectAndStartHost(session.id, {

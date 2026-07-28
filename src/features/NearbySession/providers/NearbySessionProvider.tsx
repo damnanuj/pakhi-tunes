@@ -52,6 +52,7 @@ export function NearbySessionProvider({ children }: { children: ReactNode }) {
   useRoomQueueSync();
   const { joinSession, leaveSession } = useSessionSync();
   const { createRoom, stopRoom } = usePrivateRoomHost();
+  const isHydrated = useNearbySessionStore((s) => s.isHydrated);
 
   const joinByCode = useCallback(
     async (code: string) => {
@@ -87,6 +88,15 @@ export function NearbySessionProvider({ children }: { children: ReactNode }) {
     const sub = AppState.addEventListener("change", onAppStateChange);
     return () => sub.remove();
   }, []);
+
+  // Cold start: after AsyncStorage rehydrate, rejoin a persisted room if any.
+  useEffect(() => {
+    if (!isHydrated) return;
+    const state = useNearbySessionStore.getState();
+    if (!state.role || !state.activeSession?.id) return;
+    warmupSocketServer();
+    void revalidateSessionOnForeground();
+  }, [isHydrated]);
 
   const value = useMemo(
     () => ({ joinSession, leaveSession, createRoom, stopRoom, joinByCode }),

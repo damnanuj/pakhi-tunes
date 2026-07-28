@@ -50,6 +50,7 @@ import UpNextSheet from "../components/UpNextSheet";
 import FavoriteButton from "src/features/favorites/components/FavoriteButton";
 import DownloadButton from "src/features/Downloads/components/DownloadButton";
 import ListenerCountBadge from "src/features/NearbySession/components/ListenerCountBadge";
+import HostReconnectingBanner from "src/features/NearbySession/components/HostReconnectingBanner";
 import { useNearbySessionActions } from "src/features/NearbySession/providers/NearbySessionProvider";
 import { useNearbySessionStore } from "src/features/NearbySession/store/nearbySessionStore";
 import {
@@ -554,6 +555,11 @@ export default function FullPlayerPage() {
         showSettings={false}
         rightContent={headerRightContent}
       />
+      {isListener ? (
+        <YStack px={scale(20)} pt={verticalScale(8)}>
+          <HostReconnectingBanner />
+        </YStack>
+      ) : null}
 
       <YStack
         flex={1}

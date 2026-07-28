@@ -27,6 +27,7 @@ function applyPrivateSessionSnapshot(session: NearbySession) {
     listenerCount: session.listenerCount,
     roomListeners: session.listeners ?? [],
     roomQueue: session.queue ?? [],
+    isHostConnected: session.hostConnected !== false,
   });
   syncRoomQueue(session.queue ?? []);
   applyListenersUpdate({
@@ -107,6 +108,7 @@ export async function refreshPrivateRoomState(): Promise<void> {
     const result = await sessionSocketService.emitHostStart(session.id);
     if (result.ok) {
       applyHostStartAck(result);
+      useNearbySessionStore.getState().setIsHostConnected(true);
     }
     useNearbySessionStore.getState().setIsConnected(true);
     return;

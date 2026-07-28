@@ -58,6 +58,8 @@ export type NearbySession = {
   queue?: SessionQueueTrack[];
   visibility?: "nearby" | "private";
   roomCode?: string | null;
+  hostConnected?: boolean;
+  hostLastSeenAt?: string | null;
   distanceMeters?: number;
   updatedAt?: string;
 };

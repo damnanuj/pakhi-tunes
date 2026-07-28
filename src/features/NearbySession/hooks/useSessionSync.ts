@@ -99,9 +99,11 @@ export function useSessionSync() {
         activeSession: liveSession,
         hostName: liveSession.hostName,
         isConnected: true,
+        isHostConnected: liveSession.hostConnected !== false,
         listenerCount: liveSession.listenerCount,
         roomListeners: liveSession.listeners ?? [],
         roomQueue: liveSession.queue ?? [],
+        roomCode: liveSession.roomCode ?? null,
       });
 
       if (sessionHasPlayableTrack(liveSession)) {
@@ -208,6 +210,14 @@ export function useSessionSync() {
         if (left) appToast.info("The host ended this session");
       });
     };
+    const onHostConnection = (payload: {
+      connected?: boolean;
+      sessionId?: string;
+    }) => {
+      const connected = payload?.connected !== false;
+      useNearbySessionStore.getState().setIsHostConnected(connected);
+      // Soft status only — do not tear down. Sweeper emits session:ended later.
+    };
 
     sessionSocketService.on("connect", onConnect);
     sessionSocketService.on("disconnect", onDisconnect);
@@ -219,6 +229,7 @@ export function useSessionSync() {
     sessionSocketService.on("session:listenerCount", onListenerCount);
     sessionSocketService.on("session:listeners", onListeners);
     sessionSocketService.on("session:ended", onEnded);
+    sessionSocketService.on("session:hostConnection", onHostConnection);
 
     return () => {
       sessionSocketService.off("connect", onConnect);
@@ -231,6 +242,7 @@ export function useSessionSync() {
       sessionSocketService.off("session:listenerCount", onListenerCount);
       sessionSocketService.off("session:listeners", onListeners);
       sessionSocketService.off("session:ended", onEnded);
+      sessionSocketService.off("session:hostConnection", onHostConnection);
     };
   }, [role]);
 
