@@ -9,6 +9,8 @@ export const endpoints = {
   songs: {
     search: "/songs/search",
     item: (id: string) => `/songs/${encodeURIComponent(id)}`,
+    suggestions: (id: string) =>
+      `/songs/${encodeURIComponent(id)}/suggestions`,
   },
   auth: {
     register: "/auth/register",

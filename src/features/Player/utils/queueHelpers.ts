@@ -41,6 +41,9 @@ export function sourcesMatch(
   if (a.type === "history" && b.type === "history") return true;
   if (a.type === "playlist" && b.type === "playlist") return a.id === b.id;
   if (a.type === "search" && b.type === "search") return true;
+  if (a.type === "recommendations" && b.type === "recommendations") {
+    return a.seedSongId === b.seedSongId;
+  }
   return false;
 }
 
@@ -73,6 +76,8 @@ export function getQueueSourceLabel(source: QueueSource | null): string {
       return source.name || "Playlist";
     case "search":
       return "";
+    case "recommendations":
+      return "Radio";
     default:
       return "Your library";
   }
@@ -80,6 +85,35 @@ export function getQueueSourceLabel(source: QueueSource | null): string {
 
 export function shouldShowQueueSourceLabel(source: QueueSource | null): boolean {
   return source?.type !== "search";
+}
+
+/** Sources that already own a multi-song queue and must not be replaced by radio. */
+export function isCuratedMultiSongSource(source: QueueSource | null): boolean {
+  if (!source) return false;
+  return (
+    source.type === "album" ||
+    source.type === "artist" ||
+    source.type === "genre" ||
+    source.type === "playlist" ||
+    source.type === "favorites" ||
+    source.type === "history" ||
+    source.type === "newReleases"
+  );
+}
+
+export function shouldAutoRecommendForQueue(state: {
+  queue: ArtistSong[];
+  queueSource: QueueSource | null;
+}): boolean {
+  const { queue, queueSource } = state;
+
+  if (isCuratedMultiSongSource(queueSource) && queue.length > 1) {
+    return false;
+  }
+
+  if (queue.length <= 1) return true;
+  if (queueSource?.type === "search") return true;
+  return false;
 }
 
 export function shuffleArray<T>(items: T[]): T[] {

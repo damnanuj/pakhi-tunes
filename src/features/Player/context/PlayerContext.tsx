@@ -71,6 +71,7 @@ import {
   endPresenceIfBackgroundAndNotPlaying,
   endPresenceSession,
 } from "src/features/presence/utils/presenceHeartbeatCoordinator";
+import { useAutoRecommendationQueue } from "../hooks/useAutoRecommendationQueue";
 
 type PlayerContextValue = {
   playSong: (song: ArtistSong) => Promise<void>;
@@ -226,6 +227,8 @@ function PlayerEventBridge() {
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const playRequestGenerationRef = useRef(0);
   const historyRecordedForTrackIdRef = useRef<string | null>(null);
+
+  useAutoRecommendationQueue();
 
   const resetNativePlayer = useCallback(async () => {
     resetPositionSyncSuspension();
