@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { getSongSuggestions } from "src/services";
+import { getAllSongSuggestions } from "src/services";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import { isListenerMode } from "src/features/NearbySession/store/nearbySessionStore";
 import { usePlayerStore } from "../store/playerStore";
@@ -9,8 +9,7 @@ import {
   shuffleQueueKeepingCurrent,
 } from "../utils/queueHelpers";
 import {
-  DEFAULT_SUGGESTIONS_LIMIT,
-  songSuggestionsQueryKey,
+  allSongSuggestionsQueryKey,
   SONG_SUGGESTIONS_STALE_MS,
 } from "./useSongSuggestions";
 
@@ -75,12 +74,8 @@ export function useAutoRecommendationQueue() {
     void (async () => {
       try {
         const suggestions = await queryClient.fetchQuery({
-          queryKey: songSuggestionsQueryKey(seedId, DEFAULT_SUGGESTIONS_LIMIT),
-          queryFn: () =>
-            getSongSuggestions({
-              songId: seedId,
-              limit: DEFAULT_SUGGESTIONS_LIMIT,
-            }),
+          queryKey: allSongSuggestionsQueryKey(seedId),
+          queryFn: () => getAllSongSuggestions(seedId),
           staleTime: SONG_SUGGESTIONS_STALE_MS,
         });
 

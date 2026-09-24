@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Pressable } from "react-native";
 import { Dialog, Button, YStack, XStack } from "tamagui";
 import { Check } from "@tamagui/lucide-icons";
@@ -18,7 +18,10 @@ import {
 import themeColors from "src/utils/theme/colors";
 import { useDismissOnBack } from "src/hooks/useDismissOnBack";
 import type { DownloadQuality } from "../types/download.types";
-import { DOWNLOAD_QUALITY_OPTIONS } from "../types/download.types";
+import {
+  DEFAULT_DOWNLOAD_QUALITY,
+  DOWNLOAD_QUALITY_OPTIONS,
+} from "../types/download.types";
 
 interface DownloadQualityDialogProps {
   open: boolean;
@@ -36,9 +39,15 @@ export default function DownloadQualityDialog({
   confirmDisabled = false,
 }: DownloadQualityDialogProps) {
   const [selectedQuality, setSelectedQuality] =
-    useState<DownloadQuality>("160kbps");
+    useState<DownloadQuality>(DEFAULT_DOWNLOAD_QUALITY);
 
   useDismissOnBack(open, () => onOpenChange(false));
+
+  useEffect(() => {
+    if (open) {
+      setSelectedQuality(DEFAULT_DOWNLOAD_QUALITY);
+    }
+  }, [open]);
 
   const handleConfirm = useCallback(() => {
     onConfirm(selectedQuality);

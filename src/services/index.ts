@@ -5,5 +5,10 @@ export { getNewReleases } from "./newReleases.service";
 export { getAlbumSongs } from "./albumSongs.service";
 export { getSongSearch } from "./songSearch.service";
 export { getSongById } from "./songDetail.service";
-export { getSongSuggestions } from "./songSuggestions.service";
+export {
+  getAllSongSuggestions,
+  getSongSuggestions,
+  DEFAULT_SUGGESTIONS_LIMIT,
+  SUGGESTIONS_MAX_LIMIT,
+} from "./songSuggestions.service";
 

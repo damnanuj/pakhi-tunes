@@ -22,11 +22,13 @@ export type DownloadProgress = {
   status: DownloadStatus;
 };
 
+export const DEFAULT_DOWNLOAD_QUALITY: DownloadQuality = "320kbps";
+
 export const DOWNLOAD_QUALITY_OPTIONS: {
   quality: DownloadQuality;
   label: string;
 }[] = [
-  { quality: "96kbps", label: "Low" },
-  { quality: "160kbps", label: "Medium" },
   { quality: "320kbps", label: "High" },
+  { quality: "160kbps", label: "Medium" },
+  { quality: "96kbps", label: "Low" },
 ];

@@ -1,9 +1,9 @@
 import type { ArtistSong } from "./artistSongs.types";
+import type { Pagination, PaginationParams } from "./pagination.types";
 
-export interface SongSuggestionsData {
+export interface SongSuggestionsData extends Pagination {
   seedSongId: string;
   results: ArtistSong[];
-  count: number;
 }
 
 export interface SongSuggestionsResponse {
@@ -12,7 +12,16 @@ export interface SongSuggestionsResponse {
   isSuccess: boolean;
 }
 
-export interface SongSuggestionsParams {
+export interface SongSuggestionsParams extends PaginationParams {
   songId: string;
-  limit?: number;
+}
+
+export interface SongSuggestionsPage {
+  seedSongId: string;
+  results: ArtistSong[];
+  count: number;
+  currentPage: number;
+  totalPages: number;
+  next: string | null;
+  previous: string | null;
 }
