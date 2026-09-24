@@ -1,8 +1,19 @@
 import type { ArtistSong } from "./artistSongs.types";
 import type { Pagination, PaginationParams } from "./pagination.types";
+import type { NewReleaseAlbumItem } from "./newReleases.types";
+
+export interface SearchArtistItem {
+  id: string;
+  encrypted_id: string;
+  name: string;
+  image: string;
+  type?: "artist";
+}
 
 export interface SongSearchData extends Pagination {
   results: ArtistSong[];
+  albums?: NewReleaseAlbumItem[];
+  artists?: SearchArtistItem[];
 }
 
 export interface SongSearchResponse {

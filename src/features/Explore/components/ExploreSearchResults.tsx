@@ -1,4 +1,4 @@
-import { memo, useCallback } from "react";
+import { memo, useCallback, useMemo } from "react";
 import { FlatList, ListRenderItem } from "react-native";
 import { YStack } from "tamagui";
 import {
@@ -11,6 +11,8 @@ import MyText from "src/components/MyText";
 import ConnectionErrorState from "src/components/ConnectionErrorState";
 import ListFooterSpinner from "src/components/ListFooterSpinner";
 import SongListItem from "src/features/ArtistSongs/components/SongListItem";
+import SearchAlbumsRow from "./SearchAlbumsRow";
+import SearchArtistsRow from "./SearchArtistsRow";
 import SearchPageSkeleton from "../skeletons/SearchPageSkeleton";
 import {
   useConnectionErrorProps,
@@ -55,6 +57,7 @@ function ExploreSearchResults({
 
   const {
     items: songs,
+    firstPage,
     isLoading,
     isFetching,
     isError,
@@ -75,6 +78,9 @@ function ExploreSearchResults({
     pageSize: PAGE_SIZE,
     enabled: debouncedQuery.length > 0,
   });
+
+  const albums = firstPage?.data.albums ?? [];
+  const artists = firstPage?.data.artists ?? [];
 
   const { refreshControl } = useRefreshable({
     onRefresh: async () => {
@@ -100,13 +106,47 @@ function ExploreSearchResults({
     []
   );
 
+  const listHeader = useMemo(() => {
+    const hasAlbums = albums.length > 0;
+    const hasArtists = artists.length > 0;
+    const hasSongs = songs.length > 0;
+
+    if (!hasAlbums && !hasArtists && !hasSongs) {
+      return null;
+    }
+
+    return (
+      <YStack>
+        <SearchAlbumsRow albums={albums} />
+        <SearchArtistsRow artists={artists} />
+        {hasSongs ? (
+          <YStack px={scale(20)} pb={verticalScale(8)}>
+            <MyText
+              fontSize={moderateScale(18)}
+              fontWeight="600"
+              color={themeColors.dark.onSurface}
+            >
+              Songs
+            </MyText>
+          </YStack>
+        ) : null}
+      </YStack>
+    );
+  }, [albums, artists, songs.length]);
+
+  const listFooter = isLoadingMore ? <ListFooterSpinner /> : null;
+
   const showSkeleton =
     isDebouncing || isLoading || (isFetching && songs.length === 0);
 
-  const showNoResults =
-    !showSkeleton && !isError && debouncedQuery.length > 0 && songs.length === 0;
+  const hasAnyResults =
+    songs.length > 0 || albums.length > 0 || artists.length > 0;
 
-  const listFooter = isLoadingMore ? <ListFooterSpinner /> : null;
+  const showNoResults =
+    !showSkeleton &&
+    !isError &&
+    debouncedQuery.length > 0 &&
+    !hasAnyResults;
 
   const { onScroll, onEndReached } = useScrollEndReached(fetchNextPage, {
     enabled: hasNextPage,
@@ -117,7 +157,7 @@ function ExploreSearchResults({
     return <SearchPageSkeleton />;
   }
 
-  if (isError && songs.length === 0) {
+  if (isError && !hasAnyResults) {
     return (
       <ConnectionErrorState
         {...connectionErrorProps}
@@ -145,6 +185,7 @@ function ExploreSearchResults({
       data={songs}
       keyExtractor={keyExtractor}
       renderItem={renderItem}
+      ListHeaderComponent={listHeader}
       ListFooterComponent={listFooter}
       refreshControl={refreshControl}
       onScroll={onScroll}
