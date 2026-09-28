@@ -29,7 +29,7 @@ function hasRadioQueueForSeed(
 
 /**
  * When the user plays a single song (search, notification, etc.), populate
- * Up Next with JioSaavn radio suggestions seeded by that track.
+ * Up Next with radio suggestions seeded by that track.
  *
  * Does not override multi-song curated queues (album / artist / genre /
  * playlist / favorites / history / newReleases).

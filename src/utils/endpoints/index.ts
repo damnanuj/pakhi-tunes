@@ -5,6 +5,8 @@ export const endpoints = {
   artistSongs: (artistId: string) => `/top-artists/${artistId}/songs`,
   newReleases: "/new-releases",
   albumSongs: (albumId: string) => `/albums/${albumId}/songs`,
+  catalogPlaylistSongs: (playlistId: string) =>
+    `/catalog-playlists/${encodeURIComponent(playlistId)}/songs`,
   songSearch: "/songs/search",
   songs: {
     search: "/songs/search",

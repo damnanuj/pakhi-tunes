@@ -4,6 +4,7 @@ export { getArtistSongs } from "./artistSongs.service";
 export { getNewReleases } from "./newReleases.service";
 export { getAlbumSongs } from "./albumSongs.service";
 export { getSongSearch } from "./songSearch.service";
+export { getCatalogPlaylistSongs } from "./catalogPlaylist.service";
 export { getSongById } from "./songDetail.service";
 export {
   getAllSongSuggestions,

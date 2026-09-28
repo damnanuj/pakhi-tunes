@@ -1,19 +1,14 @@
 import { memo, useCallback, useMemo } from "react";
 import { FlatList, ListRenderItem } from "react-native";
 import { YStack } from "tamagui";
-import {
-  scale,
-  verticalScale,
-  moderateScale,
-} from "src/utils/functions/dimensions";
+import { scale, verticalScale, moderateScale } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
 import MyText from "src/components/MyText";
 import ConnectionErrorState from "src/components/ConnectionErrorState";
 import ListFooterSpinner from "src/components/ListFooterSpinner";
 import SongListItem from "src/features/ArtistSongs/components/SongListItem";
-import SearchAlbumsRow from "./SearchAlbumsRow";
-import SearchArtistsRow from "./SearchArtistsRow";
 import SearchPageSkeleton from "../skeletons/SearchPageSkeleton";
+import SearchResultsHeader from "./SearchResultsHeader";
 import {
   useConnectionErrorProps,
   useRefreshable,
@@ -79,8 +74,21 @@ function ExploreSearchResults({
     enabled: debouncedQuery.length > 0,
   });
 
+  const top = firstPage?.data.top ?? [];
   const albums = firstPage?.data.albums ?? [];
   const artists = firstPage?.data.artists ?? [];
+  const playlists = firstPage?.data.playlists ?? [];
+  const topSongIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const item of top) {
+      if (item.type === "song") ids.add(item.id);
+    }
+    return ids;
+  }, [top]);
+  const listSongs = useMemo(
+    () => songs.filter((song) => !topSongIds.has(song.id)),
+    [songs, topSongIds]
+  );
 
   const { refreshControl } = useRefreshable({
     onRefresh: async () => {
@@ -102,51 +110,37 @@ function ExploreSearchResults({
 
   const keyExtractor = useCallback(
     (item: ArtistSong, index: number) =>
-      `${item.encrypted_id ?? item.id}-${index}`,
+      `${item.id || item.encrypted_id}-${index}`,
     []
   );
 
-  const listHeader = useMemo(() => {
-    const hasAlbums = albums.length > 0;
-    const hasArtists = artists.length > 0;
-    const hasSongs = songs.length > 0;
-
-    if (!hasAlbums && !hasArtists && !hasSongs) {
-      return null;
-    }
-
-    return (
-      <YStack>
-        <SearchAlbumsRow albums={albums} />
-        <SearchArtistsRow artists={artists} />
-        {hasSongs ? (
-          <YStack px={scale(20)} pb={verticalScale(8)}>
-            <MyText
-              fontSize={moderateScale(18)}
-              fontWeight="600"
-              color={themeColors.dark.onSurface}
-            >
-              Songs
-            </MyText>
-          </YStack>
-        ) : null}
-      </YStack>
-    );
-  }, [albums, artists, songs.length]);
+  const listHeader = useMemo(
+    () => (
+      <SearchResultsHeader
+        top={top}
+        artists={artists}
+        albums={albums}
+        playlists={playlists}
+        showSongsTitle={listSongs.length > 0}
+      />
+    ),
+    [albums, artists, listSongs.length, playlists, top]
+  );
 
   const listFooter = isLoadingMore ? <ListFooterSpinner /> : null;
 
   const showSkeleton =
-    isDebouncing || isLoading || (isFetching && songs.length === 0);
+    isDebouncing || isLoading || (isFetching && songs.length === 0 && top.length === 0);
 
   const hasAnyResults =
-    songs.length > 0 || albums.length > 0 || artists.length > 0;
+    songs.length > 0 ||
+    albums.length > 0 ||
+    artists.length > 0 ||
+    playlists.length > 0 ||
+    top.length > 0;
 
   const showNoResults =
-    !showSkeleton &&
-    !isError &&
-    debouncedQuery.length > 0 &&
-    !hasAnyResults;
+    !showSkeleton && !isError && debouncedQuery.length > 0 && !hasAnyResults;
 
   const { onScroll, onEndReached } = useScrollEndReached(fetchNextPage, {
     enabled: hasNextPage,
@@ -182,7 +176,7 @@ function ExploreSearchResults({
 
   return (
     <FlatList
-      data={songs}
+      data={listSongs}
       keyExtractor={keyExtractor}
       renderItem={renderItem}
       ListHeaderComponent={listHeader}
@@ -192,9 +186,9 @@ function ExploreSearchResults({
       scrollEventThrottle={16}
       onEndReached={onEndReached}
       onEndReachedThreshold={0.4}
-      initialNumToRender={PAGE_SIZE}
-      maxToRenderPerBatch={PAGE_SIZE}
-      windowSize={5}
+      initialNumToRender={12}
+      maxToRenderPerBatch={8}
+      windowSize={7}
       removeClippedSubviews
       contentContainerStyle={{
         paddingBottom: scrollBottomPadding,
