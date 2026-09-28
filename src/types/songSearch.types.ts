@@ -46,7 +46,6 @@ export interface SearchTopPlaylist extends SearchEntityFields {
 
 export interface SearchTopSong extends SearchEntityFields {
   type: "song";
-  song: ArtistSong;
 }
 
 export type SearchTopItem =

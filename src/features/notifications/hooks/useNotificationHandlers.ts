@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import { Platform } from "react-native";
 import {
-  AuthorizationStatus,
   getInitialNotification,
   getMessaging,
   getToken,
@@ -9,7 +8,6 @@ import {
   onMessage,
   onNotificationOpenedApp,
   registerDeviceForRemoteMessages,
-  requestPermission,
   type FirebaseMessagingTypes,
 } from "@react-native-firebase/messaging";
 import { useRouter } from "expo-router";
@@ -117,28 +115,6 @@ export function useNotificationHandlers(enabled: boolean) {
       unsubscribeOpened();
     };
   }, [enabled, onOpen]);
-}
-
-/**
- * Request notification permission. Returns whether permission is granted.
- */
-export async function requestNotificationPermission(): Promise<boolean> {
-  const messaging = getFcmMessaging();
-  const authStatus = await requestPermission(messaging);
-
-  if (Platform.OS === "ios") {
-    return (
-      authStatus === AuthorizationStatus.AUTHORIZED ||
-      authStatus === AuthorizationStatus.PROVISIONAL
-    );
-  }
-
-  return (
-    authStatus === AuthorizationStatus.AUTHORIZED ||
-    authStatus === AuthorizationStatus.PROVISIONAL ||
-    // On older Android, permission is granted by default
-    Platform.OS === "android"
-  );
 }
 
 /**

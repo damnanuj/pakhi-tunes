@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Image, Pressable } from "react-native";
 import { YStack } from "tamagui";
 import {
@@ -21,7 +22,7 @@ interface SearchEntityRowProps {
   onPress: () => void;
 }
 
-export default function SearchEntityRow({
+function SearchEntityRow({
   name,
   subtitle,
   image,
@@ -79,3 +80,5 @@ export default function SearchEntityRow({
     </Pressable>
   );
 }
+
+export default memo(SearchEntityRow);

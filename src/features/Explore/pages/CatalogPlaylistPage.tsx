@@ -177,7 +177,7 @@ export default function CatalogPlaylistPage() {
           scrollEventThrottle={16}
           onEndReached={onEndReached}
           onEndReachedThreshold={0.4}
-          initialNumToRender={12}
+          initialNumToRender={8}
           maxToRenderPerBatch={8}
           windowSize={5}
           removeClippedSubviews

@@ -1,5 +1,6 @@
 import { memo, useCallback, useMemo } from "react";
 import { FlatList, ListRenderItem } from "react-native";
+import { useRouter } from "expo-router";
 import { YStack } from "tamagui";
 import { scale, verticalScale, moderateScale } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
@@ -8,7 +9,8 @@ import ConnectionErrorState from "src/components/ConnectionErrorState";
 import ListFooterSpinner from "src/components/ListFooterSpinner";
 import SongListItem from "src/features/ArtistSongs/components/SongListItem";
 import SearchPageSkeleton from "../skeletons/SearchPageSkeleton";
-import SearchResultsHeader from "./SearchResultsHeader";
+import SearchEntityRow from "./SearchEntityRow";
+import SearchSectionTitleRow from "./SearchSectionTitleRow";
 import {
   useConnectionErrorProps,
   useRefreshable,
@@ -20,8 +22,17 @@ import { getSongSearch } from "src/services";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import type { SongSearchResponse } from "src/types/songSearch.types";
 import { getNextOffsetFromPagination } from "src/utils/pagination/getNextOffsetFromPagination";
+import {
+  buildSearchListRows,
+  type SearchListRow,
+} from "../utils/searchResultsListModel";
 
 const PAGE_SIZE = 20;
+const LIST_WINDOW = {
+  initialNumToRender: 8,
+  maxToRenderPerBatch: 8,
+  windowSize: 5,
+} as const;
 
 function getItems(res: SongSearchResponse) {
   return res.data.results;
@@ -40,15 +51,13 @@ interface ExploreSearchResultsProps {
 }
 
 function ExploreSearchResults({
-  query,
   debouncedQuery,
 }: ExploreSearchResultsProps) {
+  const router = useRouter();
   const scrollBottomPadding = useScrollBottomInset({
     includeTabBar: true,
     extra: verticalScale(20),
   });
-
-  const isDebouncing = query !== debouncedQuery && query.length > 0;
 
   const {
     items: songs,
@@ -60,6 +69,7 @@ function ExploreSearchResults({
     hasNextPage,
     isLoadingMore,
     refetch,
+    isPlaceholderData,
   } = useInfinitePaginatedQuery<ArtistSong, SongSearchResponse>({
     queryKey: ["songSearch", debouncedQuery, PAGE_SIZE],
     queryFn: ({ pageParam }) =>
@@ -71,23 +81,56 @@ function ExploreSearchResults({
     getItems,
     getNextPageParam,
     pageSize: PAGE_SIZE,
+    getItemKey: (song) => song.id,
     enabled: debouncedQuery.length > 0,
+    keepPreviousData: true,
   });
 
   const top = firstPage?.data.top ?? [];
   const albums = firstPage?.data.albums ?? [];
   const artists = firstPage?.data.artists ?? [];
   const playlists = firstPage?.data.playlists ?? [];
-  const topSongIds = useMemo(() => {
-    const ids = new Set<string>();
-    for (const item of top) {
-      if (item.type === "song") ids.add(item.id);
-    }
-    return ids;
-  }, [top]);
-  const listSongs = useMemo(
-    () => songs.filter((song) => !topSongIds.has(song.id)),
-    [songs, topSongIds]
+
+  const listRows = useMemo(
+    () =>
+      buildSearchListRows({
+        top,
+        artists,
+        albums,
+        playlists,
+        songs,
+      }),
+    [albums, artists, playlists, songs, top]
+  );
+
+  const openEntity = useCallback(
+    (row: Extract<SearchListRow, { kind: "entity" }>) => {
+      switch (row.target) {
+        case "artist":
+          router.push({
+            pathname: "/explore/artist/[id]",
+            params: { id: row.routeId, name: row.routeName ?? row.name },
+          });
+          break;
+        case "album":
+          router.push({
+            pathname: "/explore/album/[id]",
+            params: { id: row.routeId },
+          });
+          break;
+        case "playlist":
+          router.push({
+            pathname: "/explore/playlist/[id]",
+            params: { id: row.routeId, name: row.routeName ?? row.name },
+          });
+          break;
+        default: {
+          const _exhaustive: never = row.target;
+          return _exhaustive;
+        }
+      }
+    },
+    [router]
   );
 
   const { refreshControl } = useRefreshable({
@@ -103,44 +146,49 @@ function ExploreSearchResults({
     isFetching,
   });
 
-  const renderItem: ListRenderItem<ArtistSong> = useCallback(
-    ({ item }) => <SongListItem song={item} />,
-    []
+  const renderItem: ListRenderItem<SearchListRow> = useCallback(
+    ({ item }) => {
+      switch (item.kind) {
+        case "section":
+          return <SearchSectionTitleRow label={item.label} />;
+        case "entity":
+          return (
+            <SearchEntityRow
+              name={item.name}
+              subtitle={item.subtitle}
+              image={item.image}
+              roundImage={item.roundImage}
+              onPress={() => openEntity(item)}
+            />
+          );
+        case "song":
+          return <SongListItem song={item.song} />;
+        default: {
+          const _exhaustive: never = item;
+          return _exhaustive;
+        }
+      }
+    },
+    [openEntity]
   );
 
-  const keyExtractor = useCallback(
-    (item: ArtistSong, index: number) =>
-      `${item.id || item.encrypted_id}-${index}`,
-    []
-  );
-
-  const listHeader = useMemo(
-    () => (
-      <SearchResultsHeader
-        top={top}
-        artists={artists}
-        albums={albums}
-        playlists={playlists}
-        showSongsTitle={listSongs.length > 0}
-      />
-    ),
-    [albums, artists, listSongs.length, playlists, top]
-  );
+  const keyExtractor = useCallback((item: SearchListRow) => item.key, []);
 
   const listFooter = isLoadingMore ? <ListFooterSpinner /> : null;
 
-  const showSkeleton =
-    isDebouncing || isLoading || (isFetching && songs.length === 0 && top.length === 0);
+  const hasAnyResults = listRows.length > 0;
 
-  const hasAnyResults =
-    songs.length > 0 ||
-    albums.length > 0 ||
-    artists.length > 0 ||
-    playlists.length > 0 ||
-    top.length > 0;
+  const showSkeleton =
+    !hasAnyResults &&
+    !isPlaceholderData &&
+    (isLoading || (isFetching && debouncedQuery.length > 0));
 
   const showNoResults =
-    !showSkeleton && !isError && debouncedQuery.length > 0 && !hasAnyResults;
+    !showSkeleton &&
+    !isError &&
+    debouncedQuery.length > 0 &&
+    !hasAnyResults &&
+    !isFetching;
 
   const { onScroll, onEndReached } = useScrollEndReached(fetchNextPage, {
     enabled: hasNextPage,
@@ -176,19 +224,18 @@ function ExploreSearchResults({
 
   return (
     <FlatList
-      data={listSongs}
+      data={listRows}
       keyExtractor={keyExtractor}
       renderItem={renderItem}
-      ListHeaderComponent={listHeader}
       ListFooterComponent={listFooter}
       refreshControl={refreshControl}
       onScroll={onScroll}
       scrollEventThrottle={16}
       onEndReached={onEndReached}
       onEndReachedThreshold={0.4}
-      initialNumToRender={12}
-      maxToRenderPerBatch={8}
-      windowSize={7}
+      initialNumToRender={LIST_WINDOW.initialNumToRender}
+      maxToRenderPerBatch={LIST_WINDOW.maxToRenderPerBatch}
+      windowSize={LIST_WINDOW.windowSize}
       removeClippedSubviews
       contentContainerStyle={{
         paddingBottom: scrollBottomPadding,

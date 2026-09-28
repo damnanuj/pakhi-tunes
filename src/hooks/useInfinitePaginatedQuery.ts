@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, keepPreviousData } from "@tanstack/react-query";
 import {
   resetPaginationGuard,
   useGuardedFetchNextPage,
@@ -37,6 +37,8 @@ export interface UseInfinitePaginatedQueryOptions<TItem, TResponse> {
   getItemKey?: (item: TItem) => string;
   /** How long cached pages stay fresh before refetch (default 5 min). */
   staleTime?: number;
+  /** Keep prior page visible while query key changes (e.g. search debounce). */
+  keepPreviousData?: boolean;
 }
 
 const DEFAULT_STALE_TIME_MS = 5 * 60 * 1000;
@@ -54,6 +56,7 @@ export function useInfinitePaginatedQuery<TItem, TResponse>({
   enabled = true,
   getItemKey,
   staleTime = DEFAULT_STALE_TIME_MS,
+  keepPreviousData: keepPrevious = false,
 }: UseInfinitePaginatedQueryOptions<TItem, TResponse>) {
   const query = useInfiniteQuery({
     queryKey,
@@ -63,6 +66,7 @@ export function useInfinitePaginatedQuery<TItem, TResponse>({
       getNextPageParam(lastPage, allPages),
     enabled,
     staleTime,
+    placeholderData: keepPrevious ? keepPreviousData : undefined,
   });
 
   const pages = query.data?.pages;
@@ -109,5 +113,6 @@ export function useInfinitePaginatedQuery<TItem, TResponse>({
     isLoadingMore,
     hasNextPage: query.hasNextPage,
     refetch,
+    isPlaceholderData: query.isPlaceholderData,
   };
 }

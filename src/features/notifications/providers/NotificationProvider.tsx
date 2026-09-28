@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { AppState, Platform, type AppStateStatus } from "react-native";
 import {
   getMessaging,
   onTokenRefresh,
@@ -8,12 +9,18 @@ import { useGuestStore } from "src/features/guest/store/guestStore";
 import { usePlayback } from "src/features/Player";
 import { getSongById } from "src/services";
 import { appToast } from "src/components/toast/appToastHelpers";
+import NotificationPermissionDialog from "../components/NotificationPermissionDialog";
 import {
   getFcmToken,
-  requestNotificationPermission,
   useNotificationHandlers,
 } from "../hooks/useNotificationHandlers";
 import { registerDeviceToken } from "../services/deviceRegistration";
+import {
+  isNotificationPermissionGranted,
+  markNotificationPromptShown,
+  requestOsNotificationPermission,
+  wasNotificationPromptShown,
+} from "../utils/notificationPermission";
 import {
   getPendingNotificationAction,
   setPendingNotificationAction,
@@ -33,9 +40,11 @@ export default function NotificationProvider({
   const { isAuthenticated, isHydrated: isAuthHydrated, token } = useAuth();
   const isGuestHydrated = useGuestStore((state) => state.isHydrated);
   const [ready, setReady] = useState(false);
+  const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
   const fcmTokenRef = useRef<string | null>(null);
   const registeringRef = useRef(false);
   const playingPendingRef = useRef(false);
+  const closingFromAllowRef = useRef(false);
   const { playSong } = usePlayback();
 
   useNotificationHandlers(ready);
@@ -54,6 +63,20 @@ export default function NotificationProvider({
       registeringRef.current = false;
     }
   };
+
+  const registerFcmTokenIfNeeded = useCallback(async () => {
+    if (fcmTokenRef.current) {
+      await syncToken({ clearUser: !isAuthenticated });
+      return;
+    }
+
+    const fcmToken = await getFcmToken();
+    if (!fcmToken) return;
+
+    fcmTokenRef.current = fcmToken;
+    await syncToken({ clearUser: !isAuthenticated });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
 
   const playPendingSong = async (action: ParsedNotificationAction) => {
     if (playingPendingRef.current) return;
@@ -86,7 +109,42 @@ export default function NotificationProvider({
     }
   };
 
-  // Bootstrap: permission → token → register
+  const handlePermissionPromptNotNow = useCallback(async () => {
+    await markNotificationPromptShown();
+    setShowPermissionPrompt(false);
+  }, []);
+
+  const handlePermissionPromptAllow = useCallback(async () => {
+    closingFromAllowRef.current = true;
+    try {
+      await markNotificationPromptShown();
+      setShowPermissionPrompt(false);
+
+      const granted = await requestOsNotificationPermission();
+      if (granted) {
+        await registerFcmTokenIfNeeded();
+      }
+    } finally {
+      closingFromAllowRef.current = false;
+    }
+  }, [registerFcmTokenIfNeeded]);
+
+  const handlePermissionPromptOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open) {
+        if (closingFromAllowRef.current) {
+          setShowPermissionPrompt(false);
+          return;
+        }
+        void handlePermissionPromptNotNow();
+        return;
+      }
+      setShowPermissionPrompt(true);
+    },
+    [handlePermissionPromptNotNow]
+  );
+
+  // Bootstrap: check permission → optional prompt → token → register
   useEffect(() => {
     if (!isAuthHydrated || !isGuestHydrated) return;
 
@@ -94,18 +152,27 @@ export default function NotificationProvider({
 
     const bootstrap = async () => {
       try {
-        const granted = await requestNotificationPermission();
-        if (!granted || cancelled) {
-          setReady(true);
-          return;
-        }
-
-        const fcmToken = await getFcmToken();
+        const granted = await isNotificationPermissionGranted();
         if (cancelled) return;
 
-        if (fcmToken) {
-          fcmTokenRef.current = fcmToken;
-          await syncToken();
+        if (!granted) {
+          const prompted = await wasNotificationPromptShown();
+          if (!prompted && !cancelled) {
+            setShowPermissionPrompt(true);
+          }
+        }
+
+        const shouldFetchToken =
+          Platform.OS === "android" || granted;
+
+        if (shouldFetchToken) {
+          const fcmToken = await getFcmToken();
+          if (cancelled) return;
+
+          if (fcmToken) {
+            fcmTokenRef.current = fcmToken;
+            await syncToken();
+          }
         }
       } catch (error) {
         console.warn("[notifications] Bootstrap failed", error);
@@ -146,6 +213,24 @@ export default function NotificationProvider({
     return unsubscribe;
   }, [ready, isAuthenticated]);
 
+  // After enabling notifications in system settings, register token if needed
+  useEffect(() => {
+    if (!ready) return;
+
+    const onAppStateChange = (nextState: AppStateStatus) => {
+      if (nextState !== "active") return;
+
+      void (async () => {
+        const granted = await isNotificationPermissionGranted();
+        if (!granted) return;
+        await registerFcmTokenIfNeeded();
+      })();
+    };
+
+    const subscription = AppState.addEventListener("change", onAppStateChange);
+    return () => subscription.remove();
+  }, [ready, registerFcmTokenIfNeeded]);
+
   // Process pending play_song actions after navigation
   useEffect(() => {
     const unsubscribe = subscribePendingNotificationAction((action) => {
@@ -167,5 +252,14 @@ export default function NotificationProvider({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playSong]);
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <NotificationPermissionDialog
+        open={showPermissionPrompt}
+        onOpenChange={handlePermissionPromptOpenChange}
+        onAllow={() => void handlePermissionPromptAllow()}
+      />
+    </>
+  );
 }
