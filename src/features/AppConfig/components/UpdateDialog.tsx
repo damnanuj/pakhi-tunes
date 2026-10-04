@@ -33,6 +33,10 @@ import {
 } from "../utils/normalizeReleaseSections";
 import { openExternalUrl } from "src/utils/linking/openExternalUrl";
 
+/** In-app update prompts open the portfolio project page, not the APK URL. */
+const PAKHI_TUNES_UPDATE_PAGE_URL =
+  "https://www.damnanuj.com/projects/pakhi-tunes";
+
 interface UpdateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -40,7 +44,6 @@ interface UpdateDialogProps {
   message: string;
   latestVersion: string;
   releaseSections: ReleaseSection[];
-  downloadUrl: string;
   forceUpdate: boolean;
 }
 
@@ -128,27 +131,23 @@ function UpdateReleaseNotes({
 
 function UpdateDialogActions({
   forceUpdate,
-  hasDownloadUrl,
   onDownload,
   onCloseApp,
 }: {
   forceUpdate: boolean;
-  hasDownloadUrl: boolean;
   onDownload: () => void;
   onCloseApp: () => void;
 }) {
   if (forceUpdate) {
     return (
       <YStack gap={verticalScale(12)} width="100%">
-        {hasDownloadUrl ? (
-          <AlertDialog.Action asChild onPress={onDownload}>
-            <Button width="100%" bg={themeColors.dark.accent} size="$4">
-              <MyText color={themeColors.dark.onAccent} numberOfLines={1}>
-                Download
-              </MyText>
-            </Button>
-          </AlertDialog.Action>
-        ) : null}
+        <AlertDialog.Action asChild onPress={onDownload}>
+          <Button width="100%" bg={themeColors.dark.accent} size="$4">
+            <MyText color={themeColors.dark.onAccent} numberOfLines={1}>
+              Download
+            </MyText>
+          </Button>
+        </AlertDialog.Action>
         <Button width="100%" bg="#dc2626" size="$4" onPress={onCloseApp}>
           <MyText color="#FFFFFF" numberOfLines={1}>
             Close app
@@ -167,15 +166,13 @@ function UpdateDialogActions({
           </MyText>
         </Button>
       </AlertDialog.Cancel>
-      {hasDownloadUrl ? (
-        <AlertDialog.Action asChild onPress={onDownload}>
-          <Button flex={1} bg={themeColors.dark.accent} size="$4">
-            <MyText color={themeColors.dark.onAccent} numberOfLines={1}>
-              Download
-            </MyText>
-          </Button>
-        </AlertDialog.Action>
-      ) : null}
+      <AlertDialog.Action asChild onPress={onDownload}>
+        <Button flex={1} bg={themeColors.dark.accent} size="$4">
+          <MyText color={themeColors.dark.onAccent} numberOfLines={1}>
+            Download
+          </MyText>
+        </Button>
+      </AlertDialog.Action>
     </XStack>
   );
 }
@@ -187,14 +184,12 @@ export default function UpdateDialog({
   message,
   latestVersion,
   releaseSections,
-  downloadUrl,
   forceUpdate,
 }: UpdateDialogProps) {
   const { height: windowHeight } = useWindowDimensions();
   const trimmedTitle = title.trim();
   const trimmedMessage = message.trim();
   const trimmedVersion = latestVersion.trim();
-  const hasDownloadUrl = hasNonEmptyText(downloadUrl);
   const hasTitle = hasNonEmptyText(trimmedTitle);
   const hasMessage = hasNonEmptyText(trimmedMessage);
   const hasVersion = hasNonEmptyText(trimmedVersion);
@@ -222,8 +217,7 @@ export default function UpdateDialog({
   };
 
   const handleDownload = async () => {
-    if (!hasDownloadUrl) return;
-    await openExternalUrl(downloadUrl);
+    await openExternalUrl(PAKHI_TUNES_UPDATE_PAGE_URL);
   };
 
   const handleCloseApp = () => {
@@ -323,7 +317,6 @@ export default function UpdateDialog({
 
           <UpdateDialogActions
             forceUpdate={forceUpdate}
-            hasDownloadUrl={hasDownloadUrl}
             onDownload={() => void handleDownload()}
             onCloseApp={handleCloseApp}
           />

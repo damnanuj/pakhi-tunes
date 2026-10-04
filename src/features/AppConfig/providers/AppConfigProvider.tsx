@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { AppState, type AppStateStatus } from "react-native";
 import UpdateDialog from "../components/UpdateDialog";
 import { useAppConfig } from "../hooks/useAppConfig";
 
@@ -41,6 +42,17 @@ export default function AppConfigProvider({ children }: AppConfigProviderProps) 
     appConfig?.latestVersion,
   ]);
 
+  useEffect(() => {
+    const onAppStateChange = (nextState: AppStateStatus) => {
+      if (nextState === "active") {
+        setSoftUpdateDismissed(false);
+      }
+    };
+
+    const subscription = AppState.addEventListener("change", onAppStateChange);
+    return () => subscription.remove();
+  }, []);
+
   const shouldShowDialog = useMemo(() => {
     if (!appConfig) return false;
     if (appConfig.forceUpdate) return true;
@@ -66,7 +78,6 @@ export default function AppConfigProvider({ children }: AppConfigProviderProps) 
           message={appConfig.message}
           latestVersion={appConfig.latestVersion}
           releaseSections={appConfig.releaseSections}
-          downloadUrl={appConfig.downloadUrl}
           forceUpdate={appConfig.forceUpdate}
         />
       ) : null}
