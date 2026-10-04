@@ -12,7 +12,8 @@ export default function HomeGreeting() {
   return (
     <XStack px={scale(20)} width="100%">
       <MyText
-        fontSize={moderateScale(20)}
+        fontSize={moderateScale(16)}
+        lineHeight={moderateScale(20)}
         weight="700"
         color={themeColors.dark.onSurface}
       >

@@ -14,6 +14,15 @@ import { hasQueue, isSongInQueue, canBootstrapQueue, isSongImmediatelyNext } fro
 import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
 import type { ArtistSong } from "src/types/artistSongs.types";
 
+const NO_QUEUE: ArtistSong[] = [];
+
+// Stable selectors so closed rows do not re-render on every playback update.
+const selectNoQueue = () => NO_QUEUE;
+const selectNoQueueSource = () => null;
+const selectNoQueueIndex = () => -1;
+const selectNoActiveTrack = () => null;
+const selectNoActiveArtistSong = () => null;
+
 export type SongOptionsDownloadStatus =
   | "idle"
   | "downloaded"
@@ -91,11 +100,19 @@ export function useSongOptionsActions(
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [isSubmittingQuality, setIsSubmittingQuality] = useState(false);
 
-  const queue = usePlayerStore((s) => s.queue);
-  const queueSource = usePlayerStore((s) => s.queueSource);
-  const queueIndex = usePlayerStore((s) => s.queueIndex);
-  const activeTrack = usePlayerStore((s) => s.activeTrack);
-  const activeArtistSong = usePlayerStore((s) => s.activeArtistSong);
+  const queue = usePlayerStore(menuOpen ? (s) => s.queue : selectNoQueue);
+  const queueSource = usePlayerStore(
+    menuOpen ? (s) => s.queueSource : selectNoQueueSource
+  );
+  const queueIndex = usePlayerStore(
+    menuOpen ? (s) => s.queueIndex : selectNoQueueIndex
+  );
+  const activeTrack = usePlayerStore(
+    menuOpen ? (s) => s.activeTrack : selectNoActiveTrack
+  );
+  const activeArtistSong = usePlayerStore(
+    menuOpen ? (s) => s.activeArtistSong : selectNoActiveArtistSong
+  );
   const activeTrackId = activeTrack?.id;
   const addSongToQueue = usePlayerStore((s) => s.addSongToQueue);
   const playSongNext = usePlayerStore((s) => s.playSongNext);

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { Platform } from "react-native";
+import { AppState, NativeModules, Platform } from "react-native";
 import {
   getInitialNotification,
   getMessaging,
@@ -11,13 +11,17 @@ import {
   type FirebaseMessagingTypes,
 } from "@react-native-firebase/messaging";
 import { useRouter } from "expo-router";
-import { appToast } from "src/components/toast/appToastHelpers";
 import {
   parseNotificationData,
   routeNotificationAction,
 } from "../utils/notificationRouter";
 import { isDuplicateNotification } from "../utils/notificationDedupe";
 import { setPendingNotificationAction } from "../utils/pendingNotificationAction";
+import {
+  actionFromDisplayedNotification,
+  consumeQueuedNotificationPress,
+  displaySystemNotification,
+} from "../utils/systemNotification";
 import type { ParsedNotificationAction } from "../types";
 
 function getFcmMessaging() {
@@ -77,7 +81,21 @@ export function useNotificationHandlers(enabled: boolean) {
 
     const messaging = getFcmMessaging();
 
-    // Foreground messages — show in-app toast (system banner suppressed on iOS by default)
+    const openDisplayedNotification = (
+      notification:
+        | {
+            data?: Record<string, string | number | object> | null;
+            title?: string | null;
+            body?: string | null;
+          }
+        | undefined
+    ) => {
+      const action = actionFromDisplayedNotification(notification);
+      if (!action) return;
+      void handleNotificationOpen(action, router);
+    };
+
+    // Foreground FCM is not shown by Android. Post it to the notification panel.
     const unsubscribeForeground = onMessage(messaging, async (remoteMessage) => {
       const action = remoteMessageToAction(remoteMessage);
       if (!action) return;
@@ -86,15 +104,31 @@ export function useNotificationHandlers(enabled: boolean) {
         return;
       }
 
-      const title = action.title ?? "Pakhi Tunes";
-      const body = action.body ?? "";
+      try {
+        await displaySystemNotification(remoteMessage);
+      } catch (error) {
+        console.warn("[notifications] Failed to display system notification", error);
+      }
+    });
 
-      appToast.show({
-        variant: "info",
-        message: body ? `${title}\n${body}` : title,
-        icon: "check",
-        durationMs: 5000,
+    let unsubscribePress = () => {};
+    if (NativeModules.NotifeeApiModule != null) {
+      const notifee = require("@notifee/react-native") as typeof import("@notifee/react-native");
+      unsubscribePress = notifee.default.onForegroundEvent(({ type, detail }) => {
+        if (type !== notifee.EventType.PRESS) return;
+        openDisplayedNotification(detail.notification);
       });
+    }
+
+    const consumeQueuedPress = () => {
+      void consumeQueuedNotificationPress().then((queued) => {
+        if (!queued) return;
+        openDisplayedNotification(queued);
+      });
+    };
+    consumeQueuedPress();
+    const appStateSubscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") consumeQueuedPress();
     });
 
     // App opened from background via notification tap
@@ -113,8 +147,10 @@ export function useNotificationHandlers(enabled: boolean) {
     return () => {
       unsubscribeForeground();
       unsubscribeOpened();
+      unsubscribePress();
+      appStateSubscription.remove();
     };
-  }, [enabled, onOpen]);
+  }, [enabled, onOpen, router]);
 }
 
 /**

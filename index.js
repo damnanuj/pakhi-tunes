@@ -19,4 +19,13 @@ try {
   console.warn("[notifications] Failed to register background handler", error);
 }
 
+try {
+  const {
+    registerNotificationBackgroundHandler,
+  } = require("./src/features/notifications/utils/systemNotification");
+  registerNotificationBackgroundHandler();
+} catch (error) {
+  console.warn("[notifications] Failed to register notification press handler", error);
+}
+
 import "expo-router/entry";
