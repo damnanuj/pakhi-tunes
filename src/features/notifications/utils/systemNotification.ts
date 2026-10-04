@@ -45,6 +45,19 @@ function stringData(
   return out;
 }
 
+function imageUrlFromMessage(
+  remoteMessage: FirebaseMessagingTypes.RemoteMessage
+): string | undefined {
+  const dataUrl = remoteMessage.data?.imageUrl;
+  const androidUrl = remoteMessage.notification?.android?.imageUrl;
+  const url =
+    (typeof dataUrl === "string" && dataUrl.trim()) ||
+    (typeof androidUrl === "string" && androidUrl.trim()) ||
+    "";
+  if (!/^https?:\/\//i.test(url)) return undefined;
+  return url;
+}
+
 function notificationId(messageId?: string) {
   const raw = messageId && messageId.length > 0 ? messageId : `${Date.now()}`;
   const safe = raw.replace(/[^a-zA-Z0-9_.-]/g, "").slice(0, 64);
@@ -94,6 +107,7 @@ export async function displaySystemNotification(
 
   const title = remoteMessage.notification?.title ?? data.title ?? "Pakhi Tunes";
   const body = remoteMessage.notification?.body ?? data.body ?? "";
+  const imageUrl = imageUrlFromMessage(remoteMessage);
 
   await ensureAndroidChannel(notifee);
 
@@ -111,6 +125,15 @@ export async function displaySystemNotification(
         launchActivity: "default",
       },
       sound: "default",
+      ...(imageUrl
+        ? {
+            largeIcon: imageUrl,
+            style: {
+              type: notifee.AndroidStyle.BIGPICTURE,
+              picture: imageUrl,
+            },
+          }
+        : {}),
     },
     ios: {
       foregroundPresentationOptions: {
@@ -119,6 +142,7 @@ export async function displaySystemNotification(
         sound: true,
       },
       sound: "default",
+      ...(imageUrl ? { attachments: [{ url: imageUrl }] } : {}),
     },
   });
 
