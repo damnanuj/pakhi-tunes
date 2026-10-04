@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AppState, type AppStateStatus } from "react-native";
 import UpdateDialog from "../components/UpdateDialog";
 import { useAppConfig } from "../hooks/useAppConfig";
+import { getInstalledAppVersion } from "src/utils/version/getInstalledAppVersion";
+import { isVersionAtOrAbove } from "src/utils/version/semverCompare";
 
 interface AppConfigProviderProps {
   children: React.ReactNode;
@@ -55,6 +57,12 @@ export default function AppConfigProvider({ children }: AppConfigProviderProps) 
 
   const shouldShowDialog = useMemo(() => {
     if (!appConfig) return false;
+
+    const installedVersion = getInstalledAppVersion();
+    if (isVersionAtOrAbove(installedVersion, appConfig.latestVersion)) {
+      return false;
+    }
+
     if (appConfig.forceUpdate) return true;
     if (!appConfig.updateAvailable) return false;
     return !softUpdateDismissed;

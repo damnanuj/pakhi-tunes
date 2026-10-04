@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import Constants from "expo-constants";
 import * as Updates from "expo-updates";
+import { getInstalledAppVersion } from "src/utils/version/getInstalledAppVersion";
 import {
   CalendarDays,
   ChevronRight,
@@ -36,13 +36,6 @@ import {
   CREATOR_WEBSITE_URL,
 } from "../constants/profileCreatorLinks";
 
-function getInstalledAppVersion(): string {
-  return (
-    Constants.expoConfig?.version ??
-    Constants.nativeAppVersion ??
-    "0.0.0"
-  );
-}
 
 function formatUpdatedDate(date: Date): string {
   return date.toLocaleDateString(undefined, {
