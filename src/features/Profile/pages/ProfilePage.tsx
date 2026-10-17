@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { ScrollView } from "react-native";
 import { YStack } from "tamagui";
 import { useRouter } from "expo-router";
@@ -27,6 +27,7 @@ export default function ProfilePage() {
   const queryClient = useQueryClient();
   const { user, isAuthenticated, logout } = useAuth();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
 
   const scrollBottomPadding = useScrollBottomInset({
     includeTabBar: true,
@@ -59,6 +60,7 @@ export default function ProfilePage() {
     void queryClient.removeQueries({ queryKey: FAVORITES_QUERY_KEY });
     void queryClient.removeQueries({ queryKey: HISTORY_QUERY_KEY });
     appToast.loggedOut(displayName);
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
   };
 
   return (
@@ -66,6 +68,7 @@ export default function ProfilePage() {
       <ScreenHeader title="My profile" showBack={false} />
 
       <ScrollView
+        ref={scrollRef}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: scale(20),

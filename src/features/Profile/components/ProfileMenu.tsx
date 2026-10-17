@@ -22,12 +22,12 @@ export default function ProfileMenu({
 
   return (
     <YStack gap={verticalScale(12)} mt={verticalScale(24)}>
-      <DiscoverabilityToggle />
       <ProfileMenuItem
         icon={<Settings size={18} color={themeColors.dark.onSurface} />}
         label="Preferences"
         onPress={() => setPreferencesOpen(true)}
       />
+      <DiscoverabilityToggle />
       <PreferencesSheet
         open={preferencesOpen}
         onOpenChange={setPreferencesOpen}
