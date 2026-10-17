@@ -17,6 +17,9 @@ import {
 } from "src/hooks";
 import SongListItem from "src/features/ArtistSongs/components/SongListItem";
 import { QueueProvider } from "src/features/Player/context/QueueContext";
+import PlayAllButton, {
+  PLAY_ALL_LIST_CLEARANCE,
+} from "src/features/Player/components/PlayAllButton";
 import ArtistSongsPageSkeleton from "src/features/ArtistSongs/skeletons/ArtistSongsPageSkeleton";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
@@ -181,9 +184,12 @@ export default function CatalogPlaylistPage() {
           maxToRenderPerBatch={8}
           windowSize={5}
           removeClippedSubviews
-          contentContainerStyle={{ paddingBottom: scrollBottomPadding }}
+          contentContainerStyle={{
+            paddingBottom: scrollBottomPadding + PLAY_ALL_LIST_CLEARANCE,
+          }}
           showsVerticalScrollIndicator={false}
         />
+        <PlayAllButton />
       </QueueProvider>
     </YStack>
   );

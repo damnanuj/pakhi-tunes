@@ -16,6 +16,9 @@ import {
 } from "src/hooks";
 import SongListItem from "src/features/ArtistSongs/components/SongListItem";
 import { QueueProvider } from "src/features/Player/context/QueueContext";
+import PlayAllButton, {
+  PLAY_ALL_LIST_CLEARANCE,
+} from "src/features/Player/components/PlayAllButton";
 import AlbumProfileHeader from "../components/AlbumProfileHeader";
 import ArtistSongsPageSkeleton from "src/features/ArtistSongs/skeletons/ArtistSongsPageSkeleton";
 import type { ArtistSong } from "src/types/artistSongs.types";
@@ -134,10 +137,11 @@ export default function AlbumSongsPage() {
           updateCellsBatchingPeriod={50}
           removeClippedSubviews
           contentContainerStyle={{
-            paddingBottom: scrollBottomPadding,
+            paddingBottom: scrollBottomPadding + PLAY_ALL_LIST_CLEARANCE,
           }}
           showsVerticalScrollIndicator={false}
         />
+        <PlayAllButton />
       </QueueProvider>
     </YStack>
   );

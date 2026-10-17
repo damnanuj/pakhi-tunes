@@ -20,6 +20,9 @@ import {
 import SongListItem from "src/features/ArtistSongs/components/SongListItem";
 import { getSongListKey } from "src/features/ArtistSongs/utils/songListKeys";
 import { QueueProvider } from "src/features/Player/context/QueueContext";
+import PlayAllButton, {
+  PLAY_ALL_LIST_CLEARANCE,
+} from "src/features/Player/components/PlayAllButton";
 import type { ArtistSong } from "src/types/artistSongs.types";
 import { decodeHtmlEntities } from "src/utils/functions/decodeHtmlEntities";
 import {
@@ -277,10 +280,11 @@ export default function PlaylistDetailPage() {
           showsVerticalScrollIndicator={false}
           refreshControl={refreshControl}
           contentContainerStyle={{
-            paddingBottom: scrollBottomPadding,
+            paddingBottom: scrollBottomPadding + PLAY_ALL_LIST_CLEARANCE,
             flexGrow: songs.length === 0 ? 1 : undefined,
           }}
         />
+        <PlayAllButton />
       </QueueProvider>
       <ConfirmDialog
         open={deleteDialogOpen}
