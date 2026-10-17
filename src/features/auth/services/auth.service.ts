@@ -5,7 +5,9 @@ import {
   markGuestConverted,
 } from "src/features/guest/store/guestStore";
 import type {
+  AccountAudioQuality,
   AuthResponse,
+  AuthUser,
   LoginPayload,
   MeResponse,
   RegisterPayload,
@@ -38,5 +40,18 @@ export async function login(payload: LoginPayload) {
 
 export async function getMe() {
   const { data } = await apiClient.get<MeResponse>(endpoints.auth.me);
+  return data.data.user;
+}
+
+export interface UpdatePreferencesPayload {
+  streamQuality?: AccountAudioQuality;
+  downloadQuality?: AccountAudioQuality | null;
+}
+
+export async function updatePreferences(payload: UpdatePreferencesPayload) {
+  const { data } = await apiClient.patch<MeResponse>(
+    endpoints.users.preferences,
+    payload
+  );
   return data.data.user;
 }

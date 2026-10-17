@@ -18,6 +18,7 @@ import AuthenticatedProfileSection from "../components/AuthenticatedProfileSecti
 import ProfileLibraryShortcuts from "../components/ProfileLibraryShortcuts";
 import ProfileMenu from "../components/ProfileMenu";
 import ProfileCreatorFooter from "../components/ProfileCreatorFooter";
+import { resetPlaybackPreferences } from "src/features/Player/store/playbackPreferences";
 import { FAVORITES_QUERY_KEY } from "src/features/favorites/hooks/useFavorites";
 import { HISTORY_QUERY_KEY } from "src/features/history/hooks/useHistoryList";
 
@@ -54,6 +55,7 @@ export default function ProfilePage() {
       // Non-blocking — device stays registered for broadcasts either way
     }
     logout();
+    resetPlaybackPreferences();
     void queryClient.removeQueries({ queryKey: FAVORITES_QUERY_KEY });
     void queryClient.removeQueries({ queryKey: HISTORY_QUERY_KEY });
     appToast.loggedOut(displayName);
@@ -61,7 +63,7 @@ export default function ProfilePage() {
 
   return (
     <YStack flex={1} bg={themeColors.dark.background}>
-      <ScreenHeader title="My profile" showBack={false} showSettings={false} />
+      <ScreenHeader title="My profile" showBack={false} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}

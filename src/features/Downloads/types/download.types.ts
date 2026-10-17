@@ -32,3 +32,11 @@ export const DOWNLOAD_QUALITY_OPTIONS: {
   { quality: "160kbps", label: "Medium" },
   { quality: "96kbps", label: "Low" },
 ];
+
+export function getDownloadQualityLabel(
+  quality: DownloadQuality | null
+): string {
+  if (!quality) return "Ask every time";
+  const option = DOWNLOAD_QUALITY_OPTIONS.find((item) => item.quality === quality);
+  return option ? `${option.label} · ${option.quality}` : quality;
+}

@@ -1,9 +1,13 @@
+export type AccountAudioQuality = "96kbps" | "160kbps" | "320kbps";
+
 export interface AuthUser {
   id: string;
   name: string;
   email: string;
   avatar?: string | null;
   discoverable?: boolean;
+  streamQuality?: AccountAudioQuality;
+  downloadQuality?: AccountAudioQuality | null;
   role?: "user" | "admin";
   isAdmin?: boolean;
   authProvider?: "password" | "google" | "both";

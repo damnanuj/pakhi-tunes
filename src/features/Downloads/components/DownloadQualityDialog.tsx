@@ -26,32 +26,69 @@ import {
 interface DownloadQualityDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (quality: DownloadQuality) => void;
+  onConfirm: (quality: DownloadQuality, remember: boolean) => void;
+  onAskEveryTime?: () => void;
   isSubmitting?: boolean;
   confirmDisabled?: boolean;
+  /** Download flow can remember the choice. Settings hides this. */
+  showRememberCheckbox?: boolean;
+  /** Settings can clear a saved quality so the download popup returns. */
+  allowAskEveryTime?: boolean;
+  currentQuality?: DownloadQuality | null;
+  title?: string;
+  description?: string;
+  confirmLabel?: string;
 }
 
 export default function DownloadQualityDialog({
   open,
   onOpenChange,
   onConfirm,
+  onAskEveryTime,
   isSubmitting = false,
   confirmDisabled = false,
+  showRememberCheckbox = true,
+  allowAskEveryTime = false,
+  currentQuality = null,
+  title = "Download song",
+  description = "Choose audio quality for offline listening",
+  confirmLabel = "Download",
 }: DownloadQualityDialogProps) {
-  const [selectedQuality, setSelectedQuality] =
-    useState<DownloadQuality>(DEFAULT_DOWNLOAD_QUALITY);
+  const [selectedQuality, setSelectedQuality] = useState<DownloadQuality | null>(
+    DEFAULT_DOWNLOAD_QUALITY
+  );
+  const [remember, setRemember] = useState(false);
 
   useDismissOnBack(open, () => onOpenChange(false));
 
   useEffect(() => {
     if (open) {
-      setSelectedQuality(DEFAULT_DOWNLOAD_QUALITY);
+      setSelectedQuality(
+        allowAskEveryTime ? currentQuality : currentQuality ?? DEFAULT_DOWNLOAD_QUALITY
+      );
+      setRemember(false);
     }
-  }, [open]);
+  }, [allowAskEveryTime, currentQuality, open]);
 
   const handleConfirm = useCallback(() => {
-    onConfirm(selectedQuality);
-  }, [onConfirm, selectedQuality]);
+    if (!selectedQuality) {
+      onAskEveryTime?.();
+      onOpenChange(false);
+      return;
+    }
+    onConfirm(selectedQuality, showRememberCheckbox ? remember : true);
+    if (allowAskEveryTime) {
+      onOpenChange(false);
+    }
+  }, [
+    allowAskEveryTime,
+    onAskEveryTime,
+    onConfirm,
+    onOpenChange,
+    remember,
+    selectedQuality,
+    showRememberCheckbox,
+  ]);
 
   const downloadDisabled = isSubmitting || confirmDisabled;
 
@@ -92,7 +129,7 @@ export default function DownloadQualityDialog({
                 weight="700"
                 color={themeColors.dark.onSurface}
               >
-                Download song
+                {title}
               </MyText>
             </Dialog.Title>
             <Dialog.Description
@@ -107,7 +144,7 @@ export default function DownloadQualityDialog({
                 weight="400"
                 color={themeColors.dark.textMuted}
               >
-                Choose audio quality for offline listening
+                {description}
               </MyText>
             </Dialog.Description>
           </YStack>
@@ -175,7 +212,108 @@ export default function DownloadQualityDialog({
                 </Pressable>
               );
             })}
+            {allowAskEveryTime ? (
+              <Pressable
+                onPress={() => setSelectedQuality(null)}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: selectedQuality == null }}
+              >
+                <XStack
+                  items="center"
+                  gap={scale(12)}
+                  p={scale(12)}
+                  rounded={moderateScale(12)}
+                  borderWidth={1}
+                  borderColor={
+                    selectedQuality == null
+                      ? themeColors.dark.accent
+                      : themeColors.dark.borderSecondary
+                  }
+                  bg={
+                    selectedQuality == null
+                      ? "rgba(255, 255, 0, 0.08)"
+                      : themeColors.dark.surfaceSecondary
+                  }
+                >
+                  <XStack
+                    width={moderateScale(20)}
+                    height={moderateScale(20)}
+                    rounded={moderateScale(10)}
+                    borderWidth={2}
+                    borderColor={
+                      selectedQuality == null
+                        ? themeColors.dark.accent
+                        : themeColors.dark.borderSecondary
+                    }
+                    bg={
+                      selectedQuality == null
+                        ? themeColors.dark.accent
+                        : "transparent"
+                    }
+                    items="center"
+                    justify="center"
+                  >
+                    {selectedQuality == null ? (
+                      <Check
+                        size={moderateScale(12)}
+                        color={themeColors.dark.onAccent}
+                        strokeWidth={3}
+                      />
+                    ) : null}
+                  </XStack>
+                  <MyText
+                    flex={1}
+                    fontSize={moderateScale(15)}
+                    weight="700"
+                    color={themeColors.dark.onSurface}
+                  >
+                    Ask every time
+                  </MyText>
+                </XStack>
+              </Pressable>
+            ) : null}
           </YStack>
+
+          {showRememberCheckbox ? (
+            <Pressable
+              onPress={() => setRemember((value) => !value)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: remember }}
+            >
+              <XStack items="center" gap={scale(12)}>
+                <XStack
+                  width={moderateScale(20)}
+                  height={moderateScale(20)}
+                  rounded={moderateScale(4)}
+                  borderWidth={2}
+                  borderColor={
+                    remember
+                      ? themeColors.dark.accent
+                      : themeColors.dark.borderSecondary
+                  }
+                  bg={remember ? themeColors.dark.accent : "transparent"}
+                  items="center"
+                  justify="center"
+                >
+                  {remember ? (
+                    <Check
+                      size={moderateScale(12)}
+                      color={themeColors.dark.onAccent}
+                      strokeWidth={3}
+                    />
+                  ) : null}
+                </XStack>
+                <MyText
+                  flex={1}
+                  fontSize={moderateScale(14)}
+                  weight="500"
+                  color={themeColors.dark.onSurface}
+                >
+                  Save this for future downloads
+                </MyText>
+              </XStack>
+            </Pressable>
+          ) : null}
 
           <XStack gap={scale(12)}>
             <Dialog.Close asChild displayWhenAdapted={false}>
@@ -192,11 +330,11 @@ export default function DownloadQualityDialog({
               flex={1}
               bg={themeColors.dark.accent}
               size="$4"
-              disabled={downloadDisabled}
+              disabled={downloadDisabled || (!selectedQuality && !allowAskEveryTime)}
               onPress={handleConfirm}
             >
               <MyText color={themeColors.dark.onAccent}>
-                {isSubmitting ? "Starting…" : "Download"}
+                {isSubmitting ? "Starting…" : confirmLabel}
               </MyText>
             </Button>
           </XStack>

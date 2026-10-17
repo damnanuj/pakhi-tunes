@@ -4,10 +4,8 @@ import MyText from "src/components/MyText";
 import { XStack } from "tamagui";
 import { moderateScale } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
-import {
-  useSetStreamQuality,
-  useStreamQuality,
-} from "src/features/Player/store/streamQualityStore";
+import { useStreamQuality } from "src/features/Player/store/streamQualityStore";
+import { setStreamQualityPreference } from "src/features/Player/store/playbackPreferences";
 import type { StreamQuality } from "src/features/Player/constants/streamQualityOptions";
 import { getStreamQualityLabel } from "src/features/Player/constants/streamQualityOptions";
 import ProfileMenuItem from "./ProfileMenuItem";
@@ -15,21 +13,17 @@ import StreamQualityDialog from "./StreamQualityDialog";
 
 export default function ProfileStreamQualityItem() {
   const quality = useStreamQuality();
-  const setQuality = useSetStreamQuality();
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const handleConfirm = useCallback(
-    (next: StreamQuality) => {
-      setQuality(next);
-    },
-    [setQuality]
-  );
+  const handleConfirm = useCallback((next: StreamQuality) => {
+    setStreamQualityPreference(next);
+  }, []);
 
   return (
     <>
       <ProfileMenuItem
         icon={<AudioLines size={18} color={themeColors.dark.onSurface} />}
-        label="Audio quality"
+        label="Streaming quality"
         onPress={() => setDialogOpen(true)}
         trailing={
           <XStack items="center" gap={4}>

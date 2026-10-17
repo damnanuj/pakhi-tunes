@@ -55,6 +55,7 @@ export const endpoints = {
   },
   users: {
     discoverable: "/users/me/discoverable",
+    preferences: "/users/me/preferences",
   },
   appConfig: "/app-config",
   guests: {

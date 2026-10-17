@@ -3,6 +3,8 @@ import { appToast } from "src/components/toast/appToastHelpers";
 import { useAuth } from "src/features/auth/hooks/useAuth";
 import { useDownload } from "src/features/Downloads/hooks/useDownload";
 import type { DownloadQuality } from "src/features/Downloads/types/download.types";
+import { useDownloadQuality } from "src/features/Player/store/streamQualityStore";
+import { setDownloadQualityPreference } from "src/features/Player/store/playbackPreferences";
 import { useFavoriteStatus } from "src/features/favorites/hooks/useFavoriteStatus";
 import { useLocalFavoriteSongIds } from "src/features/favorites/hooks/useLocalFavorites";
 import { useToggleFavorite } from "src/features/favorites/hooks/useToggleFavorite";
@@ -73,7 +75,7 @@ export type SongOptionsMenuActions = {
   qualityDialog: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onConfirm: (quality: DownloadQuality) => void;
+    onConfirm: (quality: DownloadQuality, remember: boolean) => void;
     isSubmitting: boolean;
   };
   removeDialog: {
@@ -94,6 +96,7 @@ export function useSongOptionsActions(
   }
 ): SongOptionsMenuActions {
   const { isAuthenticated } = useAuth();
+  const savedDownloadQuality = useDownloadQuality();
   const localSongIds = useLocalFavoriteSongIds();
   const { toggleFavorite, isPending: isFavoritePending } = useToggleFavorite();
   const [qualityDialogOpen, setQualityDialogOpen] = useState(false);
@@ -208,13 +211,21 @@ export function useSongOptionsActions(
       return;
     }
 
+    if (savedDownloadQuality) {
+      void startDownload(song, savedDownloadQuality);
+      return;
+    }
+
     setQualityDialogOpen(true);
-  }, [downloadStatus]);
+  }, [downloadStatus, savedDownloadQuality, song, startDownload]);
 
   const handleConfirmQuality = useCallback(
-    async (quality: DownloadQuality) => {
+    async (quality: DownloadQuality, remember: boolean) => {
       setIsSubmittingQuality(true);
       try {
+        if (remember) {
+          setDownloadQualityPreference(quality);
+        }
         setQualityDialogOpen(false);
         await startDownload(song, quality);
       } finally {
@@ -343,7 +354,8 @@ export function useSongOptionsActions(
     qualityDialog: {
       open: qualityDialogOpen,
       onOpenChange: setQualityDialogOpen,
-      onConfirm: (quality) => void handleConfirmQuality(quality),
+      onConfirm: (quality, remember) =>
+        void handleConfirmQuality(quality, remember),
       isSubmitting: isSubmittingQuality,
     },
     removeDialog: {

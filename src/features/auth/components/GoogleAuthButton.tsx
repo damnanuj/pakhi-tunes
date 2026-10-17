@@ -8,6 +8,7 @@ import { scale, moderateScale } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
 import { useAuth } from "../hooks/useAuth";
 import { signInWithGoogle } from "../services/googleAuth.service";
+import { mergePreferencesOnSignIn } from "src/features/Player/store/playbackPreferences";
 import { getApiErrorMessage, sanitizeRedirectPath } from "../utils/validation";
 
 const GOOGLE_LOADING = {
@@ -56,6 +57,7 @@ export default function GoogleAuthButton({
     try {
       const { session, isNewUser } = await signInWithGoogle();
       setSession(session);
+      void mergePreferencesOnSignIn(session.user);
       if (isNewUser) {
         appToast.welcome(session.user.name);
       } else {

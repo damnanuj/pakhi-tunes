@@ -19,6 +19,8 @@ import {
 } from "src/features/Player/utils/ghostControlStyle";
 import { useDownload } from "../hooks/useDownload";
 import type { DownloadQuality } from "../types/download.types";
+import { useDownloadQuality } from "src/features/Player/store/streamQualityStore";
+import { setDownloadQualityPreference } from "src/features/Player/store/playbackPreferences";
 import DownloadQualityDialog from "./DownloadQualityDialog";
 import DownloadProgressRing from "./DownloadProgressRing";
 
@@ -116,6 +118,7 @@ export default function DownloadButton({ track }: DownloadButtonProps) {
   const [qualityDialogOpen, setQualityDialogOpen] = useState(false);
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [isSubmittingQuality, setIsSubmittingQuality] = useState(false);
+  const savedDownloadQuality = useDownloadQuality();
 
   const queue = usePlayerStore((s) => s.queue);
   const activeArtistSong = usePlayerStore((s) => s.activeArtistSong);
@@ -143,13 +146,21 @@ export default function DownloadButton({ track }: DownloadButtonProps) {
       return;
     }
 
+    if (savedDownloadQuality) {
+      void startDownload(downloadSong, savedDownloadQuality);
+      return;
+    }
+
     setQualityDialogOpen(true);
-  }, [isDownloaded, isDownloading]);
+  }, [downloadSong, isDownloaded, isDownloading, savedDownloadQuality, startDownload]);
 
   const handleConfirmQuality = useCallback(
-    async (quality: DownloadQuality) => {
+    async (quality: DownloadQuality, remember: boolean) => {
       setIsSubmittingQuality(true);
       try {
+        if (remember) {
+          setDownloadQualityPreference(quality);
+        }
         setQualityDialogOpen(false);
         await startDownload(downloadSong, quality);
       } finally {
@@ -202,7 +213,9 @@ export default function DownloadButton({ track }: DownloadButtonProps) {
       <DownloadQualityDialog
         open={qualityDialogOpen}
         onOpenChange={setQualityDialogOpen}
-        onConfirm={(quality) => void handleConfirmQuality(quality)}
+        onConfirm={(quality, remember) =>
+          void handleConfirmQuality(quality, remember)
+        }
         isSubmitting={isSubmittingQuality}
       />
 

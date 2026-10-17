@@ -15,6 +15,7 @@ import { appToast } from "src/components/toast/appToastHelpers";
 import { scale, verticalScale, moderateScale } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
 import { login } from "../services/auth.service";
+import { mergePreferencesOnSignIn } from "src/features/Player/store/playbackPreferences";
 import { useAuth } from "../hooks/useAuth";
 import {
   getApiErrorMessage,
@@ -78,6 +79,7 @@ export default function SignInForm({
         password: signInForm.password,
       });
       setSession(session);
+      void mergePreferencesOnSignIn(session.user);
       appToast.welcomeBack(session.user.name);
       router.replace(sanitizeRedirectPath(redirect));
     } catch (error) {
