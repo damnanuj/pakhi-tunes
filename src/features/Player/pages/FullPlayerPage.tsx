@@ -25,7 +25,6 @@ import {
   Play,
   Repeat,
   Repeat1,
-  Shuffle,
   SkipBack,
   SkipForward,
   Users,
@@ -351,7 +350,6 @@ export default function FullPlayerPage() {
     seekToMillis,
     skipToNext,
     skipToPrevious,
-    toggleShuffle,
     cycleRepeatMode,
   } = usePlayback();
 
@@ -368,7 +366,6 @@ export default function FullPlayerPage() {
   const queue = usePlayerStore((s) => s.queue);
   const queueIndex = usePlayerStore((s) => s.queueIndex);
   const queueSource = usePlayerStore((s) => s.queueSource);
-  const shuffleEnabled = usePlayerStore((s) => s.shuffleEnabled);
   const repeatMode = usePlayerStore((s) => s.repeatMode);
   const sessionRole = useNearbySessionStore((s) => s.role);
   const listenerCount = useNearbySessionStore((s) => s.listenerCount);
@@ -457,10 +454,6 @@ export default function FullPlayerPage() {
   const onSkipNext = useCallback(() => {
     void skipToNext();
   }, [skipToNext]);
-
-  const onToggleShuffle = useCallback(() => {
-    toggleShuffle();
-  }, [toggleShuffle]);
 
   const onCycleRepeat = useCallback(() => {
     cycleRepeatMode();
@@ -688,21 +681,7 @@ export default function FullPlayerPage() {
               style={{ alignSelf: "stretch" as const }}
               px={scale(2)}
             >
-              <IconControl
-                onPress={onToggleShuffle}
-                disabled={isListener || !canOpenUpNext}
-              >
-                <Shuffle
-                  size={moderateScale(20)}
-                  color={
-                    !isListener && shuffleEnabled && canOpenUpNext
-                      ? accent
-                      : isListener
-                        ? muted
-                        : onSurface
-                  }
-                />
-              </IconControl>
+              <FavoriteButton track={activeTrack} />
               <IconControl onPress={onSkipPrevious} disabled={isListener}>
                 <SkipBack
                   size={moderateScale(26)}
@@ -770,10 +749,7 @@ export default function FullPlayerPage() {
               </IconControl>
               <IconControl onPress={onCycleRepeat} disabled={isListener}>
                 {displayRepeatMode === "one" ? (
-                  <Repeat1
-                    size={moderateScale(20)}
-                    color={accent}
-                  />
+                  <Repeat1 size={moderateScale(20)} color={accent} />
                 ) : (
                   <Repeat
                     size={moderateScale(20)}
@@ -873,7 +849,6 @@ export default function FullPlayerPage() {
               justify="flex-end"
             >
               <DownloadButton track={activeTrack} />
-              <FavoriteButton track={activeTrack} />
             </XStack>
           </XStack>
         </YStack>

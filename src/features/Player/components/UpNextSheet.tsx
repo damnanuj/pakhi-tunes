@@ -1,4 +1,11 @@
-import { memo, useCallback, useEffect, useMemo, useRef } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  type ReactNode,
+} from "react";
 import {
   FlatList,
   ListRenderItem,
@@ -17,7 +24,8 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { YStack } from "tamagui";
+import { Repeat, Repeat1, Shuffle } from "@tamagui/lucide-icons";
+import { XStack, YStack } from "tamagui";
 import ListFooterSpinner from "src/components/ListFooterSpinner";
 import {
   moderateScale,
@@ -33,10 +41,15 @@ import {
 } from "src/features/ArtistSongs/utils/songListItemLayout";
 import { getSongListKey } from "src/features/ArtistSongs/utils/songListKeys";
 import type { ArtistSong } from "src/types/artistSongs.types";
+import { usePlayback } from "../context/PlayerContext";
 import { QueueProvider } from "../context/QueueContext";
 import { useQueuePagination } from "../hooks/useQueuePagination";
 import { usePlayerStore } from "../store/playerStore";
 import { getQueueSourceLabel, shouldShowQueueSourceLabel } from "../utils/queueHelpers";
+import {
+  ghostControlStyle,
+  playerRippleLight,
+} from "../utils/ghostControlStyle";
 import { useScrollEndReached } from "src/hooks";
 
 const SHEET_HEIGHT_RATIO = 0.7;
@@ -57,6 +70,28 @@ interface UpNextSheetProps {
   onOpenChange: (open: boolean) => void;
 }
 
+function QueueModeButton({
+  onPress,
+  accessibilityLabel,
+  children,
+}: {
+  onPress: () => void;
+  accessibilityLabel: string;
+  children: ReactNode;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      android_ripple={playerRippleLight}
+      style={({ pressed }) => ghostControlStyle(pressed)}
+    >
+      {children}
+    </Pressable>
+  );
+}
+
 function UpNextSheet({ open, onOpenChange }: UpNextSheetProps) {
   const insets = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
@@ -66,6 +101,8 @@ function UpNextSheet({ open, onOpenChange }: UpNextSheetProps) {
   const queueIndex = usePlayerStore((s) => s.queueIndex);
   const queueSource = usePlayerStore((s) => s.queueSource);
   const shuffleEnabled = usePlayerStore((s) => s.shuffleEnabled);
+  const repeatMode = usePlayerStore((s) => s.repeatMode);
+  const { toggleShuffle, cycleRepeatMode } = usePlayback();
 
   const flatListRef = useRef<FlatList<ArtistSong>>(null);
   const hasScrolledToActiveRef = useRef(false);
@@ -279,26 +316,70 @@ function UpNextSheet({ open, onOpenChange }: UpNextSheetProps) {
         >
           <View {...panResponder.panHandlers}>
             <View style={styles.handle} />
-            <YStack px={scale(20)} pb={verticalScale(12)} gap={verticalScale(4)}>
-              <MyText
-                fontSize={moderateScale(18)}
-                weight="700"
-                color={themeColors.dark.onSurface}
-              >
-                Up Next
-              </MyText>
-              {showSourceLabel ? (
-                <MyText
-                  fontSize={moderateScale(13)}
-                  weight="500"
-                  color={themeColors.dark.textMuted}
-                  numberOfLines={1}
-                >
-                  Playing from {sourceLabel}
-                </MyText>
-              ) : null}
-            </YStack>
           </View>
+          <XStack
+            px={scale(20)}
+            pb={verticalScale(12)}
+            items="center"
+            gap={scale(12)}
+          >
+            <View style={styles.titleBlock} {...panResponder.panHandlers}>
+              <YStack flex={1} gap={verticalScale(4)}>
+                <MyText
+                  fontSize={moderateScale(18)}
+                  weight="700"
+                  color={themeColors.dark.onSurface}
+                >
+                  Up Next
+                </MyText>
+                {showSourceLabel ? (
+                  <MyText
+                    fontSize={moderateScale(13)}
+                    weight="500"
+                    color={themeColors.dark.textMuted}
+                    numberOfLines={1}
+                  >
+                    Playing from {sourceLabel}
+                  </MyText>
+                ) : null}
+              </YStack>
+            </View>
+            <QueueModeButton
+              onPress={toggleShuffle}
+              accessibilityLabel="Shuffle upcoming songs"
+            >
+              <Shuffle
+                size={moderateScale(20)}
+                color={themeColors.dark.onSurface}
+              />
+            </QueueModeButton>
+            <QueueModeButton
+              onPress={cycleRepeatMode}
+              accessibilityLabel={
+                repeatMode === "one"
+                  ? "Repeat one song"
+                  : repeatMode === "all"
+                    ? "Repeat all songs"
+                    : "Repeat is off"
+              }
+            >
+              {repeatMode === "one" ? (
+                <Repeat1
+                  size={moderateScale(20)}
+                  color={themeColors.dark.accent}
+                />
+              ) : (
+                <Repeat
+                  size={moderateScale(20)}
+                  color={
+                    repeatMode === "all"
+                      ? themeColors.dark.accent
+                      : themeColors.dark.onSurface
+                  }
+                />
+              )}
+            </QueueModeButton>
+          </XStack>
           <QueueProvider songs={queue} source={queueSource}>
             <FlatList
               ref={flatListRef}
@@ -342,6 +423,9 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: moderateScale(16),
     borderTopRightRadius: moderateScale(16),
     overflow: "hidden",
+  },
+  titleBlock: {
+    flex: 1,
   },
   handle: {
     alignSelf: "center",

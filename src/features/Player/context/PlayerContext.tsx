@@ -629,29 +629,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const state = usePlayerStore.getState();
     if (!hasQueue(state) || !state.activeTrack) return;
 
-    const nextEnabled = !state.shuffleEnabled;
-    usePlayerStore.getState().setShuffleEnabled(nextEnabled);
-
-    if (nextEnabled) {
-      const currentIndex =
-        state.queueIndex >= 0
-          ? state.queueIndex
-          : findSongIndex(state.queue, state.activeTrack.id);
-      const shuffled = shuffleQueueKeepingCurrent(
-        state.originalQueue.length > 0 ? state.originalQueue : state.queue,
-        currentIndex >= 0 ? currentIndex : 0
-      );
-      usePlayerStore.getState().updateQueueOrder(shuffled, 0);
-      return;
-    }
-
-    const original =
-      state.originalQueue.length > 0 ? state.originalQueue : state.queue;
-    const restoredIndex = findSongIndex(original, state.activeTrack.id);
-    usePlayerStore.getState().updateQueueOrder(
-      original,
-      restoredIndex >= 0 ? restoredIndex : 0
+    const currentIndex = findSongIndex(state.queue, state.activeTrack.id);
+    const shuffled = shuffleQueueKeepingCurrent(
+      state.queue,
+      currentIndex >= 0 ? currentIndex : 0
     );
+    usePlayerStore.getState().updateQueueOrder(shuffled, 0);
   }, []);
 
   const cycleRepeatMode = useCallback(() => {
