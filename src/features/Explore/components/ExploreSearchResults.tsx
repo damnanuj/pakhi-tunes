@@ -1,6 +1,5 @@
-import { memo, useCallback, useMemo } from "react";
-import { FlatList, ListRenderItem } from "react-native";
-import { useRouter } from "expo-router";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { FlatList, ListRenderItem, View } from "react-native";
 import { YStack } from "tamagui";
 import { scale, verticalScale, moderateScale } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
@@ -9,8 +8,8 @@ import ConnectionErrorState from "src/components/ConnectionErrorState";
 import ListFooterSpinner from "src/components/ListFooterSpinner";
 import SongListItem from "src/features/ArtistSongs/components/SongListItem";
 import SearchPageSkeleton from "../skeletons/SearchPageSkeleton";
-import SearchEntityRow from "./SearchEntityRow";
-import SearchSectionTitleRow from "./SearchSectionTitleRow";
+import ExploreSearchTabs, { type SearchTabId } from "./ExploreSearchTabs";
+import SearchCategoryGrid from "./SearchCategoryGrid";
 import {
   useConnectionErrorProps,
   useRefreshable,
@@ -20,12 +19,11 @@ import {
 } from "src/hooks";
 import { getSongSearch } from "src/services";
 import type { ArtistSong } from "src/types/artistSongs.types";
-import type { SongSearchResponse } from "src/types/songSearch.types";
+import type {
+  SearchCategory,
+  SongSearchResponse,
+} from "src/types/songSearch.types";
 import { getNextOffsetFromPagination } from "src/utils/pagination/getNextOffsetFromPagination";
-import {
-  buildSearchListRows,
-  type SearchListRow,
-} from "../utils/searchResultsListModel";
 
 const PAGE_SIZE = 20;
 const LIST_WINDOW = {
@@ -33,6 +31,8 @@ const LIST_WINDOW = {
   maxToRenderPerBatch: 8,
   windowSize: 5,
 } as const;
+
+const TAB_GAP = verticalScale(16);
 
 function getItems(res: SongSearchResponse) {
   return res.data.results;
@@ -45,6 +45,15 @@ function getNextPageParam(
   return getNextOffsetFromPagination<ArtistSong>(res, PAGE_SIZE);
 }
 
+function buildAvailableTabs(firstPage: SongSearchResponse | undefined): SearchTabId[] {
+  const tabs: SearchTabId[] = ["songs"];
+  const data = firstPage?.data;
+  if ((data?.albums?.length ?? 0) > 0) tabs.push("albums");
+  if ((data?.artists?.length ?? 0) > 0) tabs.push("artists");
+  if ((data?.playlists?.length ?? 0) > 0) tabs.push("playlists");
+  return tabs;
+}
+
 interface ExploreSearchResultsProps {
   query: string;
   debouncedQuery: string;
@@ -53,11 +62,16 @@ interface ExploreSearchResultsProps {
 function ExploreSearchResults({
   debouncedQuery,
 }: ExploreSearchResultsProps) {
-  const router = useRouter();
   const scrollBottomPadding = useScrollBottomInset({
     includeTabBar: true,
     extra: verticalScale(20),
   });
+
+  const [activeTab, setActiveTab] = useState<SearchTabId>("songs");
+
+  useEffect(() => {
+    setActiveTab("songs");
+  }, [debouncedQuery]);
 
   const {
     items: songs,
@@ -86,52 +100,18 @@ function ExploreSearchResults({
     keepPreviousData: true,
   });
 
-  const top = firstPage?.data.top ?? [];
-  const albums = firstPage?.data.albums ?? [];
-  const artists = firstPage?.data.artists ?? [];
-  const playlists = firstPage?.data.playlists ?? [];
-
-  const listRows = useMemo(
-    () =>
-      buildSearchListRows({
-        top,
-        artists,
-        albums,
-        playlists,
-        songs,
-      }),
-    [albums, artists, playlists, songs, top]
+  const availableTabs = useMemo(
+    () => buildAvailableTabs(firstPage),
+    [firstPage]
   );
 
-  const openEntity = useCallback(
-    (row: Extract<SearchListRow, { kind: "entity" }>) => {
-      switch (row.target) {
-        case "artist":
-          router.push({
-            pathname: "/explore/artist/[id]",
-            params: { id: row.routeId, name: row.routeName ?? row.name },
-          });
-          break;
-        case "album":
-          router.push({
-            pathname: "/explore/album/[id]",
-            params: { id: row.routeId },
-          });
-          break;
-        case "playlist":
-          router.push({
-            pathname: "/explore/playlist/[id]",
-            params: { id: row.routeId, name: row.routeName ?? row.name },
-          });
-          break;
-        default: {
-          const _exhaustive: never = row.target;
-          return _exhaustive;
-        }
-      }
-    },
-    [router]
-  );
+  useEffect(() => {
+    if (!availableTabs.includes(activeTab)) {
+      setActiveTab(availableTabs[0] ?? "songs");
+    }
+  }, [activeTab, availableTabs]);
+
+  const showCategoryTabs = availableTabs.length > 1;
 
   const { refreshControl } = useRefreshable({
     onRefresh: async () => {
@@ -146,40 +126,21 @@ function ExploreSearchResults({
     isFetching,
   });
 
-  const renderItem: ListRenderItem<SearchListRow> = useCallback(
-    ({ item }) => {
-      switch (item.kind) {
-        case "section":
-          return <SearchSectionTitleRow label={item.label} />;
-        case "entity":
-          return (
-            <SearchEntityRow
-              name={item.name}
-              subtitle={item.subtitle}
-              image={item.image}
-              roundImage={item.roundImage}
-              onPress={() => openEntity(item)}
-            />
-          );
-        case "song":
-          return <SongListItem song={item.song} />;
-        default: {
-          const _exhaustive: never = item;
-          return _exhaustive;
-        }
-      }
-    },
-    [openEntity]
+  const renderSongItem: ListRenderItem<ArtistSong> = useCallback(
+    ({ item }) => <SongListItem song={item} />,
+    []
   );
 
-  const keyExtractor = useCallback((item: SearchListRow) => item.key, []);
+  const keyExtractor = useCallback((item: ArtistSong) => item.id, []);
 
   const listFooter = isLoadingMore ? <ListFooterSpinner /> : null;
 
-  const hasAnyResults = listRows.length > 0;
+  const hasSongResults = songs.length > 0;
+  const hasCategoryPreview = availableTabs.length > 1;
 
   const showSkeleton =
-    !hasAnyResults &&
+    !hasSongResults &&
+    !hasCategoryPreview &&
     !isPlaceholderData &&
     (isLoading || (isFetching && debouncedQuery.length > 0));
 
@@ -187,11 +148,12 @@ function ExploreSearchResults({
     !showSkeleton &&
     !isError &&
     debouncedQuery.length > 0 &&
-    !hasAnyResults &&
+    !hasSongResults &&
+    !hasCategoryPreview &&
     !isFetching;
 
   const { onScroll, onEndReached } = useScrollEndReached(fetchNextPage, {
-    enabled: hasNextPage,
+    enabled: hasNextPage && activeTab === "songs",
     isLoadingMore,
   });
 
@@ -199,7 +161,7 @@ function ExploreSearchResults({
     return <SearchPageSkeleton />;
   }
 
-  if (isError && !hasAnyResults) {
+  if (isError && !hasSongResults && !hasCategoryPreview) {
     return (
       <ConnectionErrorState
         {...connectionErrorProps}
@@ -223,26 +185,59 @@ function ExploreSearchResults({
   }
 
   return (
-    <FlatList
-      data={listRows}
-      keyExtractor={keyExtractor}
-      renderItem={renderItem}
-      ListFooterComponent={listFooter}
-      refreshControl={refreshControl}
-      onScroll={onScroll}
-      scrollEventThrottle={16}
-      onEndReached={onEndReached}
-      onEndReachedThreshold={0.4}
-      initialNumToRender={LIST_WINDOW.initialNumToRender}
-      maxToRenderPerBatch={LIST_WINDOW.maxToRenderPerBatch}
-      windowSize={LIST_WINDOW.windowSize}
-      removeClippedSubviews
-      contentContainerStyle={{
-        paddingBottom: scrollBottomPadding,
-      }}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-    />
+    <YStack flex={1}>
+      {showCategoryTabs ? (
+        <View style={{ marginBottom: TAB_GAP }}>
+          <ExploreSearchTabs
+            availableTabs={availableTabs}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        </View>
+      ) : null}
+
+      {activeTab === "songs" ? (
+        <FlatList
+          data={songs}
+          keyExtractor={keyExtractor}
+          renderItem={renderSongItem}
+          ListEmptyComponent={
+            hasCategoryPreview ? (
+              <YStack px={scale(20)} pt={verticalScale(24)}>
+                <MyText
+                  fontSize={moderateScale(14)}
+                  color={themeColors.dark.textMuted}
+                  textAlign="center"
+                >
+                  No songs found. Check other tabs for results.
+                </MyText>
+              </YStack>
+            ) : null
+          }
+          ListFooterComponent={listFooter}
+          refreshControl={refreshControl}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.4}
+          initialNumToRender={LIST_WINDOW.initialNumToRender}
+          maxToRenderPerBatch={LIST_WINDOW.maxToRenderPerBatch}
+          windowSize={LIST_WINDOW.windowSize}
+          removeClippedSubviews
+          contentContainerStyle={{
+            paddingBottom: scrollBottomPadding,
+          }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        />
+      ) : (
+        <SearchCategoryGrid
+          debouncedQuery={debouncedQuery}
+          type={activeTab as SearchCategory}
+          enabled
+        />
+      )}
+    </YStack>
   );
 }
 

@@ -68,6 +68,20 @@ export interface SongSearchResponse {
   isSuccess: boolean;
 }
 
+export type SearchCategory = "albums" | "artists" | "playlists";
+
+export interface SearchCategoryParams extends PaginationParams {
+  q: string;
+  type: SearchCategory;
+}
+
+export interface SearchCategoryResponse<T> {
+  data: Pagination & { results: T[] };
+  error: Record<string, unknown>;
+  isSuccess: boolean;
+}
+
 export interface SongSearchParams extends PaginationParams {
   q: string;
+  type?: SearchCategory;
 }
