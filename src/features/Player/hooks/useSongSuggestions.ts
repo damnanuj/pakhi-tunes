@@ -4,6 +4,7 @@ import {
   getSongSuggestions,
 } from "src/services";
 import type { SongSuggestionsPage } from "src/types/songSuggestions.types";
+import { isRateLimitError } from "src/utils/network/isRateLimitError";
 
 export { DEFAULT_SUGGESTIONS_LIMIT } from "src/services";
 export const SONG_SUGGESTIONS_STALE_MS = 5 * 60 * 1000;
@@ -38,6 +39,7 @@ export function useSongSuggestions(
       }),
     enabled,
     staleTime: SONG_SUGGESTIONS_STALE_MS,
-    retry: 1,
+    retry: (failureCount, error) =>
+      !isRateLimitError(error) && failureCount < 1,
   });
 }
