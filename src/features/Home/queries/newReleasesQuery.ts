@@ -1,6 +1,7 @@
 import { getNewReleases } from "src/services";
 import type { NewReleasesResponse } from "src/types/newReleases.types";
 import { NEW_RELEASES_QUEUE_FETCH_LIMIT } from "src/utils/constants/newReleases";
+import { HOME_PHONE_CACHE_MS } from "./homeCatalogQuery";
 
 const NEW_RELEASES_STALE_TIME_MS = 5 * 60 * 1000;
 
@@ -18,7 +19,8 @@ export function getNewReleasesHomeAlbumsQueryOptions() {
         offset: 0,
         type: "album",
       }),
-    staleTime: NEW_RELEASES_STALE_TIME_MS,
+    staleTime: HOME_PHONE_CACHE_MS,
+    gcTime: HOME_PHONE_CACHE_MS,
   };
 }
 
@@ -36,7 +38,8 @@ export function getNewReleasesHomeSongsQueryOptions() {
         offset: 0,
         type: "song",
       }),
-    staleTime: NEW_RELEASES_STALE_TIME_MS,
+    staleTime: HOME_PHONE_CACHE_MS,
+    gcTime: HOME_PHONE_CACHE_MS,
   };
 }
 

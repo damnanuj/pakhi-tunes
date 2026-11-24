@@ -8,8 +8,8 @@ import {
 import { SCREEN_WIDTH } from "src/utils/functions/dimensions";
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
-import { getGenres } from "src/services";
 import { getGenreCardImageUrl } from "src/utils/constants/genreCardImages";
+import { getGenresHomeQueryOptions } from "../queries/homeCatalogQuery";
 import FeaturedCardsSkeleton from "../skeletons/FeaturedCardsSkeleton";
 
 const CARD_WIDTH = (SCREEN_WIDTH - scale(20) * 3) / 2;
@@ -17,10 +17,9 @@ const CARD_HEIGHT = moderateScale(180);
 
 export default function FeaturedCards() {
   const router = useRouter();
-  const { data, isPending, isLoading, isError } = useQuery({
-    queryKey: ["genres"],
-    queryFn: getGenres,
-  });
+  const { data, isPending, isLoading, isError } = useQuery(
+    getGenresHomeQueryOptions()
+  );
 
   const genres = data?.data ?? [];
 
