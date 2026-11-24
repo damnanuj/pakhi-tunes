@@ -81,7 +81,7 @@ function SongListItem({
     [song.artists.primary]
   );
   const imageUrl = useMemo(
-    () => getSongCoverUrl(song.image),
+    () => getSongCoverUrl(song.image, "150x150"),
     [song.image]
   );
 

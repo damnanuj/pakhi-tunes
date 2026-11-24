@@ -63,7 +63,8 @@
           },
           "android": {
             "newArchEnabled": false,
-            "usesCleartextTraffic": true
+            "usesCleartextTraffic": true,
+            "enableMinifyInReleaseBuilds": true
           },
           "node": "20.19.4"
         }

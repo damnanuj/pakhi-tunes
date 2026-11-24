@@ -21,6 +21,7 @@ import { useQueueContext } from "src/features/Player/context/QueueContext";
 import { findSongIndex } from "src/features/Player/utils/queueHelpers";
 import { playerRippleLight } from "src/features/Player/utils/ghostControlStyle";
 import { PlayingArtworkIndicator } from "src/features/ArtistSongs/components/PlayingArtworkIndicator";
+import { getSongCoverUrl } from "src/utils/functions/songImage";
 import type { ArtistSong } from "src/types/artistSongs.types";
 
 const IMAGE_SIZE = moderateScale(56);
@@ -55,7 +56,7 @@ function HistorySongListItem({
   );
 
   const artistNames = song.artists.primary.map((a) => a.name).join(", ");
-  const imageUrl = song.image[0]?.url ?? "";
+  const imageUrl = getSongCoverUrl(song.image, "150x150");
 
   const isThisTrack = playbackState.isActive;
   const showLoadingOnRow =

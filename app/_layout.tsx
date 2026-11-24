@@ -72,8 +72,6 @@ export default function RootLayout() {
   // }
 
   const [fontsLoaded] = useFonts({
-    Sparkle: require("../assets/fonts/Sparkle.ttf"),
-
     NeoNeon: require("../assets/fonts/NeoNeon.otf"),
 
     MPLUSRounded1c_100Thin,
