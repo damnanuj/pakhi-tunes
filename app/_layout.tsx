@@ -25,8 +25,9 @@ import {
   ThemeProviderCustom,
   useThemeController,
 } from "src/contexts/ThemeContext/ThemeContext";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { queryClient } from "src/utils/query/queryClient";
+import { homeCatalogPersistOptions } from "src/utils/query/homeCatalogPersister";
 import { MiniPlayerRootLayer, PlayerProvider } from "src/features/Player";
 import AppToast from "src/components/toast/AppToast";
 import GuestLimitDialog from "src/components/guestLimit/GuestLimitDialog";
@@ -107,7 +108,10 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
   return (
     <KeyboardProvider>
       <ThemeProviderCustom>
-        <QueryClientProvider client={queryClient}>
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={homeCatalogPersistOptions}
+        >
           <NetworkProvider>
             <NetworkQuerySyncGate>
               <PlayerProvider>
@@ -139,7 +143,7 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
               </PlayerProvider>
             </NetworkQuerySyncGate>
           </NetworkProvider>
-        </QueryClientProvider>
+        </PersistQueryClientProvider>
       </ThemeProviderCustom>
     </KeyboardProvider>
   );

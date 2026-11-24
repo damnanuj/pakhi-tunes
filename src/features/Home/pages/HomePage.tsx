@@ -1,4 +1,5 @@
 import { ScrollView, StyleSheet, View } from "react-native";
+import { useIsRestoring } from "@tanstack/react-query";
 import { YStack } from "tamagui";
 import { verticalScale } from "src/utils/functions/dimensions";
 import themeColors from "src/utils/theme/colors";
@@ -44,6 +45,7 @@ function HomeSections() {
 }
 
 export default function HomePage() {
+  const isRestoring = useIsRestoring();
   const { isOffline, bannerPhase } = useNetwork();
   const {
     hasDisplayableContent,
@@ -67,6 +69,7 @@ export default function HomePage() {
   const isRecoveringFromOffline = bannerPhase === "reconnected";
 
   const showFallback =
+    !isRestoring &&
     !hasDisplayableContent &&
     (isOffline || (allFailedWithoutData && !isRecoveringFromOffline));
 
@@ -86,9 +89,7 @@ export default function HomePage() {
           }}
           refreshControl={showFallback ? undefined : refreshControl}
         >
-          {showFallback ? null : (
-            <HomeSections />
-          )}
+          {isRestoring || showFallback ? null : <HomeSections />}
         </ScrollView>
         {showFallback ? (
           <View style={styles.errorOverlay}>

@@ -1,17 +1,17 @@
 import { useCallback, useMemo } from "react";
 import { useQueries } from "@tanstack/react-query";
-import { getGenres, getTopArtists } from "src/services";
 import { getNewReleaseSongs } from "src/types/newReleases.types";
 import type { GenresResponse } from "src/types/genres.types";
 import type { NewReleasesResponse } from "src/types/newReleases.types";
 import type { TopArtistsResponse } from "src/types/topArtists.types";
-import { NEW_RELEASES_QUEUE_FETCH_LIMIT } from "src/utils/constants/newReleases";
+import {
+  getGenresHomeQueryOptions,
+  getTopArtistsHomeQueryOptions,
+} from "../queries/homeCatalogQuery";
 import {
   getNewReleasesHomeAlbumsQueryOptions,
   getNewReleasesHomeSongsQueryOptions,
 } from "../queries/newReleasesQuery";
-
-const TOP_ARTISTS_LIMIT = 10;
 
 function hasGenresContent(data: GenresResponse | undefined): boolean {
   return (data?.data?.length ?? 0) > 0;
@@ -34,23 +34,17 @@ function hasNewReleasesSongsContent(
 }
 
 export const HOME_QUERY_KEYS = [
-  ["genres"],
-  ["topArtists", TOP_ARTISTS_LIMIT],
-  ["newReleases", NEW_RELEASES_QUEUE_FETCH_LIMIT, "album", "home"],
-  ["newReleases", NEW_RELEASES_QUEUE_FETCH_LIMIT, "song", "home"],
+  getGenresHomeQueryOptions().queryKey,
+  getTopArtistsHomeQueryOptions().queryKey,
+  getNewReleasesHomeAlbumsQueryOptions().queryKey,
+  getNewReleasesHomeSongsQueryOptions().queryKey,
 ] as const;
 
 export function useHomePageQueries() {
   const [genresQuery, topArtistsQuery, albumsQuery, songsQuery] = useQueries({
     queries: [
-      {
-        queryKey: ["genres"] as const,
-        queryFn: getGenres,
-      },
-      {
-        queryKey: ["topArtists", TOP_ARTISTS_LIMIT] as const,
-        queryFn: () => getTopArtists({ limit: TOP_ARTISTS_LIMIT }),
-      },
+      getGenresHomeQueryOptions(),
+      getTopArtistsHomeQueryOptions(),
       getNewReleasesHomeAlbumsQueryOptions(),
       getNewReleasesHomeSongsQueryOptions(),
     ],

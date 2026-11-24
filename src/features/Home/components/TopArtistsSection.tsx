@@ -9,18 +9,15 @@ import {
 } from "src/utils/functions/dimensions";
 import MyText from "src/components/MyText";
 import themeColors from "src/utils/theme/colors";
-import { getTopArtists } from "src/services";
 import TopArtistsSectionSkeleton from "src/features/Home/skeletons/TopArtistsSectionSkeleton";
+import { getTopArtistsHomeQueryOptions } from "../queries/homeCatalogQuery";
 
 const ARTIST_SIZE = moderateScale(72);
-const TOP_ARTISTS_LIMIT = 10;
-
 export default function TopArtistsSection() {
   const router = useRouter();
-  const { data, isPending, isLoading, isError } = useQuery({
-    queryKey: ["topArtists", TOP_ARTISTS_LIMIT],
-    queryFn: () => getTopArtists({ limit: TOP_ARTISTS_LIMIT }),
-  });
+  const { data, isPending, isLoading, isError } = useQuery(
+    getTopArtistsHomeQueryOptions()
+  );
 
   const artists = data?.data?.results ?? [];
 
