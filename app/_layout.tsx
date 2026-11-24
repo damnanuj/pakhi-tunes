@@ -41,7 +41,6 @@ import HistorySyncProvider from "src/features/history/providers/HistorySyncProvi
 import { NearbySessionProvider } from "src/features/NearbySession";
 import { NetworkProvider } from "src/contexts/NetworkContext";
 import { AppConfigProvider } from "src/features/AppConfig";
-import { useEasUpdates } from "src/hooks/useEasUpdates";
 import { useNetworkQuerySync } from "src/hooks/useNetworkQuerySync";
 
 export { ErrorBoundary } from "expo-router";
@@ -84,8 +83,6 @@ export default function RootLayout() {
     MPlusRounded800,
     MPlusRounded900,
   });
-
-  useEasUpdates();
 
   useEffect(() => {
     if (fontsLoaded) {

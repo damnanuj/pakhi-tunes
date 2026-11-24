@@ -226,6 +226,8 @@ export default function UpdateDialog({
     }
   };
 
+  if (!open) return null;
+
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialog.Portal>

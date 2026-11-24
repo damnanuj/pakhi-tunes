@@ -39,6 +39,8 @@ export default function ConfirmDialog({
 }: ConfirmDialogProps) {
   useDismissOnBack(open, () => onOpenChange(false));
 
+  if (!open) return null;
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialog.Portal>
